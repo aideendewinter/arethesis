@@ -66,6 +66,18 @@ export class MixinRegistry {
     }
     try {
       const instance = def.fn(element, options as Record<string, unknown>);
+      // However it's destroyed (directly, or through remove()), forget it, so the
+      // mixin can be applied to this element again.
+      const destroy = instance.destroy.bind(instance);
+      const appliedMap = map;
+      instance.destroy = () => {
+        if (appliedMap.get(name) === instance) {
+          appliedMap.delete(name);
+          if (appliedMap.size) element.dataset.mixinsApplied = Array.from(appliedMap.keys()).join(' ');
+          else delete element.dataset.mixinsApplied;
+        }
+        destroy();
+      };
       map.set(name, instance);
       element.dataset.mixinsApplied = Array.from(map.keys()).join(' ');
       return instance;
@@ -89,10 +101,7 @@ export class MixinRegistry {
     const map = this.applied.get(element);
     const instance = map?.get(name);
     if (!map || !instance) return false;
-    instance.destroy();
-    map.delete(name);
-    if (map.size) element.dataset.mixinsApplied = Array.from(map.keys()).join(' ');
-    else delete element.dataset.mixinsApplied;
+    instance.destroy(); // also unregisters it
     return true;
   }
 
@@ -100,7 +109,7 @@ export class MixinRegistry {
   removeAll(element: HTMLElement): void {
     const map = this.applied.get(element);
     if (!map) return;
-    for (const instance of map.values()) instance.destroy();
+    for (const instance of [...map.values()]) instance.destroy();
     map.clear();
     delete element.dataset.mixinsApplied;
   }

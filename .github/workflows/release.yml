@@ -47,7 +47,8 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
             exit 1
           fi
-          git fetch --tags --quiet
+          # A tag push already has its tag; a manual run may need to fetch it.
+          git rev-parse -q --verify "refs/tags/$tag" >/dev/null || git fetch --tags --force --quiet
           if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             echo "::error::Tag $tag doesn't exist. Run \`npm version\` and push the tag first."
             exit 1

@@ -32,6 +32,25 @@ describe('built-in registration', () => {
   it('registers every mixin', () => {
     expect(mixinRegistry.names()).toEqual(expect.arrayContaining(['draggable', 'editable', 'grid-navigation', 'infinite-scroll', 'sortable', 'resizable', 'dropdown', 'tooltip', 'context-menu']));
   });
+  it('forgets an instance that was destroyed directly, so it can be applied again (regression)', () => {
+    const el = html('<ul><li>a</li></ul>');
+    const first = mixinRegistry.apply(el, 'sortable')!;
+    expect(mixinRegistry.isApplied(el, 'sortable')).toBe(true);
+    first.destroy();
+    expect(mixinRegistry.isApplied(el, 'sortable')).toBe(false);
+    expect(el.dataset.mixinsApplied).toBeUndefined();
+    const second = mixinRegistry.apply(el, 'sortable')!;
+    expect(second).not.toBe(first);
+    expect(el.classList.contains('is-sortable')).toBe(true);
+    // remove() and removeAll() still work, and destroying twice is harmless.
+    expect(mixinRegistry.remove(el, 'sortable')).toBe(true);
+    first.destroy();
+    mixinRegistry.apply(el, 'sortable');
+    mixinRegistry.apply(el, 'tooltip', { content: 'x' });
+    mixinRegistry.removeAll(el);
+    expect(mixinRegistry.isApplied(el, 'sortable')).toBe(false);
+    expect(mixinRegistry.isApplied(el, 'tooltip')).toBe(false);
+  });
 });
 
 describe('draggable', () => {

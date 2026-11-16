@@ -363,6 +363,14 @@ describe('<a-flex-view>', () => {
     expect(again.querySelector<HTMLElement>('[data-key=a]')!.style.height).toBe('320px');
     again.resetLayout();
     expect(Array.from(again.querySelectorAll<HTMLElement>('.ar-flex__panel')).map(p => p.dataset.key)).toEqual(['a', 'b', 'c']);
+    // Panels can still be reordered after a reset (regression: the sortable was left destroyed).
+    const reset = again.querySelector<HTMLElement>('.ar-flex__panel[data-key=a]')!;
+    const press = (k: string) => reset.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    press(' ');
+    press('ArrowRight');
+    press(' ');
+    await flush();
+    expect(Array.from(again.querySelectorAll<HTMLElement>('.ar-flex__panel')).map(p => p.dataset.key)).toEqual(['b', 'a', 'c']);
   });
 });
 

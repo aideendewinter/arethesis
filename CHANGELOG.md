@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.1.2
+## 0.1.3
+
+0.1.2 was tagged but never published; its changes are in this release.
 
 ### Changed
 
@@ -16,6 +18,7 @@
 
 - `<a-flex-view>`: splitters now appear next to a panel as soon as it's dragged into another row.
 - `sortable:end` now fires once the dropped item is in its final position, so listeners can measure it.
+- Mixins destroyed with `instance.destroy()` are now removed from the registry, so they can be applied to the same element again. Before, `<a-flex-view>` panels could no longer be dragged after "Reset layout".
 
 ## 0.1.1
 

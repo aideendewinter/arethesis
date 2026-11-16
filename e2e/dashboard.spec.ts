@@ -195,3 +195,33 @@ test('splitters follow a panel that is dragged into another row', async ({ page,
   expect(await atDrop()).toMatchObject({ activity: true, conversion: false });
   void errors;
 });
+
+test('panels can still be dragged after "Reset layout"', async ({ page, errors }) => {
+  await page.setViewportSize({ width: 1280, height: 1200 });
+  await page.goto('/dashboard/index.html');
+  await expect(page.locator('.feed__item strong').first()).toBeVisible();
+  await page.locator('#reset').click();
+  const keys = () => page.locator('.ar-flex__panel').evaluateAll(els => els.map(el => (el as HTMLElement).dataset.key));
+  await expect.poll(keys).toEqual(['revenue', 'users', 'orders', 'conversion', 'activity', 'about']);
+
+  // Drag "Revenue" by its title onto the right half of "Users".
+  const h = (await page.locator('[data-key=revenue] .ar-flex__header').boundingBox())!;
+  const users = (await page.locator('[data-key=users]').boundingBox())!;
+  await page.mouse.move(h.x + 30, h.y + h.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(h.x + 40, h.y + h.height / 2 + 5, { steps: 3 });
+  await page.mouse.move(users.x + users.width * 0.8, users.y + users.height / 2, { steps: 12 });
+  await page.mouse.up();
+  await expect.poll(keys).toEqual(['users', 'revenue', 'orders', 'conversion', 'activity', 'about']);
+
+  // And again after a second reset.
+  await page.locator('#reset').click();
+  await expect.poll(keys).toEqual(['revenue', 'users', 'orders', 'conversion', 'activity', 'about']);
+  const panel = page.locator('.ar-flex__panel[data-key=revenue]');
+  await panel.focus();
+  await page.keyboard.press('Space');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Space');
+  await expect.poll(keys).toEqual(['users', 'revenue', 'orders', 'conversion', 'activity', 'about']);
+  void errors;
+});
