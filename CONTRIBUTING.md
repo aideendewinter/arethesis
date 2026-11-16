@@ -32,13 +32,14 @@ npx playwright install chromium   # for end-to-end tests
 
 ## Releasing
 
-Releases are published to npm by [`.github/workflows/release.yml`](.github/workflows/release.yml) when a `v*` tag is pushed. It runs every check, publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements) through npm trusted publishing (no npm token is stored anywhere), and creates a GitHub release from the matching `CHANGELOG.md` section.
+Releases go through [`.github/workflows/release.yml`](.github/workflows/release.yml) and npm [staged publishing](https://docs.npmjs.com/cli/v11/commands/npm-stage/). CI runs every check and stages the version with [provenance](https://docs.npmjs.com/generating-provenance-statements), using npm trusted publishing, so no npm token is stored anywhere. The version only goes live once a maintainer approves it, and approving requires 2FA.
 
-1. Add a section for the new version at the top of `CHANGELOG.md` (`## 0.1.1`).
-2. `npm version patch` (or `minor` / `major`). This updates `package.json`, commits and tags.
+1. Add a section for the new version at the top of `CHANGELOG.md` (`## 0.1.2`).
+2. `npm version patch` (or `minor` / `major`). This updates `package.json` and `src/version.ts`, commits, and tags.
 3. `git push --follow-tags`.
+4. When the Release workflow finishes, approve the staged version on npmjs.com, or run `npm stage list arethesis` and then `npm stage approve <stage-id>`. The workflow's summary page has the details.
 
-The workflow refuses to publish if the tag doesn't match the `package.json` version.
+The workflow also creates the GitHub release from the matching `CHANGELOG.md` section. It refuses to run if the tag doesn't match the `package.json` version. To retry a failed release, run it by hand from the Actions tab (Release → Run workflow). It releases the version in `package.json`, skipping anything already done.
 
 ## Notes for unusual environments
 

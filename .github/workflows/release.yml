@@ -1,9 +1,17 @@
 name: Release
 
-# Push a tag like v0.1.1 (see CONTRIBUTING.md) to publish that version to npm.
+# Push a tag like v0.1.1 (see CONTRIBUTING.md) to release that version. The
+# package is *staged* on npm: it only goes live once a maintainer approves it
+# on npmjs.com (or with `npm stage approve <id>`), which requires 2FA, so this
+# workflow alone can't put a version in front of users.
+#
+# You can also run it by hand (Actions → Release → Run workflow) to release the
+# version in package.json, as long as its v<version> tag already exists. Use
+# that to retry a failed release.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write # create the GitHub release
@@ -26,48 +34,79 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
-      # Trusted publishing needs npm 11.5.1 or newer.
+      # Staged publishing needs npm 11.15.0 or newer.
       - run: npm install -g npm@latest
       - run: npm ci
 
-      - name: Check the tag matches package.json
+      - name: Work out the version and check its tag
+        id: version
         run: |
           version="$(node -p "require('./package.json').version")"
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+          tag="v$version"
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$tag" ]; then
             echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
             exit 1
           fi
+          git fetch --tags --quiet
+          if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::Tag $tag doesn't exist. Run \`npm version\` and push the tag first."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       # Re-running a release (or tagging a version published by hand) skips what's already done.
       - name: Check whether this version is already on npm
         id: npm
         run: |
-          version="$(node -p "require('./package.json').version")"
-          if npm view "arethesis@$version" version >/dev/null 2>&1; then
-            echo "::notice::arethesis@$version is already on npm; skipping publish"
+          if npm view "arethesis@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
+            echo "::notice::arethesis@${{ steps.version.outputs.version }} is already on npm; skipping publish"
             echo "published=true" >> "$GITHUB_OUTPUT"
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # prepublishOnly runs typecheck, lint, unit tests and the build.
-      - if: steps.npm.outputs.published == 'false'
-        run: npm publish --provenance --access public
+      - name: Check
+        if: steps.npm.outputs.published == 'false'
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run test:run
+          npm run build
+
+      - name: Stage on npm
+        if: steps.npm.outputs.published == 'false'
+        run: |
+          set -o pipefail
+          npm stage publish --provenance --access public 2>&1 | tee stage.log
+          {
+            echo "## arethesis@${{ steps.version.outputs.version }} is staged on npm"
+            echo
+            echo "It isn't live yet. Approve it to publish:"
+            echo
+            echo "- on npmjs.com: the arethesis package page → staged versions → Approve, or"
+            echo "- from a terminal: \`npm stage list arethesis\`, then \`npm stage approve <stage-id>\` (asks for 2FA)."
+            echo
+            echo '```'
+            tail -n 20 stage.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
           # The CHANGELOG section for this version, without its heading.
-          awk -v v="$version" '
+          awk -v v="$VERSION" '
             $0 == "## " v { found = 1; next }
             found && /^## / { exit }
             found { print }
           ' CHANGELOG.md > notes.md
           [ -s notes.md ] || echo "See CHANGELOG.md." > notes.md
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            echo "::notice::Release $GITHUB_REF_NAME already exists"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::Release $TAG already exists"
             exit 0
           fi
-          gh release create "$GITHUB_REF_NAME" --title "Arethesis $version" --notes-file notes.md --verify-tag
+          gh release create "$TAG" --title "Arethesis $VERSION" --notes-file notes.md --verify-tag
