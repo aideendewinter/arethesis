@@ -6,7 +6,9 @@ const pages = ['index.html', 'directory/index.html', 'kanban/index.html', 'edito
 for (const path of pages) {
   for (const theme of ['light', 'dark']) {
     test(`a11y ${path} ${theme}: no serious violations`, async ({ page, errors }) => {
-      await page.emulateMedia({ colorScheme: theme as 'light' | 'dark' });
+      // Reduced motion turns off fade-ins, so live content (like new dashboard
+      // activity) isn't measured mid-fade at partial opacity.
+      await page.emulateMedia({ colorScheme: theme as 'light' | 'dark', reducedMotion: 'reduce' });
       await page.goto(`/${path}`);
       await page.waitForTimeout(1200);
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
