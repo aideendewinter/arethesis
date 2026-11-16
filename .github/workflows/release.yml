@@ -38,8 +38,21 @@ jobs:
             exit 1
           fi
 
+      # Re-running a release (or tagging a version published by hand) skips what's already done.
+      - name: Check whether this version is already on npm
+        id: npm
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if npm view "arethesis@$version" version >/dev/null 2>&1; then
+            echo "::notice::arethesis@$version is already on npm; skipping publish"
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # prepublishOnly runs typecheck, lint, unit tests and the build.
-      - run: npm publish --provenance --access public
+      - if: steps.npm.outputs.published == 'false'
+        run: npm publish --provenance --access public
 
       - name: Create the GitHub release
         env:
@@ -53,4 +66,8 @@ jobs:
             found { print }
           ' CHANGELOG.md > notes.md
           [ -s notes.md ] || echo "See CHANGELOG.md." > notes.md
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "::notice::Release $GITHUB_REF_NAME already exists"
+            exit 0
+          fi
           gh release create "$GITHUB_REF_NAME" --title "Arethesis $version" --notes-file notes.md --verify-tag
