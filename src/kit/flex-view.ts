@@ -161,9 +161,9 @@ export class FlexView extends Component {
       const next = panels[i + 1];
       let shared = false;
       if (row && next && next.querySelector(':scope > .ar-flex__splitter')) {
-        const a = panel.getBoundingClientRect();
-        const b = next.getBoundingClientRect();
-        shared = Math.abs(a.top - b.top) < 1 && b.left > a.left;
+        // Layout positions, not getBoundingClientRect: they ignore the transforms of
+        // panels still animating into place after a drag.
+        shared = Math.abs(panel.offsetTop - next.offsetTop) < 1 && next.offsetLeft > panel.offsetLeft;
       }
       const growable = shared && (parseFloat(getComputedStyle(panel).flexGrow) || 0) + (parseFloat(getComputedStyle(next).flexGrow) || 0) > 0;
       splitter.hidden = !growable;

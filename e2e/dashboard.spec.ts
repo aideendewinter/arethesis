@@ -147,3 +147,51 @@ test('panels reorder by dragging their title, across rows, without re-rendering'
   await expect(page.locator('.ar-flex__panel').first()).toHaveAttribute('data-key', 'about');
   void errors;
 });
+
+test('splitters follow a panel that is dragged into another row', async ({ page, errors }) => {
+  await page.setViewportSize({ width: 1280, height: 1200 }); // the whole dashboard fits, so nothing auto-scrolls
+  await page.goto('/dashboard/index.html');
+  await expect(page.locator('.feed__item strong').first()).toBeVisible();
+  // Record the splitters right after the drop, before anything else (like the
+  // dashboard changing height) could refresh them.
+  await page.evaluate(() => {
+    document.querySelector('.ar-flex')!.addEventListener('sortable:end', () => setTimeout(() => {
+      (window as unknown as { atDrop: Record<string, boolean> }).atDrop = Object.fromEntries(
+        [...document.querySelectorAll<HTMLElement>('.ar-flex__panel')].map(p => [p.dataset.key!, !(p.querySelector<HTMLElement>(':scope > .ar-flex__splitter')?.hidden ?? true)]),
+      );
+    }));
+  });
+  // Drag "How this works" between "Revenue" and "Users".
+  const handle = page.locator('[data-key=about] .ar-flex__header');
+  const h = (await handle.boundingBox())!;
+  const revenue = (await page.locator('[data-key=revenue]').boundingBox())!;
+  await page.mouse.move(h.x + 30, h.y + h.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(h.x + 40, h.y + h.height / 2 - 10, { steps: 3 });
+  await page.mouse.move(revenue.x + revenue.width * 0.8, revenue.y + revenue.height / 2, { steps: 15 });
+  await page.mouse.up();
+  const keys = () => page.locator('.ar-flex__panel').evaluateAll(els => els.map(el => (el as HTMLElement).dataset.key));
+  await expect.poll(keys).toEqual(['revenue', 'about', 'users', 'orders', 'conversion', 'activity']);
+
+  // Its neighbours in the same row have splitters on both sides of it.
+  const rowOf = (key: string) => page.locator(`[data-key=${key}]`).evaluate(el => Math.round(el.getBoundingClientRect().top));
+  expect(await rowOf('about')).toBe(await rowOf('revenue'));
+  await expect(page.locator('[data-key=revenue] > .ar-flex__splitter')).toBeVisible();
+  await expect(page.locator('[data-key=about] > .ar-flex__splitter')).toBeVisible();
+  const atDrop = () => page.evaluate(() => (window as unknown as { atDrop: Record<string, boolean> }).atDrop);
+  expect(await atDrop()).toMatchObject({ revenue: true, about: true });
+
+  // Within one row, so the dashboard's height doesn't change and nothing else refreshes the splitters:
+  // drag "Activity" in front of "Conversion".
+  const a = (await page.locator('[data-key=activity] .ar-flex__header').boundingBox())!;
+  const conversion = (await page.locator('[data-key=conversion]').boundingBox())!;
+  await page.mouse.move(a.x + 30, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(a.x + 40, a.y + a.height / 2 - 10, { steps: 3 });
+  await page.mouse.move(conversion.x + conversion.width * 0.2, conversion.y + conversion.height / 2, { steps: 15 });
+  await page.mouse.up();
+  await expect.poll(keys).toEqual(['revenue', 'about', 'users', 'orders', 'activity', 'conversion']);
+  expect(await rowOf('activity')).toBe(await rowOf('conversion'));
+  expect(await atDrop()).toMatchObject({ activity: true, conversion: false });
+  void errors;
+});

@@ -509,6 +509,37 @@ describe('sortable', () => {
     expect(order(empty)).toEqual(['c']);
   });
 
+  it('keeps the slot while the pointer is over it, and prefers the item under the pointer', async () => {
+    // A wrapping row of mixed sizes: a wide item "w" (200px) and small ones.
+    const row = html('<div><div data-id="s1">1</div><div data-id="w">W</div><div data-id="s2">2</div><div data-id="s3">3</div></div>');
+    const boxes: Record<string, [number, number, number, number]> = { s1: [0, 0, 100, 40], w: [100, 0, 200, 40], s2: [0, 40, 100, 40], s3: [100, 40, 100, 40] };
+    for (const el of Array.from(row.children) as HTMLElement[]) {
+      vi.spyOn(el, 'getBoundingClientRect').mockImplementation(() => {
+        if (el.style.position === 'fixed') return new DOMRect(parseFloat(el.style.left), parseFloat(el.style.top), 100, 40);
+        return new DOMRect(...boxes[el.dataset.id!]);
+      });
+    }
+    vi.spyOn(row, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 80));
+    sortableMixin(row, { direction: 'horizontal', animation: 0 });
+    const moves = vi.fn();
+    row.addEventListener('sortable:move', e => moves((e as CustomEvent).detail.index));
+    const s3 = row.querySelector<HTMLElement>('[data-id=s3]')!;
+    pointer(s3, 'pointerdown', 150, 60);
+    pointer(document.body, 'pointermove', 160, 60);
+    const placeholder = row.querySelector<HTMLElement>('.sortable-placeholder')!;
+    vi.spyOn(placeholder, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 40, 100, 40));
+    // Still over its own slot: nothing moves.
+    pointer(document.body, 'pointermove', 120, 70);
+    await frame();
+    expect(moves).not.toHaveBeenCalled();
+    // Over the right half of the wide item, whose centre is far away: lands after it.
+    pointer(document.body, 'pointermove', 280, 10);
+    await frame();
+    expect(moves).toHaveBeenLastCalledWith(2);
+    pointer(document.body, 'pointerup', 280, 10);
+    expect(order(row)).toEqual(['s1', 'w', 's3', 's2']);
+  });
+
   it('ignores tiny movements right after a reorder, so items do not flicker', async () => {
     const ul = list();
     layout(ul, [0, 0]);
@@ -602,6 +633,10 @@ describe('sortable', () => {
     pointer(document.body, 'pointermove', 50, 110);
     await frame();
     expect(animate).toHaveBeenCalled(); // b and c slide up
+    const cancel = vi.fn();
+    const glide = { finished: Promise.resolve(), cancel };
+    a.animate = vi.fn(() => glide) as unknown as HTMLElement['animate'];
+    end.mockImplementation(() => expect(cancel).toHaveBeenCalled()); // settled before sortable:end
     pointer(document.body, 'pointerup', 50, 110);
     expect(end).not.toHaveBeenCalled(); // still gliding into place
     await flush();

@@ -201,6 +201,8 @@ describe('<a-flex-view>', () => {
     for (const [key, [left, top, width]] of Object.entries(rects)) {
       const panel = view.querySelector<HTMLElement>(`[data-key=${key}]`)!;
       vi.spyOn(panel, 'getBoundingClientRect').mockImplementation(() => new DOMRect(left, top, width, 200));
+      Object.defineProperty(panel, 'offsetLeft', { configurable: true, get: () => left });
+      Object.defineProperty(panel, 'offsetTop', { configurable: true, get: () => top });
     }
   }
 
@@ -245,6 +247,16 @@ describe('<a-flex-view>', () => {
     expect(grow('b')).toBe('0.5');
     pointer(ab, 'pointerup', 5000);
     expect(app.store.getData<{ sizes: Record<string, unknown> }>('ArLayout', 'split')!.sizes).toEqual({ a: { grow: 3.5 }, b: { grow: 0.5 } });
+  });
+
+  it('decides rows from layout positions, ignoring panels that are still animating', async () => {
+    const { view, splitter } = await splitView([{ key: 'a' }, { key: 'b' }]);
+    layout(view, { a: [0, 0, 500], b: [500, 0, 500] });
+    // "b" is mid-animation: its on-screen box is elsewhere, but its layout slot is in a's row.
+    vi.spyOn(view.querySelector<HTMLElement>('[data-key=b]')!, 'getBoundingClientRect').mockReturnValue(new DOMRect(300, -77, 500, 200));
+    view.querySelector('.ar-flex')!.dispatchEvent(new CustomEvent('sortable:end'));
+    await flush(2);
+    expect(splitter('a').hidden).toBe(false);
   });
 
   it('resizes the last panel in a row from its left edge, and hides splitters across row breaks', async () => {

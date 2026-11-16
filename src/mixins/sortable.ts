@@ -120,6 +120,18 @@ function scrollParents(el: HTMLElement | null): HTMLElement[] {
   return found;
 }
 
+/**
+ * Where an element sits in the layout: its box without the translation of a
+ * slide animation still in progress, so targeting doesn't chase moving items.
+ */
+function layoutRect(el: Element): DOMRect {
+  const r = el.getBoundingClientRect();
+  const transform = getComputedStyle(el).transform;
+  if (!transform || transform === 'none' || typeof DOMMatrixReadOnly === 'undefined') return r;
+  const m = new DOMMatrixReadOnly(transform);
+  return new DOMRect(r.left - m.e, r.top - m.f, r.width, r.height);
+}
+
 /** Distance from a point to a rectangle (0 inside it). */
 function distanceTo(rect: DOMRect, x: number, y: number): number {
   const dx = Math.max(rect.left - x, 0, x - rect.right);
@@ -290,14 +302,19 @@ export function sortableMixin(element: HTMLElement, options: SortableOptions = {
     const items = itemsOf(container).filter(i => i !== active?.item);
     if (!items.length) return 0;
     const horizontal = direction(container) === 'horizontal';
+    // The item under the pointer, or else the one whose edge is nearest (centres
+    // would favour small items over large neighbours); ties go to the nearer centre.
     let closest = 0;
     let closestDistance = Infinity;
-    const rects = items.map(i => i.getBoundingClientRect());
+    let closestCentre = Infinity;
+    const rects = items.map(layoutRect);
     rects.forEach((r, i) => {
-      const d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
-      if (d < closestDistance) {
+      const d = distanceTo(r, x, y);
+      const centre = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+      if (d < closestDistance || (d === closestDistance && centre < closestCentre)) {
         closest = i;
         closestDistance = d;
+        closestCentre = centre;
       }
     });
     const r = rects[closest];
@@ -312,6 +329,8 @@ export function sortableMixin(element: HTMLElement, options: SortableOptions = {
   function place(x: number, y: number): void {
     if (!active?.placeholder) return;
     if (Math.hypot(x - active.lastX, y - active.lastY) < REORDER_HYSTERESIS) return;
+    // Over the item's own slot: it's already where it would land.
+    if (active.placeholder.isConnected && distanceTo(layoutRect(active.placeholder), x, y) === 0) return;
     const container = containerAt(x, y);
     if (!container) return;
     const index = indexAt(container, x, y);
@@ -376,7 +395,12 @@ export function sortableMixin(element: HTMLElement, options: SortableOptions = {
       [{ transform: 'translate(0, 0)' }, { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px)` }],
       { duration, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'forwards' },
     );
-    animation.finished.then(settle, settle).finally(() => animation.cancel());
+    // Remove the animation first, so the item is at its real position when sortable:end fires.
+    const done = (): void => {
+      animation.cancel();
+      settle();
+    };
+    animation.finished.then(done, done);
   }
 
   /** Emit `sortable:end` (reverting if it's cancelled) and announce the result. */
