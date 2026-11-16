@@ -382,33 +382,243 @@ describe('sortable', () => {
     expect(order(done)).toEqual(['x']);
   });
 
-  it('drags with a pointer using a placeholder', () => {
+  const frame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+
+  /**
+   * Fake layout (happy-dom has none): children of each container are laid out
+   * in `cols` columns of 100×40 cells starting at `origin`. A lifted item
+   * (position: fixed) is where its left/top say.
+   */
+  function layout(container: HTMLElement, origin: [number, number], cols = 1, size: [number, number] = [100, 40]) {
+    const [w, h] = size;
+    const place = (el: HTMLElement) =>
+      vi.spyOn(el, 'getBoundingClientRect').mockImplementation(() => {
+        if (el.style.position === 'fixed') return new DOMRect(parseFloat(el.style.left), parseFloat(el.style.top), w, h);
+        const parent = el.parentElement as HTMLElement;
+        const flow = Array.from(parent.children).filter(c => (c as HTMLElement).style.position !== 'fixed');
+        const i = flow.indexOf(el);
+        const [ox, oy] = parent === container ? origin : (parent as HTMLElement & { origin: [number, number] }).origin;
+        return new DOMRect(ox + (i % cols) * w, oy + Math.floor(i / cols) * h, w, h);
+      });
+    (container as HTMLElement & { origin: [number, number] }).origin = origin;
+    vi.spyOn(container, 'getBoundingClientRect').mockImplementation(() => {
+      const rows = Math.max(1, Math.ceil(container.children.length / cols));
+      return new DOMRect(origin[0], origin[1], cols * w, rows * h);
+    });
+    for (const child of Array.from(container.children)) place(child as HTMLElement);
+    // Placeholders are created during the drag: lay them out too.
+    new MutationObserver(records => records.forEach(r => r.addedNodes.forEach(n => n instanceof HTMLElement && !vi.isMockFunction(n.getBoundingClientRect) && place(n)))).observe(container, { childList: true });
+  }
+
+  it('drags with a pointer: the item stays in its container and lands where the placeholder is', async () => {
     const ul = list();
+    layout(ul, [0, 0]);
     const onEnd = vi.fn();
-    sortableMixin(ul, { onEnd, direction: 'vertical' });
-    const items = Array.from(ul.children) as HTMLElement[];
-    items.forEach((li, i) => vi.spyOn(li, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, i * 20, 100, 20)));
-    (document as unknown as { elementFromPoint: unknown }).elementFromPoint = () => ul;
-    pointer(items[0], 'pointerdown', 5, 5);
-    pointer(document.body, 'pointermove', 5, 6); // below threshold
+    const moves = vi.fn();
+    ul.addEventListener('sortable:move', e => moves((e as CustomEvent).detail.index));
+    sortableMixin(ul, { onEnd, animation: 0 });
+    const [a] = Array.from(ul.children) as HTMLElement[];
+    pointer(a, 'pointerdown', 50, 20);
+    pointer(document.body, 'pointermove', 50, 23); // under the activation distance: still a click
     expect(document.querySelector('.sortable-placeholder')).toBeNull();
-    pointer(document.body, 'pointermove', 5, 55);
-    expect(items[0].classList.contains('is-sorting')).toBe(true);
-    expect(document.querySelector('.sortable-placeholder')).not.toBeNull();
-    pointer(document.body, 'pointerup', 5, 55);
+    pointer(document.body, 'pointermove', 50, 30);
+    // Lifted, but never re-parented (components inside keep their state).
+    expect(a.parentElement).toBe(ul);
+    expect(a.classList.contains('is-sorting')).toBe(true);
+    expect(a.style.position).toBe('fixed');
+    expect(document.documentElement.classList.contains('is-sorting-active')).toBe(true);
+    pointer(document.body, 'pointermove', 50, 110); // over the bottom half of "c"
+    await frame();
+    expect(order(ul)).toEqual(['a', 'b', 'c', null]); // a (lifted), b, c, then the placeholder
+    expect(moves).toHaveBeenLastCalledWith(2);
+    pointer(document.body, 'pointerup', 50, 110);
     expect(order(ul)).toEqual(['b', 'c', 'a']);
     expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ oldIndex: 0, newIndex: 2 }));
-    expect(items[0].style.position).toBe('');
+    expect(a.getAttribute('style')).toBeNull(); // styles restored
+    expect(document.documentElement.classList.contains('is-sorting-active')).toBe(false);
     // A click without movement doesn't sort.
-    pointer(items[1], 'pointerdown', 5, 25);
-    pointer(document.body, 'pointerup', 5, 25);
+    pointer(ul.children[0], 'pointerdown', 50, 5);
+    pointer(document.body, 'pointerup', 50, 5);
     expect(order(ul)).toEqual(['b', 'c', 'a']);
-    // Cancelled drags restore the item.
-    pointer(items[1], 'pointerdown', 5, 5);
-    pointer(document.body, 'pointermove', 5, 30);
-    pointer(document.body, 'pointercancel', 5, 30);
+    // A cancelled drag leaves everything where it was.
+    pointer(ul.children[0], 'pointerdown', 50, 5);
+    pointer(document.body, 'pointermove', 50, 90);
+    await frame();
+    pointer(document.body, 'pointercancel', 50, 90);
     expect(order(ul)).toEqual(['b', 'c', 'a']);
-    delete (document as unknown as { elementFromPoint?: unknown }).elementFromPoint;
+    expect(document.querySelector('.sortable-placeholder')).toBeNull();
+  });
+
+  it('finds the drop position in two dimensions, for grids and wrapping rows', async () => {
+    const grid = html('<div>' + 'abcdef'.split('').map(id => `<div data-id="${id}">${id}</div>`).join('') + '</div>');
+    layout(grid, [0, 0], 3); // a b c / d e f
+    sortableMixin(grid, { direction: 'horizontal', animation: 0 });
+    const a = grid.querySelector<HTMLElement>('[data-id=a]')!;
+    pointer(a, 'pointerdown', 50, 20);
+    pointer(document.body, 'pointermove', 60, 20);
+    // Over the right half of "e" (second row, middle).
+    pointer(document.body, 'pointermove', 170, 60);
+    await frame();
+    pointer(document.body, 'pointerup', 170, 60);
+    expect(order(grid)).toEqual(['b', 'c', 'd', 'e', 'a', 'f']);
+    // Just below the last item: the end.
+    const b = grid.querySelector<HTMLElement>('[data-id=b]')!;
+    pointer(b, 'pointerdown', 50, 20);
+    pointer(document.body, 'pointermove', 60, 20);
+    pointer(document.body, 'pointermove', 270, 100);
+    await frame();
+    pointer(document.body, 'pointerup', 270, 100);
+    expect(order(grid)).toEqual(['c', 'd', 'e', 'a', 'f', 'b']);
+  });
+
+  it('drops into the closest container in a group, even from the gap between them', async () => {
+    const todo = list('To do');
+    const done = html('<ul aria-label="Done"><li data-id="x">X</li></ul>');
+    const empty = html('<ul aria-label="Later"></ul>');
+    layout(todo, [0, 0]);
+    layout(done, [140, 0]);
+    layout(empty, [400, 0]);
+    sortableMixin(todo, { group: 'gap', animation: 0 });
+    sortableMixin(done, { group: 'gap', animation: 0 });
+    sortableMixin(empty, { group: 'gap', animation: 0 });
+    const end = vi.fn();
+    todo.addEventListener('sortable:end', e => end((e as CustomEvent).detail));
+    const b = todo.querySelector<HTMLElement>('[data-id=b]')!;
+    pointer(b, 'pointerdown', 50, 60);
+    pointer(document.body, 'pointermove', 60, 60);
+    // In the 40px gap between the lists, nearer "Done", below its only item.
+    pointer(document.body, 'pointermove', 125, 30);
+    await frame();
+    pointer(document.body, 'pointerup', 125, 30);
+    expect(order(done)).toEqual(['x', 'b']);
+    expect(end).toHaveBeenCalledWith(expect.objectContaining({ id: 'b', from: todo, to: done, newIndex: 1 }));
+    // Far from every list: nothing changes.
+    const c = todo.querySelector<HTMLElement>('[data-id=c]')!;
+    pointer(c, 'pointerdown', 50, 60);
+    pointer(document.body, 'pointermove', 60, 60);
+    pointer(document.body, 'pointermove', 50, 900);
+    await frame();
+    pointer(document.body, 'pointerup', 50, 900);
+    expect(order(todo)).toEqual(['a', 'c']);
+    // An empty list accepts a drop.
+    pointer(c, 'pointerdown', 50, 60);
+    pointer(document.body, 'pointermove', 60, 60);
+    pointer(document.body, 'pointermove', 420, 10);
+    await frame();
+    pointer(document.body, 'pointerup', 420, 10);
+    expect(order(empty)).toEqual(['c']);
+  });
+
+  it('ignores tiny movements right after a reorder, so items do not flicker', async () => {
+    const ul = list();
+    layout(ul, [0, 0]);
+    const moves = vi.fn();
+    ul.addEventListener('sortable:move', moves);
+    sortableMixin(ul, { animation: 0 });
+    pointer(ul.children[0], 'pointerdown', 50, 20);
+    pointer(document.body, 'pointermove', 50, 30);
+    pointer(document.body, 'pointermove', 50, 70); // over b's lower half
+    await frame();
+    expect(moves).toHaveBeenCalledTimes(1);
+    pointer(document.body, 'pointermove', 50, 66); // back across the boundary by 4px
+    await frame();
+    expect(moves).toHaveBeenCalledTimes(1);
+    pointer(document.body, 'pointerup', 50, 66);
+  });
+
+  it('on touch, starts after a press and lets a quick swipe scroll', async () => {
+    vi.useFakeTimers();
+    const ul = list();
+    layout(ul, [0, 0]);
+    sortableMixin(ul, { animation: 0, touchDelay: 200 });
+    const a = ul.children[0] as HTMLElement;
+    const touch = { pointerType: 'touch' };
+    // Swiping straight away is a scroll, not a drag.
+    pointer(a, 'pointerdown', 50, 20, touch);
+    pointer(document.body, 'pointermove', 50, 60, touch);
+    vi.advanceTimersByTime(300);
+    expect(a.style.position).toBe('');
+    pointer(document.body, 'pointerup', 50, 60, touch);
+    // Press and hold, then drag.
+    pointer(a, 'pointerdown', 50, 20, touch);
+    vi.advanceTimersByTime(150);
+    expect(a.style.position).toBe('');
+    vi.advanceTimersByTime(60);
+    expect(a.style.position).toBe('fixed');
+    // While dragging, the page doesn't scroll under the finger.
+    const touchmove = new Event('touchmove', { cancelable: true });
+    document.dispatchEvent(touchmove);
+    expect(touchmove.defaultPrevented).toBe(true);
+    pointer(document.body, 'pointermove', 50, 110, touch);
+    vi.advanceTimersByTime(20);
+    pointer(document.body, 'pointerup', 50, 110, touch);
+    expect(order(ul)).toEqual(['b', 'c', 'a']);
+    // A press released before the delay is a tap.
+    pointer(ul.children[0], 'pointerdown', 50, 20, touch);
+    pointer(document.body, 'pointerup', 50, 20, touch);
+    vi.advanceTimersByTime(300);
+    expect((ul.children[0] as HTMLElement).style.position).toBe('');
+  });
+
+  it('auto-scrolls a scrollable container near its edges', async () => {
+    const ul = list();
+    layout(ul, [0, 0]);
+    Object.assign(ul.style, { overflowY: 'auto', height: '200px' });
+    Object.defineProperty(ul, 'scrollHeight', { value: 600 });
+    Object.defineProperty(ul, 'clientHeight', { value: 200 });
+    let scrollTop = 0;
+    Object.defineProperty(ul, 'scrollTop', { get: () => scrollTop, set: v => (scrollTop = v) });
+    const scrollBy = vi.fn((_x: number, y: number) => { scrollTop += y; });
+    ul.scrollBy = scrollBy as unknown as typeof ul.scrollBy;
+    vi.spyOn(ul, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 100, 200));
+    sortableMixin(ul, { animation: 0 });
+    pointer(ul.children[0], 'pointerdown', 50, 20);
+    pointer(document.body, 'pointermove', 50, 30);
+    pointer(document.body, 'pointermove', 50, 196); // 4px from the bottom edge
+    await frame();
+    await frame();
+    expect(scrollBy).toHaveBeenCalled();
+    expect(scrollBy.mock.calls[0][1]).toBeGreaterThan(10); // fast, close to the edge
+    pointer(document.body, 'pointermove', 50, 100); // away from the edge: stops
+    await frame();
+    const calls = scrollBy.mock.calls.length;
+    await frame();
+    await frame();
+    expect(scrollBy.mock.calls.length).toBe(calls);
+    pointer(document.body, 'pointerup', 50, 100);
+  });
+
+  it('animates neighbours and the drop, unless the user prefers reduced motion', async () => {
+    const ul = list();
+    layout(ul, [0, 0]);
+    const animate = vi.fn(() => ({ finished: Promise.resolve(), cancel: vi.fn() }));
+    for (const li of Array.from(ul.children)) (li as HTMLElement).animate = animate as unknown as HTMLElement['animate'];
+    const end = vi.fn();
+    ul.addEventListener('sortable:end', end);
+    sortableMixin(ul, { animation: 180 });
+    const a = ul.children[0] as HTMLElement;
+    pointer(a, 'pointerdown', 50, 20);
+    pointer(document.body, 'pointermove', 50, 30);
+    pointer(document.body, 'pointermove', 50, 110);
+    await frame();
+    expect(animate).toHaveBeenCalled(); // b and c slide up
+    pointer(document.body, 'pointerup', 50, 110);
+    expect(end).not.toHaveBeenCalled(); // still gliding into place
+    await flush();
+    expect(end).toHaveBeenCalled();
+    expect(order(ul)).toEqual(['b', 'c', 'a']);
+
+    // Reduced motion: no animation, and the drop is immediate.
+    animate.mockClear();
+    const media = vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true } as MediaQueryList);
+    pointer(ul.children[0], 'pointerdown', 50, 20);
+    pointer(document.body, 'pointermove', 50, 30);
+    pointer(document.body, 'pointermove', 50, 110);
+    await frame();
+    pointer(document.body, 'pointerup', 50, 110);
+    expect(animate).not.toHaveBeenCalled();
+    expect(order(ul)).toEqual(['c', 'a', 'b']);
+    media.mockRestore();
   });
 
   it('respects handles and ignores interactive children', () => {

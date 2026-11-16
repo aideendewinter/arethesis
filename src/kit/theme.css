@@ -455,8 +455,10 @@ a-data-table { display: block; font-family: var(--ar-font); color: var(--ar-text
 
 /* ── Sortable & draggable ──────────────────────────────────────────────── */
 
-.is-sortable > * { touch-action: none; }
-.is-sorting { box-shadow: var(--ar-shadow-lg) !important; cursor: grabbing !important; opacity: 0.95; transform: rotate(1deg); }
+/* Touch: a press-and-hold starts a drag, so swiping over items still scrolls. */
+.is-sortable > * { touch-action: manipulation; -webkit-touch-callout: none; }
+.is-sorting { box-shadow: var(--ar-shadow-lg) !important; cursor: grabbing !important; transform: rotate(1deg); }
+html.is-sorting-active, html.is-sorting-active * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
 [aria-grabbed='true'] { outline: 2px dashed var(--ar-accent); outline-offset: 2px; }
 .sortable-placeholder {
   border: 2px dashed var(--ar-border);

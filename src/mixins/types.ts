@@ -110,6 +110,14 @@ export interface SortableOptions {
   draggingClass?: string;
   /** Class on the drop placeholder. @default 'sortable-placeholder' */
   placeholderClass?: string;
+  /** Duration (ms) of the slide and drop animations; 0 turns them off. Reduced motion always turns them off. @default 180 */
+  animation?: number;
+  /** Pixels a mouse or pen must move before a drag starts, so clicks still work. @default 5 */
+  activationDistance?: number;
+  /** On touch screens, how long (ms) to press before a drag starts, so swiping still scrolls. @default 200 */
+  touchDelay?: number;
+  /** Scroll containers and the page when dragging near their edges. @default true */
+  autoScroll?: boolean;
   onEnd?: (detail: SortDetail) => void;
 }
 

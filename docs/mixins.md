@@ -22,11 +22,21 @@ removeMixin(element, 'tooltip');
 | `editable` | Click-to-edit (double-click, Enter, F2); validation; rollback on failed save | `editable:start/save/cancel/error` |
 | `grid-navigation` | Spreadsheet keyboard navigation with a roving tabindex; Tab leaves the grid unless `tabBehavior: 'cells'` | `grid:navigate`, `grid:edit` |
 | `infinite-scroll` | Loads more near the end; pass `loadMore` or a ListView id via `view` | `infinite-scroll:load/loaded/error` |
-| `sortable` | Reorder by pointer or keyboard (Space to pick up, arrows, Space to drop), across containers sharing a `group`, with screen-reader announcements | `sortable:start`, `sortable:end` (cancelable: reverts the move) |
+| `sortable` | Reorder by pointer, touch or keyboard (Space to pick up, arrows, Space to drop), across containers sharing a `group`, with screen-reader announcements. Works in lists, grids and wrapping rows; neighbours slide aside, the item glides into place, and containers auto-scroll. | `sortable:start`, `sortable:move`, `sortable:end` (cancelable: reverts the move) |
 | `resizable` | Edge and corner handles (`role="separator"`), keyboard resizing, min/max; works on flex items | `resizable:start/resize/end` |
 | `dropdown` | Turns a `<select>` into an accessible, filterable combobox; the select keeps working for forms and bindings | `dropdown:change` |
 | `tooltip` | On hover and focus, Escape dismisses, linked with `aria-describedby`, flips to stay on screen | none |
 | `context-menu` | Right-click, Shift+F10 or the Menu key; arrow keys, Home/End and typeahead | `context-menu:select` |
+
+## How `sortable` drags
+
+The model follows [dnd kit](https://dndkit.com/):
+
+- **Starting a drag:** the pointer must move a few pixels first (`activationDistance`, default 5), so clicks still work. On touch screens, a press-and-hold starts the drag (`touchDelay`, default 200 ms), so swiping still scrolls.
+- **The item stays where it is in the DOM.** It's lifted above the page, but components inside it keep their state, and it isn't clipped by scroll containers.
+- **The drop position** is the closest item in two dimensions, so grids and wrapping rows behave. The closest container in a `group` wins, even when the pointer is in the gap between containers.
+- **Animation:** neighbours slide out of the way, and the item glides into place on drop (`animation`, default 180 ms; off when the user prefers reduced motion).
+- **Auto-scroll:** scroll containers and the page scroll when you drag near their edges (`autoScroll`).
 
 ## Writing a mixin
 

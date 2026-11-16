@@ -116,3 +116,34 @@ test('relative times in the feed keep up with the clock', async ({ page, errors 
   await expect(sameItem.locator('time')).toHaveText('1 hour ago');
   void errors;
 });
+
+test('panels reorder by dragging their title, across rows, without re-rendering', async ({ page, errors }) => {
+  await page.goto('/dashboard/index.html');
+  const panels = page.locator('.ar-flex__panel');
+  await expect(page.locator('.feed__item strong').first()).toBeVisible();
+  // Tag the live feed component, to check it's the same element (not re-created) afterwards.
+  await page.locator('activity-feed').evaluate(el => ((el as HTMLElement & { tagged?: boolean }).tagged = true));
+  const feedItems = await page.locator('.feed__item').count();
+
+  // Drag "How this works" (second row) by its title to the start of the first row.
+  const handle = page.locator('[data-key=about] .ar-flex__header');
+  await handle.scrollIntoViewIfNeeded();
+  const h = (await handle.boundingBox())!;
+  const first = (await panels.first().boundingBox())!;
+  await page.mouse.move(h.x + 30, h.y + h.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(h.x + 40, h.y + h.height / 2 - 10, { steps: 3 });
+  await page.mouse.move(first.x + 10, first.y + first.height / 2, { steps: 15 });
+  await page.mouse.up();
+
+  await expect(panels.first()).toHaveAttribute('data-key', 'about');
+  expect(await page.locator('activity-feed').evaluate(el => (el as HTMLElement & { tagged?: boolean }).tagged)).toBe(true);
+  expect(await page.locator('.feed__item').count()).toBeGreaterThanOrEqual(feedItems);
+  await expect(page.locator('.sortable-placeholder')).toHaveCount(0);
+
+  // The new order is remembered.
+  await page.waitForTimeout(300);
+  await page.reload();
+  await expect(page.locator('.ar-flex__panel').first()).toHaveAttribute('data-key', 'about');
+  void errors;
+});
