@@ -1,5 +1,6 @@
 import { Component, defineComponent, type StoredObject } from 'arethesis';
 import { startApp } from '../shared/boot';
+import { bindNetworkControl } from '../shared/network';
 import { avatar, bindStatus, mountShell, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
@@ -222,6 +223,7 @@ export class KanbanBoard extends Component {
 
 await app.fetch('listTasks');
 
+bindNetworkControl(document.querySelector<HTMLSelectElement>('#network')!, backend);
 document.querySelector('#failures')!.addEventListener('change', e => backend.control({ failureRate: (e.target as HTMLInputElement).checked ? 0.6 : 0 }));
 document.querySelector('#new-tab')!.addEventListener('click', () => window.open(location.href, '_blank'));
 bindStatus(document.querySelector('#sse-status')!, 'Live', fn => app.sse!.onStatusChange(fn), app.sse!.status);

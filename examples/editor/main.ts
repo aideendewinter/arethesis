@@ -1,6 +1,7 @@
 import { CollabSession, WebSocketManager, type CollabUser, type RemoteCursor } from 'arethesis';
 import { connectMockBackend } from '../mock/client';
 import { startApp } from '../shared/boot';
+import { bindNetworkControl } from '../shared/network';
 import { avatar, mountShell, setStatusPill, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
@@ -44,6 +45,9 @@ session.on('presence', renderPeople);
 renderPeople([]);
 
 const status = document.querySelector<HTMLElement>('#collab-status')!;
+// Try a slow network to watch edits queue up ("Saving…") and merge.
+bindNetworkControl(document.querySelector<HTMLSelectElement>('#network')!, backend);
+
 const labels = { connecting: 'Connecting…', synced: 'All changes saved', syncing: 'Saving…', offline: 'Offline: edits kept locally' };
 // Typing saves almost every keystroke. Don't flash "Saving…" for saves that finish
 // in a moment, and once it shows, keep it up long enough to read.

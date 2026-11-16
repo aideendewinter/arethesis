@@ -9,6 +9,9 @@ test('two windows edit concurrently and converge', async ({ context, page, error
   await expect(a).toHaveValue(/Launch plan/);
   await expect(b).toHaveValue(/Launch plan/);
   await expect(page.locator('.people li')).toHaveCount(2);
+  // Both editors have loaded the document (they're read-only until then).
+  await expect(a).not.toHaveAttribute('aria-busy');
+  await expect(b).not.toHaveAttribute('aria-busy');
 
   // Type at the start in one window and at the end in the other, at the same time.
   await a.focus();
@@ -17,10 +20,12 @@ test('two windows edit concurrently and converge', async ({ context, page, error
   await other.keyboard.press('Control+End');
   await Promise.all([page.keyboard.type('AAAA ', { delay: 20 }), other.keyboard.type(' BBBB', { delay: 20 })]);
 
-  await expect(page.locator('#collab-status')).toHaveAttribute('data-status', 'synced');
-  await expect(other.locator('#collab-status')).toHaveAttribute('data-status', 'synced');
+  // Wait for both sessions to be fully synced (the badge itself lags on purpose,
+  // so it doesn't flash "Saving…"), then both windows must hold the same text.
+  await expect(page.locator('#sync')).toHaveText('synced', { timeout: 10_000 });
+  await expect(other.locator('#sync')).toHaveText('synced', { timeout: 10_000 });
+  await expect.poll(async () => (await a.inputValue()) === (await b.inputValue()), { timeout: 10_000 }).toBe(true);
   const valueA = await a.inputValue();
-  await expect(b).toHaveValue(valueA);
   expect(valueA.startsWith('AAAA ')).toBe(true);
   expect(valueA.trimEnd().endsWith('BBBB')).toBe(true);
   void errors;
@@ -71,5 +76,40 @@ test('typing does not resize the status badge or shift the toolbar', async ({ pa
   await expect(badge.getByText('All changes saved')).toBeVisible();
   await expect(badge.getByText('Saving…')).toBeHidden();
   expect(await badge.evaluate(el => (el as HTMLElement).innerText.trim())).toBe('All changes saved');
+  void errors;
+});
+
+test('on a slow network the badge shows edits being saved', async ({ page, errors }) => {
+  await page.goto('/editor/index.html');
+  const badge = page.locator('#collab-status');
+  await expect(badge).toHaveAttribute('data-status', 'synced');
+  await page.getByLabel('Network').selectOption({ label: 'Slow (1 s)' });
+
+  await page.locator('#doc').click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' Slow and steady.', { delay: 40 });
+  await expect(badge).toHaveAttribute('data-status', 'syncing');
+  await expect(badge.getByText('Saving…')).toBeVisible();
+  await expect(badge).toHaveAttribute('data-status', 'synced', { timeout: 8000 });
+  await expect(badge.getByText('All changes saved')).toBeVisible();
+
+  // The choice is remembered across reloads (and pages).
+  await page.reload();
+  await expect(page.getByLabel('Network')).toHaveValue('1000');
+  await expect(page.locator('#collab-status')).toHaveAttribute('data-status', 'synced', { timeout: 8000 });
+
+  // On an instant network, quick saves don't flash "Saving…".
+  await page.getByLabel('Network').selectOption({ label: 'Instant' });
+  const seen = await page.evaluate(() => {
+    const statuses = new Set<string>();
+    new MutationObserver(() => statuses.add(document.querySelector<HTMLElement>('#collab-status')!.dataset.status!)).observe(document.querySelector('#collab-status')!, { attributes: true });
+    (window as unknown as { statuses: Set<string> }).statuses = statuses;
+    return true;
+  });
+  expect(seen).toBe(true);
+  await page.locator('#doc').click();
+  await page.keyboard.type(' Quick.', { delay: 40 });
+  await page.waitForTimeout(800);
+  expect(await page.evaluate(() => [...(window as unknown as { statuses: Set<string> }).statuses])).not.toContain('syncing');
   void errors;
 });

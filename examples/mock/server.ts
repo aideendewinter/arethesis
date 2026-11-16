@@ -52,6 +52,7 @@ function tokenValid(header: string | undefined): boolean {
 }
 
 export class MockServer {
+  /** Simulated round-trip time in ms: an HTTP request takes about this long, a WebSocket or SSE message half of it. */
   latency = 250;
   failureRate = 0;
   offline = false;

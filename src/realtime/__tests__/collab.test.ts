@@ -159,6 +159,140 @@ describe('CollabSession', () => {
   });
 });
 
+/**
+ * A simulated network with a virtual clock: every message is delayed by a
+ * random amount, but messages in one direction of one connection stay in
+ * order (as over TCP). Events run in time order; `run()` drains them.
+ */
+class SlowNet {
+  now = 0;
+  private seq = 0;
+  private events: Array<{ at: number; seq: number; fn: () => void }> = [];
+  private last = new Map<string, number>();
+  constructor(private random: () => number, private maxDelay: number) {}
+  send(lane: string, fn: () => void): void {
+    const at = Math.max(this.now + 1 + this.random() * this.maxDelay, this.last.get(lane) ?? 0);
+    this.last.set(lane, at);
+    this.events.push({ at, seq: this.seq++, fn });
+  }
+  at(time: number, fn: () => void): void {
+    this.events.push({ at: time, seq: this.seq++, fn });
+  }
+  async run(): Promise<void> {
+    while (this.events.length) {
+      this.events.sort((a, b) => a.at - b.at || a.seq - b.seq);
+      const next = this.events.shift()!;
+      this.now = next.at;
+      next.fn();
+      await flush(2);
+    }
+  }
+}
+
+function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), a | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+describe('CollabSession before the document loads', () => {
+  it('keeps the textarea read-only until synced, so early typing is not lost, then restores it', async () => {
+    const hub = new Hub();
+    const ta = makeTextarea();
+    const ws = new WebSocketManager({ url: 'ws://x', socketFactory: hub.factory, pingInterval: 0, baseDelay: 5, jitter: 0 });
+    const s = new CollabSession(ws, 'doc1', ta, { user: { name: 'A', color: '#f00' } });
+    expect(ta.readOnly).toBe(true);
+    expect(ta.getAttribute('aria-busy')).toBe('true');
+    await flush(10);
+    expect(ta.value).toBe('Hello');
+    expect(ta.readOnly).toBe(false);
+    expect(ta.hasAttribute('aria-busy')).toBe(false);
+    s.close();
+    // A textarea that was read-only to begin with stays read-only, also when closed before loading.
+    const locked = makeTextarea();
+    locked.readOnly = true;
+    const ws2 = new WebSocketManager({ url: 'ws://x', socketFactory: hub.factory, pingInterval: 0, baseDelay: 5, jitter: 0 });
+    const early = new CollabSession(ws2, 'doc1', locked, { user: { name: 'B', color: '#00f' } });
+    early.close();
+    expect(locked.readOnly).toBe(true);
+    const plain = makeTextarea();
+    const ws3 = new WebSocketManager({ url: 'ws://x', socketFactory: hub.factory, pingInterval: 0, baseDelay: 5, jitter: 0 });
+    const closedEarly = new CollabSession(ws3, 'doc1', plain, { user: { name: 'C', color: '#0f0' } });
+    closedEarly.close();
+    expect(plain.readOnly).toBe(false);
+    expect(plain.hasAttribute('aria-busy')).toBe(false);
+  });
+});
+
+describe('CollabSession over a slow network', () => {
+  it.each(Array.from({ length: 25 }, (_, i) => i + 1))('converges with random delays and concurrent edits (seed %i)', async seed => {
+    const random = seeded(seed);
+    const net = new SlowNet(random, 40);
+    const errors: unknown[] = [];
+    const sockets = new Map<string, { onmessage: ((e: MessageEvent) => void) | null; readyState: number }>();
+    const server = new CollabServer((clientId, message) => {
+      const socket = sockets.get(clientId);
+      net.send(`down:${clientId}`, () => socket?.readyState === 1 && socket.onmessage?.(new MessageEvent('message', { data: JSON.stringify(message) })));
+    }, () => 'The quick brown fox');
+    let counter = 0;
+    const factory = () => {
+      const id = `c${++counter}`;
+      const socket = {
+        readyState: 0,
+        onopen: null as (() => void) | null,
+        onclose: null as ((e: CloseEvent) => void) | null,
+        onerror: null as (() => void) | null,
+        onmessage: null as ((e: MessageEvent) => void) | null,
+        send(raw: string) {
+          const msg = JSON.parse(raw);
+          if (msg.type?.startsWith('collab:')) net.send(`up:${id}`, () => server.handle(id, msg));
+        },
+        close() {
+          socket.readyState = 3;
+        },
+      };
+      sockets.set(id, socket);
+      net.send(`open:${id}`, () => {
+        socket.readyState = 1;
+        socket.onopen?.();
+      });
+      return socket as unknown as WebSocket;
+    };
+    const editors = [makeTextarea(), makeTextarea()];
+    const sessions = editors.map((ta, i) => {
+      const ws = new WebSocketManager({ url: 'ws://x', socketFactory: factory, pingInterval: 0, reconnect: false });
+      const s = new CollabSession(ws, 'doc', ta, { user: { name: `u${i}`, color: '#000' }, cursors: false });
+      s.on('error', e => errors.push(e));
+      return s;
+    });
+    // Random inserts and deletes from both editors, interleaved with message delivery.
+    for (let step = 0; step < 30; step++) {
+      const ta = editors[Math.floor(random() * 2)];
+      net.at(5 + step * 7 * random(), () => {
+        const v = ta.value;
+        const pos = Math.floor(random() * (v.length + 1));
+        if (random() < 0.7 || v.length === 0) type(ta, v.slice(0, pos) + String.fromCharCode(97 + Math.floor(random() * 26)) + v.slice(pos));
+        else type(ta, v.slice(0, pos) + v.slice(pos + 1));
+      });
+    }
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await net.run();
+    consoleError.mockRestore();
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(errors).toEqual([]);
+    const serverText = server.document('doc').document;
+    expect(editors[0].value).toBe(serverText);
+    expect(editors[1].value).toBe(serverText);
+    expect(sessions.map(s => s.status)).toEqual(['synced', 'synced']);
+    sessions.forEach(s => s.close());
+    editors.forEach(ta => ta.remove());
+  });
+});
+
 describe('TextareaAdapter', () => {
   it('emits operations, waits for IME composition, and keeps the selection', () => {
     const ta = makeTextarea();

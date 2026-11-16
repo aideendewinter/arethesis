@@ -2,6 +2,7 @@ import { Component, defineComponent, type StoredObject } from 'arethesis';
 import 'arethesis/components';
 import type { DataTable } from 'arethesis/components';
 import { startApp } from '../shared/boot';
+import { bindNetworkControl } from '../shared/network';
 import { avatar, bindStatus, mountShell, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
@@ -111,6 +112,7 @@ table.on('save', () => toast('Saved', 'success'));
 
 // Demo controls.
 document.querySelector<HTMLInputElement>('#teammates')!.addEventListener('change', e => backend.control({ teammates: (e.target as HTMLInputElement).checked }));
+bindNetworkControl(document.querySelector<HTMLSelectElement>('#network')!, backend);
 document.querySelector<HTMLInputElement>('#failures')!.addEventListener('change', e => backend.control({ failureRate: (e.target as HTMLInputElement).checked ? 0.5 : 0 }));
 app.sse!.on('upsert', data => {
   const d = data as { by?: string; data: { name: string } };

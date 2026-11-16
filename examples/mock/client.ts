@@ -14,8 +14,8 @@
 import { createHost } from './host';
 import type { Port, ToPage, ToServer } from './protocol';
 
-let counter = 0;
-const nextId = (prefix: string): string => `${prefix}-${Date.now().toString(36)}-${++counter}`;
+/** Unique across every page sharing the mock backend (a time-and-counter id could collide between pages). */
+const nextId = (prefix: string): string => `${prefix}-${crypto.randomUUID()}`;
 
 function connectPort(): { port: Port; shared: boolean } {
   const handlers: Array<(m: ToPage) => void> = [];

@@ -11,16 +11,49 @@ export function createHost() {
   const portStreams = new Map<Port, Set<string>>();
   let eventId = 0;
 
+  // Simulated network: every message on a stream or socket takes half the
+  // round-trip time (with some jitter). Each connection is a queue drained in
+  // order by one timer, so messages never overtake each other (separate timers
+  // can fire out of order because browsers round their delays). Going offline
+  // drops whatever is still in flight.
+  const queues = new Map<string, { items: Array<{ at: number; send: () => void }>; timer?: ReturnType<typeof setTimeout> }>();
+  function pump(connection: string): void {
+    const queue = queues.get(connection);
+    if (!queue) return;
+    queue.timer = undefined;
+    const now = performance.now();
+    while (queue.items.length && queue.items[0].at <= now + 1) queue.items.shift()!.send();
+    if (queue.items.length) queue.timer = setTimeout(() => pump(connection), Math.max(0, queue.items[0].at - now));
+    else queues.delete(connection);
+  }
+  function deliver(connection: string, send: () => void): void {
+    const oneWay = server.latency / 2;
+    let queue = queues.get(connection);
+    if (oneWay <= 0 && !queue) {
+      send();
+      return;
+    }
+    if (!queue) queues.set(connection, (queue = { items: [] }));
+    const last = queue.items.at(-1)?.at ?? 0;
+    queue.items.push({ at: Math.max(performance.now() + oneWay * (0.7 + Math.random() * 0.6), last), send });
+    if (!queue.timer) queue.timer = setTimeout(() => pump(connection), Math.max(0, queue.items[0].at - performance.now()));
+  }
+  function dropInFlight(): void {
+    for (const queue of queues.values()) clearTimeout(queue.timer);
+    queues.clear();
+  }
+
   const server = new MockServer({
     sse(event, data, streamId) {
       const payload = JSON.stringify(data);
       const id = String(++eventId);
       for (const [sid, port] of streams) {
-        if (!streamId || sid === streamId) port.post({ kind: 'sse', streamId: sid, event, data: payload, id });
+        if (!streamId || sid === streamId) deliver(`sse:${sid}`, () => streams.has(sid) && port.post({ kind: 'sse', streamId: sid, event, data: payload, id }));
       }
     },
     ws(socketId, message) {
-      sockets.get(socketId)?.post({ kind: 'ws-message', socketId, data: JSON.stringify(message) });
+      const data = JSON.stringify(message);
+      deliver(`down:${socketId}`, () => sockets.get(socketId)?.post({ kind: 'ws-message', socketId, data }));
     },
   });
 
@@ -66,7 +99,7 @@ export function createHost() {
         port.post({ kind: 'ws-open', socketId: message.socketId });
         break;
       case 'ws-send':
-        server.socketMessage(message.socketId, message.data);
+        deliver(`up:${message.socketId}`, () => sockets.has(message.socketId) && server.socketMessage(message.socketId, message.data));
         break;
       case 'ws-close':
         sockets.delete(message.socketId);
@@ -75,6 +108,7 @@ export function createHost() {
       case 'control':
         server.control(message.command);
         if (message.command.offline === true) {
+          dropInFlight();
           // Drop every live connection, like a network outage.
           for (const [sid, p] of [...streams]) {
             streams.delete(sid);

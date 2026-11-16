@@ -66,6 +66,8 @@ export class CollabSession extends Emitter<CollabEvents> {
   private opCounter = 0;
   private presenceTimer: ReturnType<typeof setTimeout> | null = null;
   private _status: CollabStatus = 'connecting';
+  /** The textarea's own readOnly, restored once the document has loaded. */
+  private wasReadOnly: boolean | null = null;
   clientId: string | null = null;
 
   constructor(
@@ -79,7 +81,14 @@ export class CollabSession extends Emitter<CollabEvents> {
     this.channel = `doc:${docId}`;
     this.adapter = target instanceof HTMLElement ? new TextareaAdapter(target) : target;
     if (target instanceof HTMLTextAreaElement && options.cursors !== false) this.overlay = new CursorOverlay(target);
-    if (target instanceof HTMLElement) target.setAttribute('aria-busy', 'true');
+    if (target instanceof HTMLElement) {
+      target.setAttribute('aria-busy', 'true');
+      // Typing before the document has loaded would be overwritten by it: wait.
+      if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+        this.wasReadOnly = target.readOnly;
+        target.readOnly = true;
+      }
+    }
 
     this.adapter.attach(
       op => this.handleLocalEdit(op),
@@ -188,7 +197,11 @@ export class CollabSession extends Emitter<CollabEvents> {
     this.cursors.clear();
     for (const peer of init.peers ?? []) this.cursors.set(peer.clientId, peer);
     this.emitPresence();
-    if (this.adapter instanceof TextareaAdapter) this.adapter.element.removeAttribute('aria-busy');
+    if (this.adapter instanceof TextareaAdapter) {
+      this.adapter.element.removeAttribute('aria-busy');
+      if (this.wasReadOnly !== null) this.adapter.element.readOnly = this.wasReadOnly;
+      this.wasReadOnly = null;
+    }
     this.updateStatus();
   }
 
@@ -253,6 +266,10 @@ export class CollabSession extends Emitter<CollabEvents> {
     this.unsubscribe?.();
     this.offOpen?.();
     this.offStatus?.();
+    if (this.adapter instanceof TextareaAdapter && this.wasReadOnly !== null) {
+      this.adapter.element.readOnly = this.wasReadOnly;
+      this.adapter.element.removeAttribute('aria-busy');
+    }
     this.adapter.destroy();
     this.overlay?.destroy();
     this.clear();

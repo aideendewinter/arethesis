@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `CollabSession` keeps its textarea read-only until the document has loaded. Before, anything typed in that moment was silently replaced by the server's copy, which was easy to hit on a slow connection.
+
 ## 0.1.3
 
 0.1.2 was tagged but never published; its changes are in this release.
