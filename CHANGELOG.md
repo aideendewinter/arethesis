@@ -1,16 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.1.2
 
 ### Changed
 
 - **Smoother drag and drop** (`sortable`), following [dnd kit](https://dndkit.com/)'s approach:
   - **Starting:** a drag starts after a few pixels of movement, or a press-and-hold on touch screens, so clicks, taps and scrolling still work.
   - **The item stays in place in the DOM** while it's lifted, so components inside it keep their state. Dragging a dashboard panel no longer re-renders it.
-  - **The drop position** is the closest item in two dimensions, so grids and wrapping rows behave, and the closest container wins even from the gap between containers.
+  - **The drop position** is the item under the pointer, or the nearest one in two dimensions, so grids, wrapping rows and panels of mixed sizes behave. The closest container wins even from the gap between containers.
   - **Animation:** neighbours slide aside instead of jumping, and the item glides into place on drop. There's no animation with reduced motion.
   - **Auto-scroll** near the edges of scroll containers and the page.
   - New options: `animation`, `activationDistance`, `touchDelay`, `autoScroll`. New event: `sortable:move`.
+
+### Fixed
+
+- `<a-flex-view>`: splitters now appear next to a panel as soon as it's dragged into another row.
+- `sortable:end` now fires once the dropped item is in its final position, so listeners can measure it.
 
 ## 0.1.1
 
