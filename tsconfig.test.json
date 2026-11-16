@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "arethesis": [
+        "./src/index.ts"
+      ],
+      "arethesis/components": [
+        "./src/kit/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "test",
+    "e2e",
+    "examples",
+    "*.config.ts"
+  ],
+  "exclude": []
+}

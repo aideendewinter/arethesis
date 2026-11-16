@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Signup Form · Arethesis</title>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main>
+      <div class="signup-layout">
+        <a-form data-endpoint="createAccount" data-type="Account" class="card">
+          <form action="/api/accounts" method="post">
+            <div data-error-summary hidden></div>
+            <div class="form-grid">
+              <div class="field"><label for="name">Full name</label><input id="name" name="name" autocomplete="name" required minlength="2"></div>
+              <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required
+                data-rules='[{"type":"validEmailDomain","params":{"blocked":["mailinator.com","tempmail.dev"]}}]'>
+                <span class="hint">Try an address at example.com to see a server-side error.</span></div>
+              <div class="field"><label for="username">Username</label><input id="username" name="username" autocomplete="username" required minlength="3" maxlength="20"
+                data-rules='[{"type":"pattern","params":{"pattern":"^[a-z0-9_]+$"},"message":"Use lowercase letters, numbers and underscores"},{"type":"usernameAvailable"}]'>
+                <span class="hint">“alice”, “admin” and “bob” are taken.</span></div>
+              <div class="field"><label for="role">Role</label>
+                <select id="role" name="role" required data-mixin="dropdown"><option value="">Choose a role</option><option>Engineer</option><option>Designer</option><option>Product manager</option><option>Researcher</option><option>Founder</option></select></div>
+              <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="new-password" required minlength="8"
+                data-rules='[{"type":"pattern","params":{"pattern":"\\d"},"message":"Include at least one number"}]'></div>
+              <div class="field"><label for="confirm">Confirm password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" required
+                data-rules='[{"type":"equals","params":{"field":"password"},"message":"Passwords don’t match"}]'></div>
+              <div class="field"><label for="birthday">Date of birth</label><input id="birthday" name="birthday" type="date" required
+                data-rules='[{"type":"pastDate"},{"type":"minAge","params":{"years":13}}]'></div>
+              <div class="field"><label for="start">Preferred start date</label><input id="start" name="start" type="date" data-mixin="datepicker"
+                data-rules='[{"type":"futureDate","params":{"includeToday":false}},{"type":"businessDay"}]'></div>
+            </div>
+            <div class="field"><label for="bio">Short bio</label>
+              <textarea id="bio" name="bio" data-rich-text data-mixin="rich-text" data-mixin-rich-text-label="Short bio" data-mixin-rich-text-placeholder="A sentence or two about you…"
+                data-rules='[{"type":"richTextMinLength","params":{"min":20}},{"type":"richTextMaxLength","params":{"max":400}}]'></textarea></div>
+            <label class="checkbox"><input type="checkbox" name="terms" required> I agree to the (imaginary) terms</label>
+            <div class="form-actions"><button class="btn" type="submit">Create account</button><span class="hint">Nothing is really sent anywhere.</span></div>
+          </form>
+        </a-form>
+        <aside class="card signup-aside">
+          <h2>What’s happening</h2>
+          <ul class="how">
+            <li>This is a plain HTML <code>&lt;form&gt;</code>. Without JavaScript it would still submit.</li>
+            <li><code>required</code>, <code>type="email"</code>, <code>minlength</code> and friends become validation rules automatically.</li>
+            <li><code>data-rules</code> adds anything else, including async server checks (debounced and cancelled as you type).</li>
+            <li>Errors appear on blur, then update as you type. Submitting shows a summary that links to each field.</li>
+            <li>Server errors (HTTP 422) are mapped back onto the right inputs.</li>
+          </ul>
+          <div id="result" hidden></div>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>

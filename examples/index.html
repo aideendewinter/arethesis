@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arethesis Examples</title>
+    <meta name="description" content="Live examples of Arethesis: data-driven Light DOM Web Components." />
+    <script type="module" src="./home.ts"></script>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <h1>Data-driven web components, <em>without the framework tax</em>.</h1>
+        <p>Arethesis gives server-rendered pages a normalized store, config-driven APIs, live updates, collaborative editing and accessible UI behaviors, in plain HTML and Light DOM custom elements. No virtual DOM, no build-time magic, and zero runtime dependencies.</p>
+        <p><code>npm install arethesis</code></p>
+      </section>
+      <div class="gallery">
+        <a class="demo-card" href="./directory/index.html"><span class="demo-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2A5 5 0 0 1 21.5 19"/></svg></span><div><h2>Team directory</h2><p>10,000 people with infinite scroll, sorting, inline editing with validation, optimistic saves with rollback, and edits from teammates arriving live over SSE.</p></div><div class="chips"><span class="chip">a-data-table</span><span class="chip">ListViews</span><span class="chip">SSE</span></div></a>
+        <a class="demo-card" href="./kanban/index.html"><span class="demo-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg></span><div><h2>Kanban board</h2><p>Drag cards between columns with a mouse, a finger or the keyboard. Moves are optimistic and sync to every open tab.</p></div><div class="chips"><span class="chip">sortable</span><span class="chip">context-menu</span><span class="chip">tooltip</span></div></a>
+        <a class="demo-card" href="./editor/index.html"><span class="demo-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/><path d="M14 20h6"/></svg></span><div><h2>Collaborative editor</h2><p>Real-time co-editing with operational transformation, live cursors and presence. Open it in two windows and type in both.</p></div><div class="chips"><span class="chip">OT</span><span class="chip">WebSocket</span><span class="chip">presence</span></div></a>
+        <a class="demo-card" href="./dashboard/index.html"><span class="demo-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg></span><div><h2>Live dashboard</h2><p>Metrics stream in over SSE. Rearrange and resize panels, and the layout is remembered across reloads.</p></div><div class="chips"><span class="chip">a-flex-view</span><span class="chip">a-list</span><span class="chip">IndexedDB</span></div></a>
+        <a class="demo-card" href="./signup/index.html"><span class="demo-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><div><h2>Signup form</h2><p>Progressive enhancement of a plain form: native constraints, async username checks, date rules, a rich-text bio, and server errors mapped onto fields.</p></div><div class="chips"><span class="chip">a-form</span><span class="chip">validation</span><span class="chip">rich-text</span></div></a>
+        <a class="demo-card" href="./offline/index.html"><span class="demo-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.5"/><path d="M4.5 5.5v6c0 1.4 3.4 2.5 7.5 2.5s7.5-1.1 7.5-2.5v-6"/><path d="M4.5 11.5v7c0 1.4 3.4 2.5 7.5 2.5s7.5-1.1 7.5-2.5v-7"/></svg></span><div><h2>Offline &amp; caching</h2><p>Sign in, cache data in IndexedDB, go offline, reload, compare cache modes, watch tokens refresh, and see logout wipe everything.</p></div><div class="chips"><span class="chip">auth</span><span class="chip">persistence</span><span class="chip">cache modes</span></div></a>
+      </div>
+      <section class="features" aria-label="Highlights">
+        <div class="feature"><h3>Light DOM, real HTML</h3><p>Components render into the document, so your CSS and tools just work. Server-rendered islands hydrate in place.</p></div>
+        <div class="feature"><h3>One normalized store</h3><p>Every object lives once under <code>type:id</code>. Edit it anywhere and every view updates.</p></div>
+        <div class="feature"><h3>Config-driven APIs</h3><p>Map any response shape, paginate with cursors, retry safely, refresh tokens, and batch requests.</p></div>
+        <div class="feature"><h3>Live by default</h3><p>SSE invalidation, WebSocket channels, Azure Web PubSub, and convergent OT for collaborative text.</p></div>
+        <div class="feature"><h3>Accessible behaviors</h3><p>Nine keyboard-friendly mixins (sortable, grid navigation, menus, tooltips…) with ARIA built in.</p></div>
+        <div class="feature"><h3>Secure defaults</h3><p>Sanitized HTML and URLs, origin-scoped auth headers, prototype-pollution-safe merges, logout that wipes the cache.</p></div>
+      </section>
+      <footer class="site-footer">Every example runs entirely in your browser against a mock backend in a SharedWorker. MIT licensed.</footer>
+    </main>
+  </body>
+</html>

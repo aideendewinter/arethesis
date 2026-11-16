@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Team Directory · Arethesis</title>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main>
+      <div class="toolbar" role="search">
+        <div class="field"><label for="q">Search</label><input id="q" type="search" placeholder="Name or email" autocomplete="off"></div>
+        <div class="field"><label for="department">Department</label>
+          <select id="department"><option value="">All departments</option><option>Engineering</option><option>Design</option><option>Product</option><option>Research</option><option>Marketing</option><option>Sales</option><option>Support</option><option>Finance</option></select>
+        </div>
+        <label class="switch"><input type="checkbox" id="teammates"> Teammates editing</label>
+        <label class="switch"><input type="checkbox" id="failures"> Simulate failures</label>
+        <span class="status-pill" id="sse-status"></span>
+      </div>
+      <div class="grid-2">
+        <a-data-table id="people" style="--ar-table-height: 34rem"></a-data-table>
+        <person-card id="card" class="card" aria-live="polite"></person-card>
+      </div>
+      <p class="hint">Tip: use the arrow keys to move between cells, Enter or start typing to edit, Escape to cancel. Double-click works too.</p></main>
+  </body>
+</html>

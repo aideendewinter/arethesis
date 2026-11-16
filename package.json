@@ -1,0 +1,97 @@
+{
+  "name": "arethesis",
+  "version": "0.1.0",
+  "description": "Data-driven Light DOM Web Components: a normalized store, config-driven HTTP, live updates, collaborative editing and accessible UI mixins — with zero runtime dependencies.",
+  "type": "module",
+  "main": "./dist/arethesis.js",
+  "module": "./dist/arethesis.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/arethesis.js"
+    },
+    "./components": {
+      "types": "./dist/kit/index.d.ts",
+      "import": "./dist/components.js"
+    },
+    "./components/theme.css": "./dist/theme.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "dev": "vite --config examples/vite.config.ts",
+    "build": "tsc -p tsconfig.json && vite build && node scripts/copy-theme.mjs",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "lint": "eslint .",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
+    "examples": "vite --config examples/vite.config.ts",
+    "examples:build": "vite build --config examples/vite.config.ts",
+    "examples:preview": "vite preview --config examples/vite.config.ts",
+    "e2e": "playwright test",
+    "docs": "typedoc",
+    "prepublishOnly": "npm run typecheck && npm run lint && npm run test:run && npm run build"
+  },
+  "keywords": [
+    "web-components",
+    "light-dom",
+    "custom-elements",
+    "typescript",
+    "framework",
+    "data-binding",
+    "normalized-store",
+    "indexeddb",
+    "server-sent-events",
+    "websocket",
+    "operational-transform",
+    "collaborative-editing",
+    "islands",
+    "zero-dependency"
+  ],
+  "author": {
+    "name": "Ada Graves",
+    "email": "aideendewinter@gmail.com",
+    "url": "https://github.com/aideendewinter"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^10.0.0",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "5.1.0",
+    "eslint": "^10.15.0",
+    "fake-indexeddb": "^6.2.8",
+    "happy-dom": "^21.0.4",
+    "typedoc": "^0.28.20",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.8",
+    "vite-plugin-dts": "^5.1.2",
+    "vitest": "5.1.0"
+  },
+  "sideEffects": [
+    "./dist/*.js",
+    "./src/**",
+    "./examples/**",
+    "*.css"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aideendewinter/arethesis.git"
+  },
+  "homepage": "https://aideendewinter.github.io/arethesis/",
+  "bugs": {
+    "url": "https://github.com/aideendewinter/arethesis/issues"
+  }
+}

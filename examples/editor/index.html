@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Collaborative Editor · Arethesis</title>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main>
+      <div class="toolbar">
+        <div class="field"><label for="name">Your name</label><input id="name" autocomplete="off"></div>
+        <span class="status-pill" id="collab-status"></span>
+        <label class="switch"><input type="checkbox" id="ghost"> Ghost writer</label>
+        <label class="switch"><input type="checkbox" id="offline"> Go offline</label>
+        <button class="btn btn--ghost" type="button" id="new-window">Open a second window ↗</button>
+      </div>
+      <div class="editor-layout">
+        <div class="editor-wrap card">
+          <label for="doc" class="ar-visually-hidden">Shared document</label>
+          <textarea id="doc" class="editor" spellcheck="false"></textarea>
+        </div>
+        <aside class="card editor-side" aria-label="Collaborators">
+          <h2>In this document</h2>
+          <ul id="people" class="people"></ul>
+          <dl class="facts">
+            <dt>Revision</dt><dd id="revision">0</dd>
+            <dt>Words</dt><dd id="words">0</dd>
+            <dt>Sync</dt><dd id="sync">–</dd>
+          </dl>
+          <p class="hint">Edits made offline are kept and merged when you reconnect.</p>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live Dashboard · Arethesis</title>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main>
+      <div class="toolbar">
+        <span class="status-pill" id="sse-status"></span>
+        <button class="btn btn--ghost" type="button" id="reset">Reset layout</button>
+        <span class="hint">Drag a panel by its title to reorder it (or focus it and press Space), drag the gap between two panels to share space between them, or a panel’s bottom edge to change its height. Your layout is remembered.</span>
+      </div>
+      <a-flex-view id="dashboard"></a-flex-view>
+    </main>
+  </body>
+</html>
