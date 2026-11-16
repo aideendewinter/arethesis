@@ -15,6 +15,7 @@
  */
 
 import type { ArethesisPlugin } from './types';
+import { VERSION } from '../version';
 import type { MixinInstance } from '../mixins/types';
 import { parseDate, startOfDay, toDateInputValue } from '../utils/dates';
 import { emit } from '../mixins/utils';
@@ -93,7 +94,7 @@ const today = (): Date => startOfDay(new Date());
 export function dateUtilsPlugin(): ArethesisPlugin {
   return {
     name: 'date-utils',
-    version: '0.1.0',
+    version: VERSION,
     mixins: {
       datepicker: datepickerMixin as never,
       daterange: daterangeMixin as never,

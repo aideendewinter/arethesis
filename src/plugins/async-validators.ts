@@ -16,6 +16,7 @@
  */
 
 import type { ArethesisPlugin } from './types';
+import { VERSION } from '../version';
 import type { ValidatorContext, ValidatorResult } from '../binding/types';
 import type { Arethesis } from '../core/arethesis';
 import { getPath } from '../utils/path';
@@ -67,7 +68,7 @@ export function asyncValidatorsPlugin(): ArethesisPlugin<AsyncValidatorsOptions>
 
   return {
     name: 'async-validators',
-    version: '0.1.0',
+    version: VERSION,
     install(instance, options) {
       app = instance;
       opts = { ...opts, ...options };

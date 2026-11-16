@@ -37,7 +37,8 @@ import { Emitter } from '../utils/emitter';
 import { registerBuiltInMixins } from '../mixins/index';
 import { registerBuiltInPlugins } from '../plugins/builtins';
 
-export const VERSION = '0.1.0';
+import { VERSION } from '../version';
+export { VERSION };
 
 export interface ArethesisEvents extends Record<string, unknown> {
   ready: void;

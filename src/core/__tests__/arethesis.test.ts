@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Arethesis, defineEndpoint, defineType, getArethesis } from '../arethesis';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { Arethesis, defineEndpoint, defineType, getArethesis, VERSION } from '../arethesis';
 import { Component } from '../../components/component';
 import { defineComponent } from '../../components/decorators';
 import { FakeEventSource, FakeWebSocket, flush, makeJwt, mockFetch, type RouteHandler } from '../../../test/helpers';
@@ -17,11 +19,16 @@ function setup(handler: RouteHandler) {
   return { app, fetch };
 }
 
+it('VERSION matches package.json (npm version keeps them in sync)', () => {
+  const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../../package.json'), 'utf8'));
+  expect(VERSION).toBe(pkg.version);
+});
+
 describe('Arethesis', () => {
   it('is a singleton with chainable registration helpers', () => {
     const a = getArethesis();
     expect(getArethesis()).toBe(a);
-    expect(a.version).toBe('0.1.0');
+    expect(a.version).toBe(VERSION);
     expect(defineType({ name: 'Global' })).toEqual({ name: 'Global' });
     defineEndpoint('globalEp', { url: '/g' });
     expect(a.http.getEndpoint('globalEp')).toBeDefined();

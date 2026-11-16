@@ -1,0 +1,55 @@
+{
+  "$description": "Arethesis base tokens: typography, radii and spacing, shared by every theme.",
+  "font": {
+    "$type": "fontFamily",
+    "$root": {
+      "$value": [
+        "system-ui",
+        "-apple-system",
+        "Segoe UI",
+        "Roboto",
+        "Helvetica Neue",
+        "Arial",
+        "sans-serif"
+      ],
+      "$description": "Interface text."
+    },
+    "mono": {
+      "$value": [
+        "ui-monospace",
+        "SFMono-Regular",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "$description": "Code and tabular figures."
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "$root": {
+      "$value": {
+        "value": 10,
+        "unit": "px"
+      },
+      "$description": "Cards, panels and dialogs."
+    },
+    "sm": {
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      },
+      "$description": "Buttons, inputs and small controls."
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "$root": {
+      "$value": {
+        "value": 1,
+        "unit": "rem"
+      },
+      "$description": "Base spacing unit."
+    }
+  }
+}

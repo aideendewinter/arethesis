@@ -83,7 +83,8 @@ When the server sends `invalidate { type: "Person", id: 42 }` over SSE, every `<
 | **Collaboration** | `TextOperation` OT, `OTClient`, a reference `CollabServer`, and `CollabSession` with presence and live cursors |
 | **Mixins** | `draggable`, `editable`, `grid-navigation`, `infinite-scroll`, `sortable`, `resizable`, `dropdown`, `tooltip`, `context-menu` |
 | **Plugins** | `date-utils`, `async-validators`, a dependency-free `rich-text` editor, and an API for your own |
-| **Component kit** | `<a-data-table>`, `<a-flex-view>`, `<a-list>`, `<a-form>` and a themeable stylesheet (light and dark) |
+| **Component kit** | `<a-data-table>`, `<a-flex-view>`, `<a-list>`, `<a-form>` and a themeable stylesheet: light, dark and high contrast, without a flash on load |
+| **Design tokens** | The theme as [W3C design tokens](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (2025.10) with a resolver, published as `arethesis/tokens/*` |
 
 ## Documentation
 

@@ -1,0 +1,57 @@
+{
+  "name": "Arethesis",
+  "version": "2025-10-01",
+  "description": "Arethesis component kit theme. Resolve with the input { \"theme\": \"light\" | \"dark\" | \"light-high-contrast\" | \"dark-high-contrast\" }.",
+  "sets": {
+    "base": {
+      "description": "Typography, radii and spacing.",
+      "sources": [
+        {
+          "$ref": "base.tokens.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "description": "Color theme and contrast level.",
+      "contexts": {
+        "light": [
+          {
+            "$ref": "light.tokens.json"
+          }
+        ],
+        "dark": [
+          {
+            "$ref": "dark.tokens.json"
+          }
+        ],
+        "light-high-contrast": [
+          {
+            "$ref": "light.tokens.json"
+          },
+          {
+            "$ref": "light-high-contrast.tokens.json"
+          }
+        ],
+        "dark-high-contrast": [
+          {
+            "$ref": "dark.tokens.json"
+          },
+          {
+            "$ref": "dark-high-contrast.tokens.json"
+          }
+        ]
+      },
+      "default": "light"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    }
+  ]
+}

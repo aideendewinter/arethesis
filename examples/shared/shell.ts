@@ -1,6 +1,12 @@
 /** Page chrome for the examples: navigation, theme toggle, source viewer and toasts. */
 import './site.css';
 import 'arethesis/components/theme.css';
+import { VERSION } from 'arethesis';
+import { applyStoredTheme, getContrast, getTheme, setContrast, setTheme } from 'arethesis/components';
+
+const REPO_URL = 'https://github.com/aideendewinter/arethesis';
+const NPM_URL = 'https://www.npmjs.com/package/arethesis';
+const GITHUB_ICON = `<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
 
 const DEMOS: Array<[string, string]> = [
   ['directory', 'Directory'],
@@ -12,23 +18,6 @@ const DEMOS: Array<[string, string]> = [
 ];
 
 const LOGO = `<svg class="site-nav__logo" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#g)"/><path d="M9 23 16 8l7 15M11.8 17.5h8.4" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-function applyTheme(theme: string | null): void {
-  if (theme) document.documentElement.dataset.theme = theme;
-  else delete document.documentElement.dataset.theme;
-}
-
-function currentTheme(): 'light' | 'dark' {
-  const explicit = document.documentElement.dataset.theme;
-  if (explicit === 'light' || explicit === 'dark') return explicit;
-  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-try {
-  applyTheme(localStorage.getItem('ar-theme'));
-} catch {
-  /* storage unavailable */
-}
 
 export interface ShellOptions {
   /** Demo key ('directory', …) or 'home'. */
@@ -49,31 +38,52 @@ export function mountShell(options: ShellOptions): HTMLElement {
   nav.innerHTML = `
     <a class="site-nav__brand" href="${prefix}index.html">${LOGO}<span>Arethesis</span></a>
     <div class="site-nav__links">${DEMOS.map(([key, label]) => `<a href="${prefix}${key}/index.html"${key === options.page ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</div>
-    ${options.source ? '<button class="btn btn--ghost" type="button" data-source-toggle aria-expanded="false" aria-controls="source-drawer">View source</button>' : ''}
+    ${options.source ? '<button class="btn btn--ghost" type="button" data-source-toggle aria-expanded="false" aria-controls="source-drawer" aria-label="View source"><span class="site-nav__wide" aria-hidden="true">View source</span><span class="site-nav__narrow" aria-hidden="true">Source</span></button>' : ''}
+    <a class="icon-button" href="${REPO_URL}" aria-label="Arethesis on GitHub" title="Arethesis on GitHub">${GITHUB_ICON}</a>
+    <button class="icon-button" type="button" data-contrast-toggle></button>
     <button class="icon-button" type="button" data-theme-toggle></button>`;
   document.body.prepend(nav);
 
-  const toggle = nav.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
-  const renderToggle = (): void => {
-    const dark = currentTheme() === 'dark';
-    toggle.textContent = dark ? '☀' : '☾';
-    toggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  // The boot snippet in <head> already applied any saved choice; this keeps it in sync after navigation.
+  applyStoredTheme();
+  const themeToggle = nav.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
+  const contrastToggle = nav.querySelector<HTMLButtonElement>('[data-contrast-toggle]')!;
+  const renderToggles = (): void => {
+    const dark = getTheme() === 'dark';
+    themeToggle.textContent = dark ? '☀' : '☾';
+    themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    const more = getContrast() === 'more';
+    contrastToggle.textContent = '◐';
+    contrastToggle.setAttribute('aria-label', 'High contrast');
+    contrastToggle.setAttribute('aria-pressed', String(more));
   };
-  renderToggle();
-  toggle.addEventListener('click', () => {
-    const next = currentTheme() === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    try {
-      localStorage.setItem('ar-theme', next);
-    } catch {
-      /* ignore */
-    }
-    renderToggle();
+  renderToggles();
+  themeToggle.addEventListener('click', () => {
+    setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+    renderToggles();
+  });
+  contrastToggle.addEventListener('click', () => {
+    setContrast(getContrast() === 'more' ? 'standard' : 'more');
+    renderToggles();
   });
 
   const main = document.querySelector<HTMLElement>('main') ?? document.body.appendChild(document.createElement('main'));
   main.classList.add('page');
   main.id = 'main';
+
+  const footer = document.createElement('footer');
+  footer.className = 'site-footer';
+  footer.innerHTML = `<div class="site-footer__inner">
+    <p>Every example runs entirely in your browser, against a mock backend in a SharedWorker.</p>
+    <p class="site-footer__links">
+      <span>Arethesis ${VERSION}</span>
+      <a href="${REPO_URL}">GitHub</a>
+      <a href="${NPM_URL}">npm</a>
+      <a href="${REPO_URL}/tree/main/docs">Docs</a>
+      <a href="${REPO_URL}/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="${REPO_URL}/blob/main/LICENSE">MIT license</a>
+    </p></div>`;
+  main.after(footer);
   if (options.title) {
     const intro = document.createElement('header');
     intro.className = 'page-intro';
@@ -171,11 +181,36 @@ export function avatar(name: string): { initials: string; color: string } {
 }
 
 /** Reflect a connection status on a pill element. */
+/**
+ * Show a status in a pill without resizing it. Every label sits in the same
+ * grid cell and only the current one is visible (hidden ones are also hidden
+ * from screen readers), so the pill is always as wide as its longest label
+ * and nothing next to it shifts when the status changes.
+ */
+export function setStatusPill(pill: HTMLElement, status: string, labels: Record<string, string>): void {
+  const all = status in labels ? labels : { ...labels, [status]: status };
+  const keys = Object.keys(all).join('|');
+  let stack = pill.querySelector<HTMLElement>(':scope > .status-pill__labels');
+  if (!stack || stack.dataset.keys !== keys) {
+    stack = document.createElement('span');
+    stack.className = 'status-pill__labels';
+    stack.dataset.keys = keys;
+    for (const [key, text] of Object.entries(all)) {
+      const span = document.createElement('span');
+      span.dataset.for = key;
+      span.textContent = text;
+      stack.appendChild(span);
+    }
+    pill.replaceChildren(stack);
+  }
+  for (const span of stack.children as HTMLCollectionOf<HTMLElement>) span.toggleAttribute('data-active', span.dataset.for === status);
+  pill.dataset.status = status;
+}
+
+/** Reflect a connection status on a pill element. */
 export function bindStatus(pill: HTMLElement, label: string, onStatusChange: (fn: (s: string) => void) => unknown, initial = 'connecting'): void {
-  const set = (status: string): void => {
-    pill.dataset.status = status;
-    pill.textContent = `${label}: ${status}`;
-  };
+  const labels = Object.fromEntries(['idle', 'connecting', 'open', 'reconnecting', 'closed'].map(s => [s, `${label}: ${s}`]));
+  const set = (status: string): void => setStatusPill(pill, status, labels);
   set(initial);
   onStatusChange(set);
 }

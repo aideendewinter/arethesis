@@ -5,19 +5,25 @@
  * (tooltips, menus, dropdowns, the rich-text editor, validation messages…).
  * Everything is driven by custom properties: override them on :root (or any
  * container) to restyle. Light and dark modes follow the OS unless you set
- * data-theme="light" or data-theme="dark" on <html>.
+ * data-theme="light" or data-theme="dark" on <html>. High contrast follows
+ * the OS (prefers-contrast: more) unless you set data-contrast="more" or
+ * data-contrast="standard".
+ *
+ * The values come from the design tokens in src/kit/tokens (W3C Design Tokens
+ * Format 2025.10), also published as arethesis/tokens/*.
  */
 
+/* ── Design tokens (generated from src/kit/tokens by `npm run tokens`; do not edit by hand) ── */
+
 :root {
-  --ar-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --ar-font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --ar-font: system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif;
+  --ar-font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
   --ar-radius: 10px;
   --ar-radius-sm: 6px;
   --ar-space: 1rem;
-
   --ar-bg: #ffffff;
-  --ar-surface: #f7f7fb;
   --ar-surface-2: #eef0f6;
+  --ar-surface: #f7f7fb;
   --ar-border: #dcdfe8;
   --ar-text: #161a23;
   --ar-text-muted: #5b6275;
@@ -33,17 +39,16 @@
   --ar-success-text: #ffffff;
   --ar-warning: #a35200;
   --ar-warning-soft: #fff4e5;
-  --ar-focus: 0 0 0 3px color-mix(in srgb, var(--ar-accent) 35%, transparent);
-  --ar-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 4px 16px rgb(16 24 40 / 0.08);
-  --ar-shadow-lg: 0 12px 40px rgb(16 24 40 / 0.18);
+  --ar-shadow: 0 1px 2px 0 rgb(16 24 40 / 0.06), 0 4px 16px 0 rgb(16 24 40 / 0.08);
+  --ar-shadow-lg: 0 12px 40px 0 rgb(16 24 40 / 0.18);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --ar-bg: #0f1117;
-    --ar-surface: #171a22;
     --ar-surface-2: #20242f;
+    --ar-surface: #171a22;
     --ar-border: #2c3140;
     --ar-text: #e8eaf1;
     --ar-text-muted: #9aa2b5;
@@ -53,24 +58,22 @@
     --ar-accent-text: #0f1117;
     --ar-danger: #ff7a7a;
     --ar-danger-soft: #3a1d22;
-  --ar-danger-text: #0f1117;
     --ar-danger-text: #0f1117;
     --ar-success: #4cd394;
     --ar-success-soft: #13301f;
-  --ar-success-text: #0f1117;
     --ar-success-text: #0f1117;
     --ar-warning: #ffb44d;
     --ar-warning-soft: #33260f;
-    --ar-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
-    --ar-shadow-lg: 0 12px 40px rgb(0 0 0 / 0.55);
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
   --ar-bg: #0f1117;
-  --ar-surface: #171a22;
   --ar-surface-2: #20242f;
+  --ar-surface: #171a22;
   --ar-border: #2c3140;
   --ar-text: #e8eaf1;
   --ar-text-muted: #9aa2b5;
@@ -86,10 +89,171 @@
   --ar-success-text: #0f1117;
   --ar-warning: #ffb44d;
   --ar-warning-soft: #33260f;
-  --ar-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
-  --ar-shadow-lg: 0 12px 40px rgb(0 0 0 / 0.55);
+  --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+  --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
   color-scheme: dark;
 }
+
+@media (prefers-contrast: more) {
+  :root:not([data-contrast='standard']) {
+    --ar-bg: #ffffff;
+    --ar-surface-2: #eef0f6;
+    --ar-surface: #f7f7fb;
+    --ar-border: #6b7280;
+    --ar-text: #000000;
+    --ar-text-muted: #2f3542;
+    --ar-accent: #3525b8;
+    --ar-accent-hover: #2a1d96;
+    --ar-accent-soft: #e4e6ff;
+    --ar-accent-text: #ffffff;
+    --ar-danger: #8f1717;
+    --ar-danger-soft: #fdecec;
+    --ar-danger-text: #ffffff;
+    --ar-success: #0b5a37;
+    --ar-success-soft: #e6f6ee;
+    --ar-success-text: #ffffff;
+    --ar-warning: #6f3800;
+    --ar-warning-soft: #fff4e5;
+    --ar-shadow: 0 1px 2px 0 rgb(16 24 40 / 0.06), 0 4px 16px 0 rgb(16 24 40 / 0.08);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(16 24 40 / 0.18);
+    color-scheme: light;
+  }
+}
+
+:root[data-contrast='more'] {
+  --ar-bg: #ffffff;
+  --ar-surface-2: #eef0f6;
+  --ar-surface: #f7f7fb;
+  --ar-border: #6b7280;
+  --ar-text: #000000;
+  --ar-text-muted: #2f3542;
+  --ar-accent: #3525b8;
+  --ar-accent-hover: #2a1d96;
+  --ar-accent-soft: #e4e6ff;
+  --ar-accent-text: #ffffff;
+  --ar-danger: #8f1717;
+  --ar-danger-soft: #fdecec;
+  --ar-danger-text: #ffffff;
+  --ar-success: #0b5a37;
+  --ar-success-soft: #e6f6ee;
+  --ar-success-text: #ffffff;
+  --ar-warning: #6f3800;
+  --ar-warning-soft: #fff4e5;
+  --ar-shadow: 0 1px 2px 0 rgb(16 24 40 / 0.06), 0 4px 16px 0 rgb(16 24 40 / 0.08);
+  --ar-shadow-lg: 0 12px 40px 0 rgb(16 24 40 / 0.18);
+  color-scheme: light;
+}
+
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-contrast='standard']):not([data-theme='light']) {
+    --ar-bg: #000000;
+    --ar-surface-2: #15171e;
+    --ar-surface: #0b0c10;
+    --ar-border: #9aa2b5;
+    --ar-text: #ffffff;
+    --ar-text-muted: #d3d8e3;
+    --ar-accent: #b8b3ff;
+    --ar-accent-hover: #cfcbff;
+    --ar-accent-soft: #24233f;
+    --ar-accent-text: #000000;
+    --ar-danger: #ffa3a3;
+    --ar-danger-soft: #3a1d22;
+    --ar-danger-text: #000000;
+    --ar-success: #7ee8b6;
+    --ar-success-soft: #13301f;
+    --ar-success-text: #000000;
+    --ar-warning: #ffcf85;
+    --ar-warning-soft: #33260f;
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root[data-theme='dark']:not([data-contrast='standard']) {
+    --ar-bg: #000000;
+    --ar-surface-2: #15171e;
+    --ar-surface: #0b0c10;
+    --ar-border: #9aa2b5;
+    --ar-text: #ffffff;
+    --ar-text-muted: #d3d8e3;
+    --ar-accent: #b8b3ff;
+    --ar-accent-hover: #cfcbff;
+    --ar-accent-soft: #24233f;
+    --ar-accent-text: #000000;
+    --ar-danger: #ffa3a3;
+    --ar-danger-soft: #3a1d22;
+    --ar-danger-text: #000000;
+    --ar-success: #7ee8b6;
+    --ar-success-soft: #13301f;
+    --ar-success-text: #000000;
+    --ar-warning: #ffcf85;
+    --ar-warning-soft: #33260f;
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-contrast='more']:not([data-theme='light']) {
+    --ar-bg: #000000;
+    --ar-surface-2: #15171e;
+    --ar-surface: #0b0c10;
+    --ar-border: #9aa2b5;
+    --ar-text: #ffffff;
+    --ar-text-muted: #d3d8e3;
+    --ar-accent: #b8b3ff;
+    --ar-accent-hover: #cfcbff;
+    --ar-accent-soft: #24233f;
+    --ar-accent-text: #000000;
+    --ar-danger: #ffa3a3;
+    --ar-danger-soft: #3a1d22;
+    --ar-danger-text: #000000;
+    --ar-success: #7ee8b6;
+    --ar-success-soft: #13301f;
+    --ar-success-text: #000000;
+    --ar-warning: #ffcf85;
+    --ar-warning-soft: #33260f;
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'][data-contrast='more'] {
+  --ar-bg: #000000;
+  --ar-surface-2: #15171e;
+  --ar-surface: #0b0c10;
+  --ar-border: #9aa2b5;
+  --ar-text: #ffffff;
+  --ar-text-muted: #d3d8e3;
+  --ar-accent: #b8b3ff;
+  --ar-accent-hover: #cfcbff;
+  --ar-accent-soft: #24233f;
+  --ar-accent-text: #000000;
+  --ar-danger: #ffa3a3;
+  --ar-danger-soft: #3a1d22;
+  --ar-danger-text: #000000;
+  --ar-success: #7ee8b6;
+  --ar-success-soft: #13301f;
+  --ar-success-text: #000000;
+  --ar-warning: #ffcf85;
+  --ar-warning-soft: #33260f;
+  --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+  --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+/* ── End of generated design tokens ── */
+
+/* Focus ring: the accent at 35%, or solid in high contrast. */
+:root { --ar-focus: 0 0 0 3px color-mix(in srgb, var(--ar-accent) 35%, transparent); }
+@media (prefers-contrast: more) {
+  :root:not([data-contrast='standard']) { --ar-focus: 0 0 0 3px var(--ar-accent); }
+}
+:root[data-contrast='more'] { --ar-focus: 0 0 0 3px var(--ar-accent); }
 
 /* ── Utilities ─────────────────────────────────────────────────────────── */
 

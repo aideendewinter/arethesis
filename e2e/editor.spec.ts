@@ -40,3 +40,36 @@ test('keeps offline edits and syncs them on reconnect', async ({ page, errors })
   await expect(doc).toHaveValue(/Written offline\./);
   void errors;
 });
+
+test('typing does not resize the status badge or shift the toolbar', async ({ page, errors }) => {
+  await page.goto('/editor/index.html');
+  const badge = page.locator('#collab-status');
+  await expect(badge).toHaveAttribute('data-status', 'synced');
+
+  // Record the badge's width and its neighbour's position on every frame while typing.
+  await page.evaluate(() => {
+    const samples: string[] = [];
+    (window as unknown as { samples: string[] }).samples = samples;
+    const badge = document.querySelector('#collab-status')!;
+    const next = badge.nextElementSibling!;
+    const tick = () => {
+      samples.push(`${badge.getBoundingClientRect().width.toFixed(1)}|${next.getBoundingClientRect().left.toFixed(1)}`);
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+  await page.locator('#doc').click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' The quick brown fox jumps over the lazy dog.', { delay: 30 });
+  await page.waitForTimeout(1200);
+  const samples = await page.evaluate(() => (window as unknown as { samples: string[] }).samples);
+  expect(samples.length).toBeGreaterThan(20);
+  expect(new Set(samples).size, 'badge width and toolbar position never change').toBe(1);
+
+  // Only the current label is visible (and read out).
+  await expect(badge).toHaveAttribute('data-status', 'synced');
+  await expect(badge.getByText('All changes saved')).toBeVisible();
+  await expect(badge.getByText('Saving…')).toBeHidden();
+  expect(await badge.evaluate(el => (el as HTMLElement).innerText.trim())).toBe('All changes saved');
+  void errors;
+});

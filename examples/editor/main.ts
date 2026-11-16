@@ -1,7 +1,7 @@
 import { CollabSession, WebSocketManager, type CollabUser, type RemoteCursor } from 'arethesis';
 import { connectMockBackend } from '../mock/client';
 import { startApp } from '../shared/boot';
-import { avatar, mountShell, toast } from '../shared/shell';
+import { avatar, mountShell, setStatusPill, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
 mountShell({
@@ -44,10 +44,31 @@ session.on('presence', renderPeople);
 renderPeople([]);
 
 const status = document.querySelector<HTMLElement>('#collab-status')!;
+const labels = { connecting: 'Connecting…', synced: 'All changes saved', syncing: 'Saving…', offline: 'Offline: edits kept locally' };
+// Typing saves almost every keystroke. Don't flash "Saving…" for saves that finish
+// in a moment, and once it shows, keep it up long enough to read.
+const SAVING_DELAY = 400;
+const SAVING_MIN = 600;
+let savingShownAt = 0;
+let pendingStatus: ReturnType<typeof setTimeout> | undefined;
+const display = (s: string) => {
+  setStatusPill(status, s, labels);
+  if (s === 'syncing') savingShownAt = Date.now();
+};
 const show = (s: string) => {
-  status.dataset.status = s;
-  status.textContent = { connecting: 'Connecting…', synced: 'All changes saved', syncing: 'Saving…', offline: 'Offline: edits kept locally' }[s] ?? s;
   document.querySelector('#sync')!.textContent = s;
+  clearTimeout(pendingStatus);
+  const current = status.dataset.status;
+  if (s === 'syncing' && current === 'synced') {
+    pendingStatus = setTimeout(() => display('syncing'), SAVING_DELAY);
+    return;
+  }
+  const wait = SAVING_MIN - (Date.now() - savingShownAt);
+  if (s === 'synced' && current === 'syncing' && wait > 0) {
+    pendingStatus = setTimeout(() => display('synced'), wait);
+    return;
+  }
+  display(s);
 };
 session.on('status', show);
 show(session.status);

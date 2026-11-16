@@ -5,7 +5,66 @@ import 'arethesis/components';
 import 'arethesis/components/theme.css';
 ```
 
-The theme styles the kit and everything the framework generates (tooltips, menus, dropdowns, the editor, validation messages, skeletons). It's built on CSS custom properties: override `--ar-accent`, `--ar-radius`, `--ar-font` and friends on `:root` or any container. Light and dark modes follow the OS unless `<html data-theme="light|dark">` is set.
+The theme styles the kit and everything the framework generates (tooltips, menus, dropdowns, the editor, validation messages, skeletons). It's built on CSS custom properties: override `--ar-accent`, `--ar-radius`, `--ar-font` and friends on `:root` or any container.
+
+## Theming
+
+### Light, dark and high contrast
+
+The theme follows the OS:
+
+- **Dark mode** follows `prefers-color-scheme`.
+- **High contrast** follows `prefers-contrast: more`. It uses stronger text, borders and focus rings, and every text color reaches WCAG AAA contrast (7:1).
+
+Let users override either from your UI:
+
+```ts
+import { setTheme, setContrast, getTheme, getContrast } from 'arethesis/components';
+
+setTheme('dark');       // 'light' | 'dark' | 'system'
+setContrast('more');    // 'more' | 'standard' | 'system'
+getTheme();             // the theme in effect: 'light' | 'dark'
+```
+
+- **Storage:** choices are saved in localStorage (`ar-theme`, `ar-contrast`). You can pass `{ themeKey, contrastKey }` to use other keys.
+- **Markup:** choices are applied as `data-theme` and `data-contrast` on `<html>`. You can set those attributes yourself instead.
+- **Events:** an `ar-theme-change` event fires on `<html>` whenever the theme or contrast changes.
+
+### No flash of the wrong theme
+
+A saved choice has to be applied before the page first paints, or the page flashes the OS theme (often white) first. Put the boot snippet at the top of `<head>`, using either option:
+
+```html
+<!-- A plain (not module) script, so it runs before the first paint: -->
+<script src="/node_modules/arethesis/dist/theme-boot.js"></script>
+```
+
+```ts
+// Or inline it from your server or build. Pass a nonce if your CSP needs one:
+import { themeBootHtml } from 'arethesis/components';
+const head = themeBootHtml({ nonce });
+```
+
+The snippet applies the saved theme and contrast. It also adds a few critical rules: background, text color and `color-scheme` for every theme, so the first frame is right even before `theme.css` loads.
+
+### Design tokens
+
+The theme's values come from design tokens in the [W3C Design Tokens Format](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (2025.10): colors, shadows, font stacks, radii and spacing. They ship with the package, so designers and other tools can use the same source:
+
+| File | Contents |
+| --- | --- |
+| `arethesis/tokens/arethesis.resolver.json` | A [resolver document](https://www.w3.org/community/reports/design-tokens/CG-FINAL-resolver-20251028/) that combines the files below. Resolve it with `{ "theme": "light" \| "dark" \| "light-high-contrast" \| "dark-high-contrast" }`. |
+| `arethesis/tokens/base.tokens.json` | Fonts, radii, spacing |
+| `arethesis/tokens/light.tokens.json`, `dark.tokens.json` | Colors and shadows |
+| `arethesis/tokens/light-high-contrast.tokens.json`, `dark-high-contrast.tokens.json` | High-contrast overrides, applied on top of light or dark |
+
+- **Colors** use the spec's sRGB form (`colorSpace`, `components`), with a 6-digit `hex` fallback for tools that still expect hex.
+- **CSS names:** each token maps to a custom property named after its path, without the `color` group. For example, `color.text.muted` becomes `--ar-text-muted`, and `radius.sm` becomes `--ar-radius-sm`.
+- **Resolver `version`:** the 2025.10 resolver spec gives two different values for `version`, `2025-10-01` and `2025-11-01`. The tokens use `2025-10-01`, the value in the spec's own property table.
+
+To rebrand, override custom properties as above, or copy the tokens, change them and generate your own CSS with Style Dictionary or a similar tool.
+
+Contributing to Arethesis: `theme.css` is generated from `src/kit/tokens/`. Edit the tokens, then run `npm run tokens`. The tests fail if the CSS is out of date, if a token breaks the spec, or if a theme drops below its contrast target.
 
 ## `<a-data-table>`
 

@@ -1,0 +1,331 @@
+{
+  "$description": "Light theme colors and shadows.",
+  "color": {
+    "$type": "color",
+    "bg": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "hex": "#ffffff"
+      },
+      "$description": "Page background."
+    },
+    "surface": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9686,
+            0.9686,
+            0.9843
+          ],
+          "hex": "#f7f7fb"
+        },
+        "$description": "Raised or grouped areas."
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9333,
+            0.9412,
+            0.9647
+          ],
+          "hex": "#eef0f6"
+        },
+        "$description": "Hover and pressed backgrounds; a second surface level."
+      }
+    },
+    "border": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.8627,
+          0.8745,
+          0.9098
+        ],
+        "hex": "#dcdfe8"
+      },
+      "$description": "Borders and dividers."
+    },
+    "text": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0863,
+            0.102,
+            0.1373
+          ],
+          "hex": "#161a23"
+        },
+        "$description": "Body text."
+      },
+      "muted": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.3569,
+            0.3843,
+            0.4588
+          ],
+          "hex": "#5b6275"
+        },
+        "$description": "Secondary text: hints, captions, timestamps."
+      }
+    },
+    "accent": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.3098,
+            0.2745,
+            0.898
+          ],
+          "hex": "#4f46e5"
+        },
+        "$description": "Primary actions, links, focus and selection."
+      },
+      "hover": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.2627,
+            0.2196,
+            0.7922
+          ],
+          "hex": "#4338ca"
+        },
+        "$description": "Accent on hover."
+      },
+      "soft": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9333,
+            0.9412,
+            1.0
+          ],
+          "hex": "#eef0ff"
+        },
+        "$description": "Tinted background for selected or highlighted items."
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "Text on an accent background."
+      }
+    },
+    "danger": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7765,
+            0.1569,
+            0.1569
+          ],
+          "hex": "#c62828"
+        },
+        "$description": "Errors and destructive actions."
+      },
+      "soft": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9922,
+            0.9255,
+            0.9255
+          ],
+          "hex": "#fdecec"
+        },
+        "$description": "Background for error messages."
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "Text on a danger background."
+      }
+    },
+    "success": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0941,
+            0.4745,
+            0.3059
+          ],
+          "hex": "#18794e"
+        },
+        "$description": "Success states."
+      },
+      "soft": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.902,
+            0.9647,
+            0.9333
+          ],
+          "hex": "#e6f6ee"
+        },
+        "$description": "Background for success messages."
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "Text on a success background."
+      }
+    },
+    "warning": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6392,
+            0.3216,
+            0.0
+          ],
+          "hex": "#a35200"
+        },
+        "$description": "Warnings."
+      },
+      "soft": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            0.9569,
+            0.898
+          ],
+          "hex": "#fff4e5"
+        },
+        "$description": "Background for warnings."
+      }
+    }
+  },
+  "shadow": {
+    "$type": "shadow",
+    "$root": {
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0627,
+              0.0941,
+              0.1569
+            ],
+            "alpha": 0.06,
+            "hex": "#101828"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 1,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 2,
+            "unit": "px"
+          },
+          "spread": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0627,
+              0.0941,
+              0.1569
+            ],
+            "alpha": 0.08,
+            "hex": "#101828"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 4,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 16,
+            "unit": "px"
+          },
+          "spread": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      ],
+      "$description": "Cards and panels."
+    },
+    "lg": {
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0627,
+              0.0941,
+              0.1569
+            ],
+            "alpha": 0.18,
+            "hex": "#101828"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 12,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 40,
+            "unit": "px"
+          },
+          "spread": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      ],
+      "$description": "Menus, popovers and dragged items."
+    }
+  }
+}

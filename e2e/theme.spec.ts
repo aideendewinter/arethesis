@@ -48,3 +48,56 @@ test('each page is revealed in one go once its chrome is ready', async ({ page, 
   }
   void errors;
 });
+
+test('high contrast follows the OS, can be toggled, and is remembered without a flash', async ({ page, errors }) => {
+  const text = () => page.evaluate(() => getComputedStyle(document.body).color);
+  const toggle = page.getByRole('button', { name: 'High contrast' });
+
+  // The OS asks for more contrast: the high-contrast palette applies, and the toggle says so.
+  await page.emulateMedia({ colorScheme: 'light', contrast: 'more' });
+  await page.goto('/kanban/index.html');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  expect(await text()).toBe('rgb(0, 0, 0)');
+
+  // Turn it off: standard colors, remembered across pages.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  expect(await text()).toBe('rgb(22, 26, 35)');
+  await page.goto('/directory/index.html');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+  // Turn it on with a standard OS setting, in dark mode, and check the first paint.
+  await page.emulateMedia({ colorScheme: 'dark', contrast: 'no-preference' });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  expect(await text()).toBe('rgb(255, 255, 255)');
+  await page.route(/\.(js|ts)(\?|$)/, () => {});
+  await page.goto('/offline/index.html', { waitUntil: 'commit' });
+  await page.waitForFunction(() => document.body !== null);
+  expect(await page.evaluate(() => document.documentElement.dataset.contrast)).toBe('more');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).toBe('rgb(0, 0, 0)');
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+  void errors;
+});
+
+test('every page fits a phone screen, with the header links on their own row', async ({ page, errors }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  for (const path of pages) {
+    await page.goto(`/${path}`);
+    await expect(page.locator('body')).toHaveAttribute('data-ready', '');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), `${path} scrolls sideways`).toBeLessThanOrEqual(390);
+    for (const name of ['Arethesis on GitHub', 'High contrast']) await expect(page.getByRole(name === 'High contrast' ? 'button' : 'link', { name })).toBeInViewport();
+    await expect(page.locator('[data-theme-toggle]')).toBeInViewport();
+  }
+  void errors;
+});
+
+test('the header and footer link to GitHub and npm', async ({ page, errors }) => {
+  await page.goto('/kanban/index.html');
+  await expect(page.getByRole('link', { name: 'Arethesis on GitHub' })).toHaveAttribute('href', 'https://github.com/aideendewinter/arethesis');
+  const footer = page.locator('footer.site-footer');
+  await expect(footer.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/aideendewinter/arethesis');
+  await expect(footer.getByRole('link', { name: 'npm' })).toHaveAttribute('href', 'https://www.npmjs.com/package/arethesis');
+  await expect(footer).toContainText(/Arethesis \d+\.\d+\.\d+/);
+  void errors;
+});

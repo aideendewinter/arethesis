@@ -18,6 +18,7 @@
  */
 
 import type { ArethesisPlugin } from './types';
+import { VERSION } from '../version';
 import type { MixinInstance } from '../mixins/types';
 import { htmlToText, sanitizeHtml, type SanitizeOptions } from '../utils/sanitize';
 import { sanitizeUrl } from '../utils/url';
@@ -301,7 +302,7 @@ function richTextMixin(host: HTMLElement, options: RichTextOptions = {}): MixinI
 export function richTextPlugin(): ArethesisPlugin {
   return {
     name: 'rich-text',
-    version: '0.1.0',
+    version: VERSION,
     mixins: { 'rich-text': richTextMixin as never },
     validators: {
       richTextMinLength: {

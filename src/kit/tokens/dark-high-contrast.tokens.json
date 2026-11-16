@@ -1,0 +1,172 @@
+{
+  "$description": "High-contrast overrides for the dark theme (WCAG AAA text contrast). Applied on top of dark.tokens.json.",
+  "color": {
+    "$type": "color",
+    "bg": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hex": "#000000"
+      }
+    },
+    "surface": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0431,
+            0.0471,
+            0.0627
+          ],
+          "hex": "#0b0c10"
+        }
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0824,
+            0.0902,
+            0.1176
+          ],
+          "hex": "#15171e"
+        }
+      }
+    },
+    "border": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.6039,
+          0.6353,
+          0.7098
+        ],
+        "hex": "#9aa2b5"
+      }
+    },
+    "text": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "hex": "#ffffff"
+        }
+      },
+      "muted": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.8275,
+            0.8471,
+            0.8902
+          ],
+          "hex": "#d3d8e3"
+        }
+      }
+    },
+    "accent": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7216,
+            0.702,
+            1.0
+          ],
+          "hex": "#b8b3ff"
+        }
+      },
+      "hover": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.8118,
+            0.7961,
+            1.0
+          ],
+          "hex": "#cfcbff"
+        }
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "hex": "#000000"
+        }
+      }
+    },
+    "danger": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            0.6392,
+            0.6392
+          ],
+          "hex": "#ffa3a3"
+        }
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "hex": "#000000"
+        }
+      }
+    },
+    "success": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.4941,
+            0.9098,
+            0.7137
+          ],
+          "hex": "#7ee8b6"
+        }
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "hex": "#000000"
+        }
+      }
+    },
+    "warning": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            0.8118,
+            0.5216
+          ],
+          "hex": "#ffcf85"
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.1
+
+### Added
+
+- **Design tokens.** The theme is now defined as [W3C design tokens](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (Design Tokens Format Module 2025.10), with a resolver document for light, dark and high-contrast themes. They're published as `arethesis/tokens/*`, so design tools (such as Tokens Studio) and Style Dictionary can use the same values. `theme.css` is generated from them, and tests keep the two in sync.
+- **High-contrast theme.** Follows `prefers-contrast: more`, or `data-contrast="more"` on `<html>`. Every text color meets WCAG AAA contrast (7:1), borders reach 3:1, and focus rings are solid.
+- **Flash-free theme switching.**
+  - `setTheme()`, `setContrast()`, `getTheme()` and `getContrast()` switch and remember the user's choice.
+  - A boot snippet applies a saved choice before the first paint, so the page never flashes the wrong theme: either the drop-in `arethesis/components/theme-boot.js`, or `themeBootHtml()` for servers.
+
+### Changed
+
+- The release workflow is safe to re-run: it skips versions already on npm and releases that already exist.
+
 ## 0.1.0
 
 The first public release.
