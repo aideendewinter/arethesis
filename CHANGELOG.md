@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Binding a component to another list now replaces its rows. Before, the old rows were forgotten but stayed on the page, and the new list's rows were added after them. `unbind()` now removes a list's rows too.
+- A component moved in the DOM keeps its binding (and live rows) instead of silently losing it.
 - `CollabSession` keeps its textarea read-only until the document has loaded. Before, anything typed in that moment was silently replaced by the server's copy, which was easy to hit on a slow connection.
 
 ## 0.1.3

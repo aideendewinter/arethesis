@@ -53,6 +53,12 @@ const view = list.bindList({ type: 'Task', endpoint: 'listTasks', pageSize: 20 }
 
 Items render into `[data-items]` (or the component itself), keyed by id. Existing elements are reused and moved, never re-created, so focus and scroll position survive updates. Each item element gets `data-id`. When an object changes, only its element is patched.
 
+### Rebinding and moving
+
+- **One binding at a time:** a component has one binding. Calling `bind()` or `bindList()` again replaces it. The previous list's rows, placeholder and infinite-scroll sentinel are removed, and the new list renders in their place.
+- **`unbind()`:** stops listening and removes the list's rows. An object binding's content is left as it is.
+- **Moving a component:** a component moved in the DOM (disconnected, then connected again) keeps its binding, and its rows stay live. It's only unbound if you call `unbind()`.
+
 ## Islands
 
 ```html

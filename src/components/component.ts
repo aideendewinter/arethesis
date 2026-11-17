@@ -62,6 +62,8 @@ export abstract class Component extends HTMLElement {
   protected errorTemplateId = 'error';
 
   #bound: Bound | null = null;
+  /** The binding to restore when a disconnected component is connected again (it was moved). */
+  #suspended: Bound | null = null;
   #subscriptions: Array<() => void> = [];
   #lifecycle: AbortController | null = null;
   #mixins: MixinInstance[] = [];
@@ -95,6 +97,10 @@ export abstract class Component extends HTMLElement {
       this.#readyResolve();
     }
     this.onConnected();
+    // Moved in the DOM (disconnected, then connected again): pick up where it left off.
+    const suspended = this.#suspended;
+    this.#suspended = null;
+    if (suspended && !this.#bound) this.bind(suspended.kind === 'list' ? suspended.view : suspended.ref, suspended.config);
     this.#bindFromAttributes();
   }
 
@@ -102,6 +108,7 @@ export abstract class Component extends HTMLElement {
     this.#lifecycle?.abort();
     this.#lifecycle = null;
     for (const m of this.#mixins.splice(0)) m.destroy();
+    this.#suspended = this.#bound;
     this.#teardownBinding();
     this.onDisconnected();
   }
@@ -225,6 +232,7 @@ export abstract class Component extends HTMLElement {
    * previous binding. Missing objects are fetched when their type has an `endpoint`.
    */
   bind(source: BindSource, config?: BindConfig): void {
+    this.#suspended = null;
     this.#teardownBinding();
     const { store, listViews } = getRuntime();
 
@@ -260,6 +268,7 @@ export abstract class Component extends HTMLElement {
 
   /** Stop listening to the bound source. */
   unbind(): void {
+    this.#suspended = null;
     const had = this.#bound !== null;
     this.#teardownBinding();
     if (had) {
@@ -272,9 +281,20 @@ export abstract class Component extends HTMLElement {
     for (const off of this.#subscriptions.splice(0)) off();
     this.#observer?.disconnect();
     this.#observer = null;
-    if (this.#bound) getRuntime().binder.unbind(this);
-    for (const el of this.#items.values()) getRuntime().binder.unbind(el);
-    this.#items.clear();
+    const { binder } = getRuntime();
+    if (this.#bound) binder.unbind(this);
+    // The rows, placeholder and sentinel belong to the list binding: remove them
+    // with it, so a new binding starts clean instead of adding to stale rows.
+    if (this.#bound?.kind === 'list') {
+      const container = this.#itemsContainer();
+      this.#clearItems(container);
+      this.#sentinel?.remove();
+      this.#sentinel = null;
+      container.removeAttribute('aria-busy');
+    } else {
+      for (const el of this.#items.values()) binder.unbind(el);
+      this.#items.clear();
+    }
     this.#bound = null;
   }
 

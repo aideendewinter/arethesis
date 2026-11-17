@@ -282,6 +282,70 @@ describe('Component: lists', () => {
     expect(el.items).toContain('3');
   });
 
+  it('replaces the rows when bound to another list, and removes them when unbound (regression)', async () => {
+    const ctx = app(url => {
+      const team = url.searchParams.get('team');
+      const items = team === 'b' ? [{ id: 3, name: 'Cy' }] : team === 'empty' ? [] : [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bo' }];
+      return { body: { data: items, next: team === 'a' ? 'more' : null } };
+    });
+    ctx.app.defineEndpoint('people', { url: '/people', type: 'Person', list: true, mapping: { dataPath: 'data' }, pagination: { cursorPath: 'next' } });
+    const { tag } = component(LIST, config);
+    const el = await mount<Component>(tag);
+    const names = () => Array.from(el.querySelectorAll('li [data-bind=name]')).map(n => n.textContent);
+    el.bindList({ type: 'Person', endpoint: 'people', filters: { team: 'a' } });
+    await flush(5);
+    expect(names()).toEqual(['Alice', 'Bo']);
+    expect(el.querySelector('.ar-scroll-sentinel')).not.toBeNull();
+
+    // A different list: only its rows remain, with one sentinel after them.
+    el.bindList({ type: 'Person', endpoint: 'people', filters: { team: 'b' } });
+    await flush(5);
+    expect(names()).toEqual(['Cy']);
+    expect(el.querySelectorAll('.ar-scroll-sentinel')).toHaveLength(1);
+    expect(el.querySelector('ul')!.lastElementChild!.className).toBe('ar-scroll-sentinel');
+
+    // An empty list: the old rows go and the empty template shows.
+    el.bindList({ type: 'Person', endpoint: 'people', filters: { team: 'empty' } });
+    await flush(5);
+    expect(names()).toEqual([]);
+    expect(el.querySelector('.empty')).not.toBeNull();
+
+    // Unbinding removes the list's rows and placeholders; binding again doesn't duplicate.
+    el.bindList({ type: 'Person', endpoint: 'people', filters: { team: 'b' } });
+    await flush(5);
+    expect(el.querySelector('.empty')).toBeNull();
+    el.unbind();
+    expect(names()).toEqual([]);
+    el.bindList({ type: 'Person', endpoint: 'people', filters: { team: 'b' } });
+    await flush(5);
+    expect(names()).toEqual(['Cy']);
+  });
+
+  it('keeps its binding when moved in the DOM: live rows, no duplicates', async () => {
+    const { app: a } = listApp({ first: { items: [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bo' }], next: null } });
+    const { tag } = component(LIST, { fields: { name: {} } });
+    const el = await mount<Component>(tag);
+    el.bindList({ type: 'Person', endpoint: 'people' });
+    await flush(5);
+    const names = () => Array.from(el.querySelectorAll('li [data-bind=name]')).map(n => n.textContent);
+    // Move it somewhere else in the document.
+    const elsewhere = document.createElement('section');
+    document.body.appendChild(elsewhere);
+    elsewhere.appendChild(el);
+    await flush(5);
+    expect(names()).toEqual(['Alice', 'Bo']);
+    expect(el.source).not.toBeNull();
+    a.store.upsert('Person', '2', { name: 'Bo B.' });
+    expect(names()).toEqual(['Alice', 'Bo B.']); // still live
+    // Unbinding while detached means it stays unbound when re-attached.
+    el.remove();
+    el.unbind();
+    document.body.appendChild(el);
+    await flush(5);
+    expect(el.source).toBeNull();
+    expect(names()).toEqual([]);
+  });
+
   it('shows the empty template and the error template with retry', async () => {
     const pages: Record<string, { items: Array<{ id: number; name: string }>; next: string | null }> = {};
     const { app: a } = listApp(pages);
