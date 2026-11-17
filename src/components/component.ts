@@ -57,7 +57,8 @@ export abstract class Component extends HTMLElement {
   /** Current state; mirrored to the `data-state` attribute for CSS. */
   protected state: ComponentState = 'idle';
   protected error: Error | null = null;
-  protected mainTemplateId = 'main';
+  /** The template for the main state: `defineComponent`'s `templateId`, or `'main'`. */
+  protected mainTemplateId: string = this.metadata?.templateId ?? 'main';
   protected loadingTemplateId = 'loading';
   protected errorTemplateId = 'error';
 

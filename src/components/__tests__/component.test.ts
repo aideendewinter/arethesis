@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Arethesis } from '../../core/arethesis';
 import { Component } from '../component';
 import { defineComponent } from '../decorators';
+import { templateLoader } from '../template-loader';
 import { HttpError } from '../../http/http-error';
 import type { StoredObject, ListView } from '../../data/types';
 import { flush, mockFetch, type RouteHandler } from '../../../test/helpers';
@@ -423,5 +424,57 @@ describe('Component: misc', () => {
     document.body.appendChild(el);
     await el.ready;
     expect(el.innerHTML).toBe('<span>child</span>');
+  });
+});
+
+describe('Component: templateId', () => {
+  const AUTH = `
+    <template id="login"><form class="login"><span data-bind="name"></span></form></template>
+    <template id="loading"><p class="loading">Loading…</p></template>
+    <template id="item"><li data-bind="name"></li></template>`;
+
+  it('renders the template named by templateId on connect, from a template file (regression)', async () => {
+    templateLoader.setFetch((async (url: string) => new Response(url === '/t.html' ? AUTH : 'nope', { status: url === '/t.html' ? 200 : 404 })) as typeof fetch);
+    class XAuth extends Component {}
+    defineComponent({ tag: 'x-auth-file', template: '/t.html', templateId: 'login' })(XAuth);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const el = await mount<Component>('x-auth-file');
+    expect(el.querySelector('form.login')).not.toBeNull();
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+    templateLoader.setFetch(globalThis.fetch);
+  });
+
+  it('restores the templateId template after loading, for objects and lists', async () => {
+    const { app: a } = app(url => (url.pathname === '/accounts' ? { body: { data: [{ id: 2, name: 'Bo' }, { id: 3, name: 'Cy' }] } } : { body: { id: 1, name: 'Alice' } }));
+    a.defineType({ name: 'Account', endpoint: 'getAccount' });
+    a.defineEndpoint('getAccount', { url: '/accounts/:id', type: 'Account' });
+    a.defineEndpoint('listAccounts', { url: '/accounts', type: 'Account', list: true, mapping: { dataPath: 'data' } });
+    class XAuthInline extends Component {
+      static override bindConfig = { fields: { name: {} }, loadingTemplate: 'loading' };
+    }
+    defineComponent({ tag: 'x-auth-inline', html: AUTH, templateId: 'login' })(XAuthInline);
+    const el = await mount<Component>('x-auth-inline');
+    expect(el.querySelector('form.login')).not.toBeNull();
+    // Bound to an object that has to be fetched: back to #login, filled in, once loaded.
+    el.bind({ type: 'Account', id: 1 });
+    await flush(5);
+    expect(el.querySelector('form.login [data-bind=name]')!.textContent).toBe('Alice');
+
+    // Lists render inside #login too.
+    class XAccounts extends Component {
+      static override bindConfig = { fields: { name: {} }, itemsSelector: 'ul' };
+    }
+    defineComponent({ tag: 'x-accounts', html: '<template id="board"><ul class="board"></ul></template><template id="item"><li data-bind="name"></li></template>', templateId: 'board' })(XAccounts);
+    const list = await mount<Component>('x-accounts');
+    list.bindList({ type: 'Account', endpoint: 'listAccounts' });
+    await flush(5);
+    expect(Array.from(list.querySelectorAll('ul.board li')).map(li => li.textContent)).toEqual(['Bo', 'Cy']);
+  });
+
+  it("still defaults to 'main'", async () => {
+    const { tag } = component('<template id="main"><p class="main">Main</p></template>');
+    const el = await mount<Component>(tag);
+    expect(el.querySelector('p.main')).not.toBeNull();
   });
 });

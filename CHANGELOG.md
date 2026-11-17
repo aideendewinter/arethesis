@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `defineComponent`'s `templateId` option is now used. Components render that template on connect, and return to it after loading or binding. Before, they always looked for `#main`, so a template file without one rendered nothing.
+
 ## 0.1.4
 
 ### Fixed

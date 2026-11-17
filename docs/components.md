@@ -23,7 +23,7 @@ A template source (an inline `html` string or a file) holds `<template id>` elem
 
 | id | Used for |
 | --- | --- |
-| `main` | The component's content (required, or the whole file if it has no `<template>`s) |
+| `main` | The component's content (required, or the whole file if it has no `<template>`s). Use another id with `defineComponent({ …, templateId: 'login' })`, for example to share one template file between components. |
 | `loading` | While a missing object is fetched, or during `fetchData()` |
 | `error` | When loading fails. Put the message in `[data-error-message]` and add a `[data-retry]` button |
 | `item` | Each collection item (override with `bindConfig.itemTemplate`) |
