@@ -30,6 +30,13 @@
                 data-rules='[{"type":"pastDate"},{"type":"minAge","params":{"years":13}}]'></div>
               <div class="field"><label for="start">Preferred start date</label><input id="start" name="start" type="date" data-mixin="datepicker"
                 data-rules='[{"type":"futureDate","params":{"includeToday":false}},{"type":"businessDay"}]'></div>
+              <div class="field"><label for="polis">Home polis</label>
+                <a-combobox id="polis" name="polis" placeholder="Type to search">
+                  <option value="athens">Athens</option><option value="sparta">Sparta</option><option value="corinth">Corinth</option>
+                  <option value="thebes">Thebes</option><option value="argos">Argos</option><option value="miletus">Miletus</option>
+                  <option value="syracuse">Syracuse</option><option value="ephesus">Ephesus</option><option value="delphi">Delphi</option>
+                  <option value="alexandria">Alexandria</option><option value="rhodes">Rhodes</option><option value="samos">Samos</option>
+                </a-combobox></div>
             </div>
             <div class="field"><label for="bio">Short bio</label>
               <textarea id="bio" name="bio" data-rich-text data-mixin="rich-text" data-mixin-rich-text-label="Short bio" data-mixin-rich-text-placeholder="A sentence or two about you…"

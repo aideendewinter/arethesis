@@ -8,7 +8,7 @@ mountShell({
   page: 'signup',
   title: 'Signup form',
   description: 'Progressive enhancement of an ordinary form: native constraint attributes plus declarative rules, async availability checks, date rules, a sanitized rich-text bio and server-side errors mapped onto fields, all accessible from the keyboard and screen readers.',
-  features: ['<a-form>', 'async validators', 'date-utils', 'rich-text', 'dropdown', 'error summary'],
+  features: ['<a-form>', 'async validators', 'date-utils', 'rich-text', 'dropdown', 'a-combobox', 'error summary'],
   source,
 });
 

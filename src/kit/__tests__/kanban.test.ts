@@ -148,3 +148,76 @@ describe('<a-kanban>', () => {
     expect(titles('done')).toEqual(['Plan']);
   });
 });
+
+describe('<a-kanban> details', () => {
+  beforeEach(() => Arethesis.resetInstance());
+  afterEach(() => Arethesis.resetInstance());
+
+  it('filters cards, renders details, and can turn the menu off', async () => {
+    const render = vi.fn();
+    const { board, titles } = await mount({ filter: t => t.id !== 'a', card: { render, label: t => `Card ${t.title}` }, menu: false });
+    expect(titles('todo')).toEqual(['Plan']);
+    expect(render).toHaveBeenCalled();
+    expect(board.cardElement('b')!.getAttribute('aria-label')).toBe('Card Plan');
+    expect(board.config?.groupBy).toBe('status');
+  });
+
+  it('refuses a second move while the first is saving', async () => {
+    let finish: () => void = () => {};
+    const save = vi.fn(() => new Promise<void>(r => (finish = r)));
+    const { board } = await mount({ save });
+    const first = board.move('a', 'done', 0);
+    await flush();
+    expect(await board.move('a', 'todo', 0)).toBe(false);
+    expect(await board.deleteCard('a')).toBe(false);
+    finish();
+    expect(await first).toBe(true);
+  });
+
+  it('reports failed creates and deletes, and does nothing without the requests', async () => {
+    const { board } = await mount({ create: async () => { throw new Error('no'); }, remove: async () => { throw new Error('no'); } });
+    const errors: string[] = [];
+    board.addEventListener('kanban:error', e => errors.push((e as CustomEvent<{ action: string }>).detail.action));
+    expect(await board.createCard('todo', { title: 'X' })).toBeNull();
+    expect(await board.deleteCard('a')).toBe(false);
+    expect(errors).toEqual(['create', 'delete']);
+    const plain = (await mount()).board;
+    expect(await plain.createCard('todo', {})).toBeNull();
+    expect(await plain.deleteCard('a')).toBe(false);
+  });
+
+  it('creates and deletes through endpoints, and cancels an add with Escape', async () => {
+    const app = getArethesis();
+    const fetch = mockFetch((url, init) => (init.method === 'POST' ? { body: { id: 'z', title: 'Z', status: 'todo', order: 9 } } : { status: 204 }));
+    app.http.configure({ baseUrl: '/api', fetch, retry: false });
+    app.defineEndpoint('createTask', { url: '/tasks', method: 'POST', type: 'Task' });
+    app.defineEndpoint('deleteTask', { url: '/tasks/:id', method: 'DELETE' });
+    const { board } = await mount({ create: { endpoint: 'createTask' }, remove: { endpoint: 'deleteTask' } });
+    expect(await board.createCard('todo', { title: 'Z' })).toBe('z');
+    expect(fetch.calls[0].init.method).toBe('POST');
+    expect(await board.deleteCard('z')).toBe(true);
+    expect(fetch.calls[1].url).toContain('/api/tasks/z');
+    (board.querySelector('[data-add="todo"]') as HTMLButtonElement).click();
+    const input = board.querySelector<HTMLInputElement>('input[data-new="todo"]')!;
+    input.value = 'Never mind';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(input.hidden).toBe(true);
+    expect(input.value).toBe('');
+  });
+
+  it('rebuilds when moved in the DOM, and loads its list', async () => {
+    const app = getArethesis();
+    const fetch = mockFetch(() => ({ body: tasks }));
+    app.http.configure({ baseUrl: '/api', fetch, retry: false });
+    app.defineEndpoint('listTasks', { url: '/tasks', type: 'Task', list: true });
+    const { board, titles } = await mount({ list: { type: 'Task', endpoint: 'listTasks' } });
+    await flush(4);
+    expect(fetch.calls).toHaveLength(1);
+    const host = document.createElement('div');
+    document.body.append(host);
+    host.append(board);
+    await flush();
+    expect(titles('todo')).toEqual(['Plan', 'Write']);
+    expect(await board.move('missing', 'todo', 0)).toBe(false);
+  });
+});

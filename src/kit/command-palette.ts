@@ -28,7 +28,7 @@
 import { Component } from '../components/component';
 import { defineComponent } from '../components/decorators';
 import { getRuntime } from '../components/runtime';
-import { fuzzyFilter, type FuzzyMatch } from '../utils/fuzzy';
+import { fuzzyFilter, highlightMatch as highlight, type FuzzyMatch } from '../utils/fuzzy';
 import { uniqueId } from '../utils/dom';
 
 export interface PaletteCommand {
@@ -369,33 +369,6 @@ export class CommandPalette extends Component {
   }
 }
 
-/** Text nodes with the matched characters wrapped in <mark>. */
-function highlight(text: string, indices?: number[]): Node[] {
-  if (!indices?.length) return [document.createTextNode(text)];
-  const set = new Set(indices);
-  const out: Node[] = [];
-  let buffer = '';
-  let marked = false;
-  const flush = () => {
-    if (!buffer) return;
-    if (marked) {
-      const mark = document.createElement('mark');
-      mark.textContent = buffer;
-      out.push(mark);
-    } else out.push(document.createTextNode(buffer));
-    buffer = '';
-  };
-  for (let i = 0; i < text.length; i++) {
-    const m = set.has(i);
-    if (m !== marked) {
-      flush();
-      marked = m;
-    }
-    buffer += text[i];
-  }
-  flush();
-  return out;
-}
 
 /** Define `<a-command-palette>` (idempotent). `import 'arethesis/components/command-palette'` calls this. */
 export function defineCommandPalette(): void {

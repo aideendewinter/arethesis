@@ -60,7 +60,7 @@ export type * from '../plugins/types';
 export { sanitizeHtml, htmlToText } from '../utils/sanitize';
 export type { SanitizeOptions } from '../utils/sanitize';
 export { sanitizeUrl } from '../utils/url';
-export { fuzzyMatch, fuzzyFilter } from '../utils/fuzzy';
+export { fuzzyMatch, fuzzyFilter, highlightMatch } from '../utils/fuzzy';
 export { computeWindow } from '../utils/virtual-window';
 export type { WindowInput, WindowRange } from '../utils/virtual-window';
 export type { FuzzyMatch } from '../utils/fuzzy';

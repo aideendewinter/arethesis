@@ -215,6 +215,36 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-combobox>`
+
+A text field with a list of suggestions, for when a `<select>` has too many options or they come from a search. It's a form control: it submits its value under its `name` in a native `<form>` or `<a-form>`, and `required`, reset and `<label for>` work.
+
+```html
+<label for="polis">Home polis</label>
+<a-combobox id="polis" name="polis" placeholder="Type to search" required>
+  <option value="athens">Athens</option>
+  <option value="sparta">Sparta</option>
+</a-combobox>
+```
+
+The options in the markup work before scripts run. To search instead, configure a source:
+
+```ts
+combobox.configure({ source: { endpoint: 'searchPeople', param: 'q' }, valueField: 'id', labelField: 'name' });
+combobox.configure({ source: async (query, signal) => (await fetch(`/cities?q=${query}`, { signal })).json() });
+```
+
+Typing filters local options with fuzzy matching and highlights the letters that matched. Searches are debounced (`debounce`, default 200 ms) and need `minChars` (default 1). A slower, older search never replaces a newer one's results, and the number of results is announced to screen readers.
+
+| Key | |
+| --- | --- |
+| Down / Up | Open the list and move through it (disabled options are skipped) |
+| Alt+Down | Open without moving |
+| Enter or a click | Pick |
+| Escape | Close; again to clear |
+
+Leaving the field without picking restores the current choice's label, or picks an option whose label you typed exactly. With `allowCustom: true`, the typed text becomes the value. Event: `combobox:select` (`{ value, label, data }`), plus `input` and `change`.
+
 ## `<a-kanban>`
 
 A board of cards in columns. The cards are objects of one type in the store, grouped by a field and sorted by another, so changes from anywhere (an SSE update, another tab, an edit elsewhere on the page) show up on the board.

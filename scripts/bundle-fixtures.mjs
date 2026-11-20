@@ -66,9 +66,15 @@ export const fixtures = [
     mustNotContain: ['a-data-table', '#CYCLE!', 'compose: length mismatch'],
   },
   {
+    name: 'components/combobox',
+    code: `import 'arethesis/components/combobox';`,
+    mustContain: ['a-combobox'],
+    mustNotContain: ['a-data-table', 'sortable:start', 'compose: length mismatch'],
+  },
+  {
     name: 'components (all)',
     code: `import 'arethesis/components';`,
-    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban'],
+    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox'],
   },
   {
     name: 'arethesis (everything)',

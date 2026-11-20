@@ -646,3 +646,30 @@ describe('<a-form>', () => {
     edit.remove();
   });
 });
+
+describe('<a-list> virtualize attributes', () => {
+  beforeEach(() => void getArethesis());
+
+  it('reads virtualize, data-item-size and data-scroller, and numbers its items', async () => {
+    const app = getArethesis();
+    app.store.upsert('LItem', '1', { name: 'One' });
+    app.store.upsert('LItem', '2', { name: 'Two' });
+    const view = app.listViews.getOrCreate({ type: 'LItem', id: 'litems' });
+    app.listViews.populate(view.id, ['1', '2']);
+    document.body.innerHTML = `<a-list virtualize data-item-size="30"><template data-item><li data-bind="name"></li></template></a-list>
+      <a-list virtualize="window" data-scroller="self"><template data-item><div data-bind="name"></div></template></a-list>`;
+    await flush();
+    const [css, win] = Array.from(document.querySelectorAll<List>('a-list'));
+    css.bind(view);
+    win.bind(view);
+    await flush(4);
+    const ul = css.querySelector('ul')!;
+    expect(ul.classList.contains('ar-virtual-css')).toBe(true);
+    expect(ul.style.getPropertyValue('--ar-item-size')).toBe('30px');
+    expect(ul.querySelector('li')!.getAttribute('aria-posinset')).toBe('1');
+    expect(ul.querySelector('li')!.getAttribute('aria-setsize')).toBe('2');
+    expect(win.querySelector('.ar-virtual-spacer')).not.toBeNull();
+    // Plain divs have no list role, so no position attributes.
+    expect(win.querySelector('div[data-id]')!.hasAttribute('aria-posinset')).toBe(false);
+  });
+});

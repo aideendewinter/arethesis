@@ -66,3 +66,31 @@ export function fuzzyFilter<T>(query: string, items: T[], text: (item: T) => str
   }
   return out.sort((a, b) => b.match.score - b.field * 20 - (a.match.score - a.field * 20));
 }
+
+/** Text nodes with the matched characters wrapped in <mark>. */
+export function highlightMatch(text: string, indices?: number[]): Node[] {
+  if (!indices?.length) return [document.createTextNode(text)];
+  const set = new Set(indices);
+  const out: Node[] = [];
+  let buffer = '';
+  let marked = false;
+  const flush = () => {
+    if (!buffer) return;
+    if (marked) {
+      const mark = document.createElement('mark');
+      mark.textContent = buffer;
+      out.push(mark);
+    } else out.push(document.createTextNode(buffer));
+    buffer = '';
+  };
+  for (let i = 0; i < text.length; i++) {
+    const m = set.has(i);
+    if (m !== marked) {
+      flush();
+      marked = m;
+    }
+    buffer += text[i];
+  }
+  flush();
+  return out;
+}

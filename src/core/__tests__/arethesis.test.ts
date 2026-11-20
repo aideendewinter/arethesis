@@ -177,3 +177,16 @@ describe('Arethesis', () => {
     await expect(app.login({})).rejects.toThrow(/No auth/);
   });
 });
+
+describe('optional modules', () => {
+  it('names the import when the real-time managers are missing', async () => {
+    const hooks = await import('../hooks');
+    const saved = hooks.getRealtime('sse');
+    hooks.setRealtime(null as never);
+    try {
+      expect(() => hooks.getRealtime('sse')).toThrow(/arethesis\/realtime/);
+    } finally {
+      hooks.setRealtime(saved);
+    }
+  });
+});
