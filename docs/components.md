@@ -93,3 +93,23 @@ Choose event names the DOM doesn't use (`row-select`, not `select`), because nat
 Lifecycle hooks: `onConnected`, `onDisconnected`, `onBind(obj)`, `onUnbind`, `onItemRender(el, obj)`, `onListChange(view)`, `onRetry`. Override `formatErrorMessage(error)` to customize error text.
 
 Component internals use true `#private` fields, so your subclass can use any property names (`items`, `bound`, …) without clashing.
+
+## Form controls
+
+A component that is a form control extends `FormAssociatedComponent`. It then works in a native `<form>` like an `<input>`: its value is submitted under its `name`, `required` and `setCustomValidity()` feed `validity`, and a form reset, a disabled `<fieldset>` and back/forward restore all work. `DataBinder` and `<a-form>` treat it as a control.
+
+```ts
+import { FormAssociatedComponent, defineComponent } from 'arethesis';
+
+@defineComponent({ tag: 'star-rating', html: '<template id="main"><div role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="5"></div></template>' })
+class StarRating extends FormAssociatedComponent<number> {
+  protected get focusTarget() { return this.querySelector<HTMLElement>('[role=slider]')!; }
+  protected serialize(value: number) { return value ? String(value) : null; }
+  protected parse(state: string) { return Number(state); }
+  protected emptyValue() { return 0; }
+  protected override onValueChange(value: number) { this.focusTarget.setAttribute('aria-valuenow', String(value)); }
+  // Call this.commitValue(n) when the user picks n stars.
+}
+```
+
+Components live in the Light DOM, so the inner control must not have a `name` of its own. A `<label for>` pointing at the component names its `focusTarget`.

@@ -39,11 +39,12 @@ export type * from '../http/types';
 // Components
 export { Component } from '../components/component';
 export { defineComponent, getComponentMetadata, COMPONENT_METADATA } from '../components/decorators';
+export { FormAssociatedComponent } from '../components/form-associated';
 export { TemplateLoader, templateLoader } from '../components/template-loader';
 export type * from '../components/types';
 
 // Binding & validation
-export { DataBinder, formatRelative, RelativeTimeTicker, relativeTimes } from '../binding/data-binder';
+export { DataBinder, formatRelative, RelativeTimeTicker, relativeTimes, isFormAssociated } from '../binding/data-binder';
 export type { BindingHandle } from '../binding/data-binder';
 export { ValidationEngine } from '../binding/validation-engine';
 export type * from '../binding/types';

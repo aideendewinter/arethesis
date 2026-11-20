@@ -29,6 +29,19 @@ removeMixin(element, 'tooltip');
 | `listbox` | A select-only combobox (APG pattern) in place of `<select>`: arrows move through the options without picking, typing jumps to a match, Enter, Tab or a click picks, Escape closes | `listbox:change`, `listbox:commit`, `listbox:cancel` |
 | `context-menu` | Right-click, Shift+F10 or the Menu key; arrow keys, Home/End and typeahead | `context-menu:select` |
 
+## Popups
+
+Tooltips, context menus and the `dropdown` and `listbox` lists open as [popovers](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API) where the browser supports them. They render in the top layer, so a scrolling table, a card with `overflow: hidden` or a sticky header can't clip or cover them, and they follow their anchor as the page scrolls. Inside an open modal `<dialog>` they're placed in the dialog, because the rest of the page is inert. Elsewhere they fall back to fixed positioning. Either way, `hidden` reflects whether a popup is open.
+
+Your own floating UI can use the same helper:
+
+```ts
+import { attachPopup } from 'arethesis/mixins';
+
+const popup = attachPopup(panel, { anchor: () => button, placement: 'bottom', matchWidth: true });
+button.addEventListener('click', () => (popup.isOpen() ? popup.hide() : popup.show()));
+```
+
 ## How `sortable` drags
 
 The model follows [dnd kit](https://dndkit.com/):

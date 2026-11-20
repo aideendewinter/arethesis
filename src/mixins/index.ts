@@ -36,6 +36,10 @@ export function registerBuiltInMixins(): void {
 }
 
 export * from './registry';
+export { attachPopup, popupHost, supportsPopover } from './popup';
+export type { Popup, PopupOptions } from './popup';
+export { placeFloating, announce } from './utils';
+export type { Placement } from './utils';
 export { draggableMixin } from './draggable';
 export { editableMixin } from './editable';
 export { gridNavigationMixin } from './grid-navigation';
