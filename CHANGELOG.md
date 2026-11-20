@@ -19,6 +19,7 @@
 
 ### Added
 
+- **`<a-presence>`**: avatars for the people in a collaborative session, with readable initials, tooltips, an overflow list, and optional join and leave announcements. The editor example shows it in its toolbar.
 - **`<a-calendar>`**: a date grid with the full keyboard pattern, locale-aware weeks, single or range selection, `min`/`max`, events from a ListView whose date filters follow the month, and form submission.
 - **`<a-tree>`**: a tree whose branches are ListViews loaded when they're opened. It has the full tree keyboard pattern, single or multiple selection, "Show more" for long branches, and it's a form control when it has a `name`.
 - **`<a-dialog>`** and **`confirm()`**: a native `<dialog>` with a heading, a close button, `closedby`, focus management and a promise for its result, plus a ready-made yes-or-no `alertdialog`. `<a-command-palette>` shares its modal handling. The kanban example asks before deleting a card.

@@ -567,6 +567,27 @@ html.is-sorting-active, html.is-sorting-active * { cursor: grabbing !important; 
 }
 .is-dragging { cursor: grabbing !important; user-select: none; z-index: 10; }
 
+/* ── Presence ──────────────────────────────────────────────────────────── */
+a-presence { display: inline-flex; align-items: center; }
+.ar-presence { display: flex; list-style: none; margin: 0; padding: 0 0 0 0.4rem; }
+.ar-presence__person { margin-left: -0.4rem; border-radius: 50%; }
+.ar-presence__person:focus-visible { outline: none; box-shadow: var(--ar-focus); }
+.ar-presence__avatar {
+  display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%;
+  font: 700 0.72rem/1 var(--ar-font); letter-spacing: 0.02em; box-shadow: 0 0 0 2px var(--ar-bg);
+}
+.ar-presence__more {
+  margin-left: -0.4rem; width: 2rem; height: 2rem; border-radius: 50%; border: 0; box-shadow: 0 0 0 2px var(--ar-bg);
+  background: var(--ar-surface-2); color: var(--ar-text); font: 700 0.72rem/1 var(--ar-font); cursor: pointer;
+}
+.ar-presence__more:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ar-bg), var(--ar-focus); }
+.ar-presence__panel {
+  list-style: none; margin: 0; padding: 0.4rem; min-width: 12rem; max-height: 18rem; overflow: auto;
+  background: var(--ar-bg); color: var(--ar-text); border: 1px solid var(--ar-border); border-radius: var(--ar-radius); box-shadow: var(--ar-shadow-lg);
+}
+.ar-presence__panel li { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem; }
+.ar-presence__panel .ar-presence__avatar { width: 1.6rem; height: 1.6rem; font-size: 0.65rem; box-shadow: none; }
+
 /* ── Calendar ──────────────────────────────────────────────────────────── */
 a-calendar { display: block; max-width: 24rem; }
 a-calendar:has(.ar-calendar__items) { max-width: none; }

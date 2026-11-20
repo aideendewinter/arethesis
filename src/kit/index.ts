@@ -32,6 +32,7 @@ import './elements/tabs';
 import './elements/dialog';
 import './elements/tree';
 import './elements/calendar';
+import './elements/presence';
 
 export { DataTable } from './data-table';
 export type { DataTableColumn, DataTableConfig } from './data-table';
@@ -57,6 +58,8 @@ export type { ToastOptions, ToastHandle, ToastKind, ConnectToastsOptions } from 
 export { Tabs } from './tabs';
 export { Tree } from './tree';
 export { Calendar } from './calendar';
+export { Presence, initials, colorFor, textOn } from './presence';
+export type { PresenceSource } from './presence';
 export type { CalendarConfig } from './calendar';
 export type { TreeConfig } from './tree';
 export { Dialog, confirm } from './dialog';

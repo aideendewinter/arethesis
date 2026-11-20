@@ -1,5 +1,5 @@
 import { CollabSession, WebSocketManager, type CollabAnnotation, type CollabUser, type RemoteCursor } from 'arethesis';
-import { MarkdownEditor, type OutlineEntry } from 'arethesis/components';
+import { MarkdownEditor, type OutlineEntry, type Presence } from 'arethesis/components';
 import { connectMockBackend } from '../mock/client';
 import { startApp } from '../shared/boot';
 import { bindNetworkControl } from '../shared/network';
@@ -10,7 +10,7 @@ mountShell({
   page: 'editor',
   title: 'Collaborative editor',
   description: 'A Markdown studio for many hands. Every keystroke is an operation, transformed against everyone else’s so all copies converge, even across reconnects. Undo reverts only your own edits, and comments stay pinned to their words. Open a second window, or invite Socrates.',
-  features: ['<a-markdown-editor>', 'OT', 'per-user undo', 'anchored comments', 'live cursors', 'presence', 'offline edits'],
+  features: ['<a-markdown-editor>', '<a-presence>', 'OT', 'per-user undo', 'anchored comments', 'live cursors', 'presence', 'offline edits'],
   source,
 });
 
@@ -30,6 +30,9 @@ await editor.ready;
 const textarea = document.querySelector<HTMLTextAreaElement>('#doc')!;
 // The editor keeps its own per-user undo history, following remote edits through `collab:apply`.
 const session = app.collab.open('symposium', textarea, { user: me() });
+const presence = document.querySelector<Presence>('#presence')!;
+presence.self = me();
+presence.session = session;
 
 // ── Outline, and where everyone is ─────────────────────────────────────────
 

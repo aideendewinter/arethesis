@@ -215,6 +215,24 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-presence>`
+
+Who else is here, as a row of avatars.
+
+```html
+<a-presence max="4" announce aria-label="People editing"></a-presence>
+```
+
+```ts
+presence.self = { name: 'Hypatia', color: '#1d4b98' };   // shown first, as "(you)"
+presence.session = app.collab.open('doc-1', textarea);
+```
+
+- **Avatars:** each shows initials (first and last name) on the person's color, or a stable color picked from their name. The text is black or white, whichever reads better on it. Names are in the accessible text and in a tooltip.
+- **Many people:** past `max` (default 5), a "+3" button opens a list of everyone. Escape or a click elsewhere closes it.
+- **`announce`:** people joining and leaving are announced to screen readers, gathered over a second so a crowd arriving is one message.
+- **Sessions:** it needs only `peers` and `on('presence', …)`, so any source with that shape works, and importing it adds no collaboration code. `initials()`, `colorFor()` and `textOn()` are exported too.
+
 ## `<a-calendar>`
 
 A month of days to move through and pick from, which can also show events from a list.

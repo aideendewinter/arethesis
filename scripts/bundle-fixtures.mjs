@@ -102,9 +102,15 @@ export const fixtures = [
     mustNotContain: ['a-data-table', 'sortable:start', 'a-combobox'],
   },
   {
+    name: 'components/presence',
+    code: `import 'arethesis/components/presence';`,
+    mustContain: ['a-presence'],
+    mustNotContain: ['a-data-table', 'collab:join', 'compose: length mismatch', 'EventSource'],
+  },
+  {
     name: 'components (all)',
     code: `import 'arethesis/components';`,
-    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox', 'a-toast', 'a-tabs', 'a-dialog', 'a-tree', 'a-calendar'],
+    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox', 'a-toast', 'a-tabs', 'a-dialog', 'a-tree', 'a-calendar', 'a-presence'],
   },
   {
     name: 'arethesis (everything)',
