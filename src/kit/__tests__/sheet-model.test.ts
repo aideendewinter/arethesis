@@ -96,3 +96,46 @@ describe('SheetModel', () => {
     expect(code(m.getValue('B1'))).toBe('#ERROR!');
   });
 });
+
+describe('formula edge cases', () => {
+  it('handles text comparisons, unary plus, booleans, blanks and missing arguments', () => {
+    expect(calc('"b">"a"')).toBe(true);
+    expect(calc('"a"<="a"')).toBe(true);
+    expect(calc('2>=3')).toBe(false);
+    expect(calc('1<2')).toBe(true);
+    expect(calc('+5')).toBe(5);
+    expect(calc('TRUE+1')).toBe(2);
+    expect(calc('A9+1')).toBe(1); // blank is zero
+    expect(calc('ROUND(2.5)')).toBe(3);
+    expect(calc('ABS(-3)')).toBe(3);
+    expect(code(calc('ABS("x")'))).toBe('#VALUE!');
+    expect(code(calc('ROUND("x", 1)'))).toBe('#VALUE!');
+    expect(code(calc('ROUND(1, "x")'))).toBe('#VALUE!');
+    expect(calc('MIN()')).toBe(0);
+    expect(calc('MAX()')).toBe(0);
+    expect(code(calc('AVERAGE()'))).toBe('#DIV/0!');
+    expect(calc('IF(0)')).toBe(false);
+    expect(calc('IF(1)')).toBe(true);
+    expect(calc('IF("", 1, 2)')).toBe(2);
+    expect(code(calc('IF(1/0, 1, 2)'))).toBe('#DIV/0!');
+    expect(code(calc('CONCAT(1/0)'))).toBe('#DIV/0!');
+    expect(code(calc('SUM(1/0)'))).toBe('#DIV/0!');
+    expect(code(calc('SUM("x")'))).toBe('#VALUE!');
+    expect(code(calc('-"x"'))).toBe('#VALUE!');
+    expect(code(calc('(1/0)+1'))).toBe('#DIV/0!');
+    expect(code(calc('1+(1/0)'))).toBe('#DIV/0!');
+    expect(code(calc('"x"-1'))).toBe('#VALUE!');
+    expect(code(calc('1-"x"'))).toBe('#VALUE!');
+    expect(code(calc('ABS(A1:A2)'))).toBe('#VALUE!');
+    expect(calc('"a""b"')).toBe('a"b');
+    expect(calc('.5*2')).toBe(1);
+    expect(calc('1e2')).toBe(100);
+    const errs = { A1: new FormulaError('#REF!') as unknown as number };
+    expect(code(calc('SUM(A1:A2)', errs))).toBe('#REF!');
+  });
+
+  it('rejects malformed formulas', () => {
+    for (const bad of ['', ')', 'SUM(1', 'A1:', 'A1:2', '1 2', '*', '#', 'SUM(1,)']) expect(() => parse(bad)).toThrow(FormulaError);
+    expect(new FormulaError('#NAME?').toString()).toBe('#NAME?');
+  });
+});

@@ -82,3 +82,65 @@ describe('<a-command-palette>', () => {
     expect(opened).toHaveBeenCalledWith('1');
   });
 });
+
+describe('<a-command-palette> details', () => {
+  beforeEach(() => void getArethesis());
+  const key = (el: Element, k: string, init: KeyboardEventInit = {}) =>
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
+
+  it('toggles with the hotkey (or not), wraps, pages, and handles async sources and empty results', async () => {
+    const p = document.createElement('a-command-palette') as CommandPalette;
+    document.body.appendChild(p);
+    await p.ready;
+    p.setAttribute('placeholder', 'Ask…');
+    const input = p.querySelector<HTMLInputElement>('input')!;
+    expect(input.placeholder).toBe('Ask…');
+    const ran = vi.fn();
+    const items = Array.from({ length: 12 }, (_, i) => ({ id: `c${i}`, title: `Command ${i}`, subtitle: 'sub', shortcut: 'Ctrl+1', icon: '*', run: () => ran(i) }));
+    const remove = p.addSource({ id: 'all', label: 'All', limit: 20, commands: () => items });
+    p.addSource({ id: 'slow', label: 'Remote', search: async q => (q === 'zzz' ? [{ id: 'remote', title: 'zzz remote', run: () => ran('remote') }] : []) });
+    key(document.body, 'k', { metaKey: true });
+    expect(p.isOpen).toBe(true);
+    await flush(2);
+    expect(p.querySelectorAll('[role=option]')).toHaveLength(12);
+    expect(p.querySelector('.ar-palette__shortcut')!.textContent).toBe('Ctrl+1');
+    key(input, 'ArrowUp'); // wraps to the last
+    expect(input.getAttribute('aria-activedescendant')).toBe(p.querySelectorAll('[role=option]')[11].id);
+    key(input, 'ArrowDown'); // and back to the first
+    key(input, 'PageDown');
+    key(input, 'PageUp');
+    expect(input.getAttribute('aria-activedescendant')).toBe(p.querySelectorAll('[role=option]')[0].id);
+    p.querySelectorAll('[role=option]')[2].dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+    expect(input.getAttribute('aria-activedescendant')).toBe(p.querySelectorAll('[role=option]')[2].id);
+    key(input, 'Tab'); // not handled
+    input.value = 'zzz';
+    input.dispatchEvent(new Event('input'));
+    await flush(3);
+    expect(p.querySelector('[role=option]')!.textContent).toContain('zzz remote');
+    input.value = 'qqqq';
+    input.dispatchEvent(new Event('input'));
+    await flush(3);
+    expect(p.querySelector('[role=listbox]')!.hasAttribute('data-empty')).toBe(true);
+    expect(p.querySelector('.ar-palette__status')!.textContent).toBe('No results');
+    key(input, 'Enter'); // nothing to run
+    expect(ran).not.toHaveBeenCalled();
+    key(document.body, 'k', { ctrlKey: true }); // toggles closed
+    expect(p.isOpen).toBe(false);
+    // The backdrop (the dialog itself) closes it.
+    p.open();
+    p.querySelector('dialog')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(p.isOpen).toBe(false);
+    p.open();
+    p.open(); // already open
+    p.close();
+    p.close(); // already closed
+    remove();
+    p.removeSource('slow');
+    // With the hotkey turned off, Ctrl+K does nothing.
+    p.setAttribute('hotkey', '');
+    key(document.body, 'k', { ctrlKey: true });
+    expect(p.isOpen).toBe(false);
+    key(document.body, 'k', { ctrlKey: true, shiftKey: true });
+    p.remove();
+  });
+});

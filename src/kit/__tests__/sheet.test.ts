@@ -127,3 +127,140 @@ describe('<a-sheet>', () => {
     expect(s.getValue('C3')).toBe(8);
   });
 });
+
+describe('<a-sheet> keys, pointer and formula bar', () => {
+  beforeEach(() => void getArethesis());
+
+  it('moves with every navigation key and selects with Ctrl+A', async () => {
+    const s = await mount({ B2: '1' });
+    const g = grid(s);
+    s.select('C10');
+    key(g, 'Home');
+    expect(s.active).toBe('A10');
+    key(g, 'End');
+    expect(s.active).toBe('F10');
+    key(g, 'Home', { ctrlKey: true });
+    expect(s.active).toBe('A1');
+    key(g, 'End', { ctrlKey: true });
+    expect(s.active).toBe('F50');
+    key(g, 'ArrowUp', { metaKey: true });
+    expect(s.active).toBe('F1');
+    key(g, 'ArrowLeft', { ctrlKey: true });
+    expect(s.active).toBe('A1');
+    key(g, 'ArrowRight', { ctrlKey: true });
+    expect(s.active).toBe('F1');
+    key(g, 'ArrowDown', { ctrlKey: true });
+    expect(s.active).toBe('F50');
+    key(g, 'PageUp');
+    expect(s.active).not.toBe('F50');
+    key(g, 'PageDown');
+    key(g, 'Tab', { shiftKey: true });
+    expect(s.active).toBe('E50');
+    key(g, 'Tab');
+    expect(s.active).toBe('F50');
+    key(g, 'Enter', { shiftKey: true });
+    expect(s.active).toBe('F49');
+    key(g, 'a', { ctrlKey: true });
+    expect(s.selection).toBe('A1:F50');
+    key(g, 'Escape');
+    expect(s.selection).toBe('F50');
+    expect(key(g, 'F12')).toBe(true); // unhandled keys pass through
+    // Keys aimed at something else inside the sheet are ignored.
+    const formula = s.querySelector<HTMLInputElement>('.ar-sheet__formula')!;
+    expect(formula.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }))).toBe(true);
+    s.select('Z99'); // out of bounds: ignored
+    expect(s.active).toBe('F50');
+    s.setCells({ Z99: '1' }); // ignored
+  });
+
+  it('edits with F2 and Enter, cancels with Escape, and fills right', async () => {
+    const s = await mount({ A2: '=1+1', B2: '' });
+    const g = grid(s);
+    s.select('A2');
+    key(g, 'F2');
+    const input = editor(s)!;
+    expect(input.value).toBe('=1+1');
+    key(input, 'Escape');
+    expect(editor(s)).toBeNull();
+    s.select('A2');
+    s.select('C2', true);
+    key(g, 'r', { ctrlKey: true });
+    expect(s.model.getRaw('B2')).toBe('=1+1');
+    key(g, 'Backspace');
+    expect(s.getValue('A2')).toBe('');
+    // Clearing and filling skip read-only cells.
+    s.setCells({ A1: 'Head' });
+    s.select('A1');
+    key(g, 'Delete');
+    expect(s.getValue('A1')).toBe('Head');
+  });
+
+  it('selects ranges by dragging and edits on a plain click', async () => {
+    const s = await mount({ B2: '5' });
+    const g = grid(s);
+    const pointer = (type: string, addr: string, init: PointerEventInit = {}) =>
+      cell(s, addr).dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, ...init }));
+    pointer('pointerdown', 'B2');
+    pointer('pointermove', 'C4');
+    pointer('pointerup', 'C4');
+    expect(s.selection).toBe('B2:C4');
+    expect(editor(s)).toBeNull();
+    // Shift+click extends; a plain click edits.
+    pointer('pointerdown', 'D5', { shiftKey: true });
+    pointer('pointerup', 'D5');
+    expect(s.selection).toBe('B2:D5');
+    pointer('pointerdown', 'B2');
+    pointer('pointerup', 'B2');
+    expect(editor(s)!.value).toBe('5');
+    editor(s)!.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    pointer('pointerdown', 'B2', { button: 2 }); // right button: ignored
+    g.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 }));
+  });
+
+  it('edits through the formula bar', async () => {
+    const s = await mount({ C3: '2' });
+    s.select('C3');
+    s.redraw();
+    const bar = s.querySelector<HTMLInputElement>('.ar-sheet__formula')!;
+    expect(bar.value).toBe('2');
+    bar.value = '=C3*2';
+    bar.dispatchEvent(new Event('change'));
+    expect((s.getValue('C3') as FormulaError).code).toBe('#CYCLE!');
+    bar.value = '9';
+    key(bar, 'Enter');
+    expect(s.getValue('C3')).toBe(9);
+    expect(s.active).toBe('C4');
+    bar.value = 'nope';
+    key(bar, 'Escape');
+    expect(bar.value).toBe('');
+    key(bar, 'x');
+  });
+
+  it('cuts ranges and formats numbers, booleans and errors', async () => {
+    const s = document.createElement('a-sheet') as Sheet;
+    document.body.appendChild(s);
+    await s.ready;
+    s.configure({ rows: 10, cols: 4, cells: { A1: '1234.5', B1: 'TRUE', C1: '=NOPE()' }, formatNumber: v => `#${v}`, widths: { A: 50 } });
+    s.redraw();
+    expect(cell(s, 'A1').textContent).toBe('#1234.5');
+    expect(cell(s, 'B1').textContent).toBe('TRUE');
+    expect(cell(s, 'C1').title).toContain('Unknown function');
+    s.select('A1');
+    s.select('B1', true);
+    const store = new Map<string, string>();
+    const cut = new Event('cut', { bubbles: true, cancelable: true }) as ClipboardEvent;
+    Object.defineProperty(cut, 'clipboardData', { value: { setData: (t: string, v: string) => store.set(t, v), getData: () => '' } });
+    grid(s).dispatchEvent(cut);
+    expect(store.get('text/plain')).toBe('#1234.5\tTRUE');
+    expect(s.getValue('A1')).toBe('');
+    // Clipboard events without data are ignored.
+    grid(s).dispatchEvent(new Event('copy', { bubbles: true }));
+    grid(s).dispatchEvent(new Event('paste', { bubbles: true }));
+    expect(s.undo()).toBe(true);
+    expect(s.getValue('A1')).toBe(1234.5);
+    expect(s.redo()).toBe(true);
+    s.undo();
+    s.undo();
+    expect(s.undo()).toBe(false);
+  });
+});

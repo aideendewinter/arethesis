@@ -995,3 +995,55 @@ describe('editable select', () => {
     expect(saved).toHaveBeenCalledWith(expect.objectContaining({ detail: { value: 'b', previous: 'a' } }));
   });
 });
+
+describe('listbox keys', () => {
+  it('pages, jumps to the ends, wraps type-ahead, and picks with Tab or Alt+Up', async () => {
+    const { listboxMixin } = await import('../listbox');
+    const opts = Array.from({ length: 30 }, (_, i) => `item ${String(i).padStart(2, '0')}`);
+    const el = html('<div></div>');
+    const commits: Array<[string, boolean]> = [];
+    el.addEventListener('listbox:commit', e => commits.push([(e as CustomEvent).detail.key, (e as CustomEvent).detail.shiftKey]));
+    const m = listboxMixin(el, { options: [...opts, { value: 'z', label: 'zeta', disabled: true }], label: 'Items' });
+    const active = () => (m.getActiveValue as () => string)();
+    key(el, 'End'); // opens at the end (skipping the disabled last one)
+    expect(active()).toBe('item 29');
+    key(el, 'PageUp');
+    expect(active()).toBe('item 19');
+    key(el, 'PageDown');
+    expect(active()).toBe('item 29');
+    key(el, 'Home');
+    expect(active()).toBe('item 00');
+    key(el, 'i'); // type-ahead from the next option
+    expect(active()).toBe('item 01');
+    key(el, 'ArrowDown', { altKey: true }); // already open: ignored
+    key(el, 'Tab', { shiftKey: true });
+    expect(commits.at(-1)).toEqual(['Tab', true]);
+    key(el, 'Home');
+    key(el, 'ArrowUp', { altKey: true });
+    expect(commits.at(-1)![0]).toBe('Enter');
+    expect((m.getValue as () => string)()).toBe('item 00');
+    (m.setValue as (v: string) => void)('item 05');
+    expect(el.textContent).toBe('item 05');
+    key(el, 'Enter');
+    const list = document.getElementById(el.getAttribute('aria-controls')!)!;
+    list.children[3].dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+    expect(active()).toBe('item 03');
+    list.children[30].dispatchEvent(new MouseEvent('mousemove', { bubbles: true })); // disabled
+    expect(active()).toBe('item 03');
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    list.dispatchEvent(down);
+    expect(down.defaultPrevented).toBe(true);
+    el.dispatchEvent(new FocusEvent('blur'));
+    expect(el.getAttribute('aria-expanded')).toBe('false');
+    el.click();
+    expect((m.isOpen as () => boolean)()).toBe(true);
+    el.click();
+    expect((m.isOpen as () => boolean)()).toBe(false);
+    key(el, 'x', { ctrlKey: true }); // ignored when closed
+    key(el, 'Home'); // opens
+    key(el, 'F1'); // ignored when open
+    (m.close as () => void)();
+    (m.close as () => void)();
+    m.destroy();
+  });
+});

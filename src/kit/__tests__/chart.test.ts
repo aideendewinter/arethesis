@@ -112,3 +112,52 @@ describe('<a-chart>', () => {
     expect(spark.querySelector('.ar-chart__legend')!.children).toHaveLength(0);
   });
 });
+
+describe('<a-chart> axes and pointer', () => {
+  beforeEach(() => void getArethesis());
+
+  it('formats time and custom x values, honours y bounds, and draws negative bars', async () => {
+    const t0 = new Date(2026, 0, 1, 12, 0, 0).getTime();
+    const time = await mount({ type: 'line', label: 'T', series: [{ key: 'v', label: 'V' }], x: { type: 'time' }, data: [{ x: t0, v: 1 }, { x: new Date(t0 + 60_000), v: 2 }], y: { min: 0, max: 10 } });
+    expect(time.querySelectorAll('.ar-chart__tick').length).toBeGreaterThan(2);
+    expect(time.querySelector('tbody th')!.textContent).toMatch(/\d/);
+    const custom = await mount({ type: 'bar', label: 'C', series: [{ key: 'v', label: 'V' }], x: { type: 'category', format: x => `<${x}>` }, data: [{ x: 'a', v: -5 }, { x: 'b', v: 3 }, { x: 'c', v: null as unknown as number }] });
+    expect(custom.querySelector('tbody th')!.textContent).toBe('<a>');
+    expect(custom.querySelectorAll('.ar-chart__bar')).toHaveLength(2);
+    expect(custom.querySelector('.ar-chart__grid.is-zero')).not.toBeNull();
+    expect(custom.querySelector('tbody td:last-child')!.textContent).toBe('5'.replace('5', '-5'));
+    const big = await mount({ type: 'line', label: 'B', series: [{ key: 'v', label: 'V' }], x: { type: 'number' }, data: [{ x: 1, v: 50_000 }, { x: 2, v: 90_000 }] });
+    expect(Array.from(big.querySelectorAll('.ar-chart__tick')).some(t => /K/.test(t.textContent ?? ''))).toBe(true);
+    const empty = await mount({ type: 'area', label: 'E', series: [{ key: 'v', label: 'V' }], data: [] });
+    expect(empty.querySelectorAll('.ar-chart__line')).toHaveLength(0);
+    const flat = await mount({ type: 'line', label: 'F', series: [{ key: 'v', label: 'V' }], data: [{ x: 'only', v: 3 }] });
+    expect(flat.querySelectorAll('.ar-chart__dot')).toHaveLength(1);
+  });
+
+  it('tracks the pointer with a crosshair or a band, and hides on leave', async () => {
+    const line = await mount({ type: 'line', label: 'L', series: [{ key: 'web', label: 'Web' }, { key: 'api', label: 'API' }], data: rows });
+    const plot = line.querySelector<HTMLElement>('.ar-chart__plot')!;
+    plot.dispatchEvent(new PointerEvent('pointermove', { clientX: 150, clientY: 50, bubbles: true }));
+    expect(line.querySelector('.ar-chart__crosshair')).not.toBeNull();
+    expect(line.querySelectorAll('.ar-chart__dot.is-hover')).toHaveLength(2);
+    expect(line.querySelector<HTMLElement>('.ar-chart__tooltip')!.hidden).toBe(false);
+    line.push({ x: 4, web: 1, api: 2 }); // redraws keep the readout
+    line.redraw();
+    plot.dispatchEvent(new PointerEvent('pointerleave'));
+    expect(line.querySelector<HTMLElement>('.ar-chart__tooltip')!.hidden).toBe(true);
+    key(plot, 'End');
+    key(plot, 'ArrowRight');
+    key(plot, 'x');
+    plot.dispatchEvent(new FocusEvent('blur'));
+
+    const bars = await mount({ type: 'stacked-bar', label: 'S', series: [{ key: 'web', label: 'Web' }, { key: 'api', label: 'API' }], data: rows });
+    bars.querySelector('.ar-chart__plot')!.dispatchEvent(new PointerEvent('pointermove', { clientX: 10, bubbles: true }));
+    expect(bars.querySelector('.ar-chart__band')).not.toBeNull();
+    bars.setSeriesVisible('api', false);
+    bars.setSeriesVisible('api', true);
+    bars.setData([]);
+    bars.redraw();
+    expect(bars.data).toEqual([]);
+    bars.remove();
+  });
+});
