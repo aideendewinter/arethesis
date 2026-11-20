@@ -91,10 +91,13 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
 
   const schedule = (): void => {
     if (frame) return;
-    frame = requestAnimationFrame(() => {
+    // Mark as scheduled before asking for the frame, in case it runs at once.
+    frame = -1;
+    const id = requestAnimationFrame(() => {
       frame = 0;
       reposition();
     });
+    if (frame === -1) frame = id;
   };
 
   function show(): void {
@@ -124,7 +127,7 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
     open = false;
     listeners?.abort();
     listeners = null;
-    if (frame) cancelAnimationFrame(frame);
+    if (frame > 0) cancelAnimationFrame(frame);
     frame = 0;
     if (native) {
       try {

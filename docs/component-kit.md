@@ -213,6 +213,8 @@ Editing works like a spreadsheet, and the editor floats over the cell, so nothin
 
 Invalid values keep the editor open with the message underneath, and starting, saving and errors are announced to screen readers. The editor itself is `openCellEditor()` (exported), for building other grids.
 
+For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
+
 ## `<a-list>`
 
 A list with no JavaScript. Fields come from `data-bind` in the item template; `data-display`, `data-format` and `data-attribute` configure them.
@@ -225,6 +227,8 @@ A list with no JavaScript. Fields come from `data-bind` in the item template; `d
   <template data-error><li>Couldn’t load. <button data-retry>Retry</button></li></template>
 </a-list>
 ```
+
+Add `virtualize` (or `virtualize="css"`) for long lists: off-screen items stay in the DOM but aren't rendered. `virtualize="window"` keeps only the items on screen, with `data-item-size` (in px) and `data-scroller` (a selector, `self` or `viewport`). Items get `aria-posinset` and `aria-setsize` either way.
 
 ## `<a-form>`
 

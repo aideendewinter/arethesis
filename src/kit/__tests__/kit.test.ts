@@ -63,6 +63,38 @@ describe('<a-data-table>', () => {
 
   const names = (table: Element) => Array.from(table.querySelectorAll('tbody td[data-col=name]')).map(td => td.textContent);
 
+  it('virtualizes rows: aria-rowindex, spacer rows, and the edited row stays', async () => {
+    const { app } = tableApp();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+      cb(0);
+      return 1;
+    });
+    // A 60px-tall scroller showing two 30px rows; overscan 0.
+    let scrolled = 0;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const top = this.classList.contains('ar-virtual-spacer') || this.localName === 'tbody' ? -scrolled : 0;
+      return new DOMRect(0, top, 100, 30);
+    });
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(60);
+    const table = await mountTable(app, { virtualize: { rowHeight: 30, overscan: 0 } });
+    expect(names(table)).toEqual(['Person 1', 'Person 2']);
+    const rows = () => Array.from(table.querySelectorAll('tbody tr[data-id]'));
+    expect(rows().map(r => r.getAttribute('aria-rowindex'))).toEqual(['2', '3']);
+    const spacers = table.querySelectorAll<HTMLElement>('tbody tr.ar-virtual-spacer');
+    expect(spacers).toHaveLength(2);
+    expect(spacers[0].getAttribute('aria-hidden')).toBe('true');
+    expect(spacers[1].style.height).toBe('30px'); // the third loaded row
+
+    // Edit the first row, then scroll it out of the window: it stays.
+    (table.querySelector('tbody tr[data-id="1"] td[data-col=name]') as HTMLElement).click();
+    expect(table.editing).not.toBeNull();
+    scrolled = 30;
+    table.querySelector('.ar-table__scroll')!.dispatchEvent(new Event('scroll'));
+    await flush(4);
+    expect(rows().map(r => r.getAttribute('data-id'))).toEqual(['1', '2', '3']);
+    expect(rows()[2].getAttribute('aria-rowindex')).toBe('4');
+  });
+
   it('renders headers, rows, status and pages with infinite scroll', async () => {
     const { app } = tableApp();
     const table = await mountTable(app);
@@ -72,7 +104,7 @@ describe('<a-data-table>', () => {
     expect(table.querySelector('tbody td[data-col=salary]')!.textContent).toBe('$1,000.00');
     expect(table.querySelector('tbody td[data-col=role] .badge')!.textContent).toBe('design');
     expect(table.querySelector('.ar-table__status')!.textContent).toBe('Showing 3 of 5');
-    expect(table.querySelector('table')!.getAttribute('aria-rowcount')).toBe('5');
+    expect(table.querySelector('table')!.getAttribute('aria-rowcount')).toBe('6'); // 5 people + the header row
     MockIntersectionObserver.latest()!.trigger();
     await flush(8);
     expect(names(table)).toHaveLength(5);

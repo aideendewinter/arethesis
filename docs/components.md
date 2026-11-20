@@ -53,6 +53,19 @@ const view = list.bindList({ type: 'Task', endpoint: 'listTasks', pageSize: 20 }
 
 Items render into `[data-items]` (or the component itself), keyed by id. Existing elements are reused and moved, never re-created, so focus and scroll position survive updates. Each item element gets `data-id`. When an object changes, only its element is patched.
 
+### Long lists
+
+Set `virtualize` to keep long lists light:
+
+- **`'window'` (or `true`):** only the items on screen are in the DOM, plus `overscan` (default 8) on each side, with spacers standing in for the rest. Items scroll in and out as you scroll. The item that has focus stays rendered, and so does any item you pin with `this.pinItem(id)` (it returns a function that unpins). Items must be one height. It's measured from the first item, or set with `itemSize`. Tell it what scrolls with `scroller`: a selector inside the component, `'self'`, or `'viewport'` (the default).
+- **`'css'`:** every item stays in the DOM, but the browser skips rendering the ones off screen (`content-visibility: auto`). Find-in-page and screen readers' browse mode still see every item, so prefer it unless the list is very long. It has no effect on table rows.
+
+```ts
+list.bindList({ type: 'Task', endpoint: 'listTasks' }, { fields: { title: {} }, virtualize: { mode: 'window', itemSize: 48 } });
+```
+
+Override `onItemPosition(el, index, view)` to annotate items with their position, for example `aria-rowindex`; it's called for every rendered item. `revealItem(index)` scrolls a virtualized list to an item and returns its element, and `onItemRemove(el)` runs before an item's element is removed.
+
 ### Rebinding and moving
 
 - **One binding at a time:** a component has one binding. Calling `bind()` or `bindList()` again replaces it. The previous list's rows, placeholder and infinite-scroll sentinel are removed, and the new list renders in their place.

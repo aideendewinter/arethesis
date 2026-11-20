@@ -103,6 +103,14 @@ export interface BindConfig {
   itemsSelector?: string;
   /** Load more items when the end of the collection scrolls into view. */
   infiniteScroll?: boolean | { threshold?: number; root?: 'self' | 'viewport' };
+  /**
+   * Keep long lists light. `'window'` (or `true`) renders only the items on
+   * screen plus `overscan`, with spacers for the rest; items must be one
+   * height. `'css'` keeps every item but lets the browser skip rendering
+   * off-screen ones (`content-visibility`), so find-in-page and screen readers
+   * still see them all; it has no effect on table rows.
+   */
+  virtualize?: boolean | 'window' | 'css' | VirtualizeOptions;
   /** When to validate. @default ['blur', 'change'] (and on input once a field has shown an error) */
   validateOn?: ValidationTrigger[];
   /** Render a list of errors at `[data-error-summary]` (or a selector) when `validate()` fails. */
@@ -146,6 +154,19 @@ export interface FieldValidationConfig {
   debounce?: number;
   /** Human-readable name used as `{label}` in messages. */
   label?: string;
+}
+
+export interface VirtualizeOptions {
+  mode?: 'window' | 'css';
+  /** Item height in px. @default measured from the first item */
+  itemSize?: number;
+  /** Items rendered beyond each edge of the screen. @default 8 */
+  overscan?: number;
+  /**
+   * What scrolls: a selector inside the component, `'self'`, or `'viewport'`
+   * (the page). @default `'viewport'`
+   */
+  scroller?: string;
 }
 
 export interface ValidationError {

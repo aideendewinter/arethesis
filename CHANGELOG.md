@@ -13,10 +13,13 @@
 - Importing a mixin or plugin module no longer registers it as a side effect. `import 'arethesis'` still registers all the built-ins. With `arethesis/core`, call `registerBuiltInMixins()` from `arethesis/mixins`, or `mixinRegistry.register()` for just the ones you use.
 
 - **Tooltips, context menus and dropdown lists open as popovers** where the browser supports them. A scrolling table or a card with `overflow: hidden` no longer clips them, and lists follow their input as the page scrolls. Inside a modal `<dialog>` they open in the dialog.
+- New rows are inserted in one batch.
+- `<a-data-table>`'s `aria-rowcount` now counts the header row, and is `-1` while the total is unknown.
 - A list's loading, empty and error placeholders are no longer wrapped in a `<div>`, so a loading `<li>` stays a direct child of its `<ul>`.
 
 ### Added
 
+- **Virtualized lists.** `virtualize` on a list binding renders only the items on screen (`'window'`) or lets the browser skip off-screen ones (`'css'`). `<a-data-table>` takes `virtualize: true`, keeps `aria-rowindex` on every row, and keeps the row being edited. `<a-list>` takes a `virtualize` attribute. New `Component` hooks: `onItemPosition`, `onItemRemove`, `pinItem`, `itemIndex` and `revealItem`.
 - **`FormAssociatedComponent`**: a base class for components that are form controls. They submit with a native `<form>`, report `validity`, and handle reset, disabled fieldsets and state restore. `DataBinder` and `<a-form>` treat them as controls.
 - `attachPopup()` (in `arethesis/mixins`): the popover helper behind the mixins, for your own floating UI.
 - `mixinRegistry.ensure(name, mixin)` registers a mixin unless the name is taken.

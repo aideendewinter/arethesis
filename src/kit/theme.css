@@ -567,6 +567,11 @@ html.is-sorting-active, html.is-sorting-active * { cursor: grabbing !important; 
 }
 .is-dragging { cursor: grabbing !important; user-select: none; z-index: 10; }
 
+/* ── Virtualized lists ─────────────────────────────────────────────────── */
+.ar-virtual-css > * { content-visibility: auto; contain-intrinsic-size: auto var(--ar-item-size, 3rem); }
+.ar-virtual-spacer { margin: 0; padding: 0; border: 0; list-style: none; pointer-events: none; }
+.ar-virtual-spacer > td { padding: 0; border: 0; }
+
 /* ── Popups (tooltips, menus, lists) ───────────────────────────────────── */
 /* Popups open in the top layer where supported; they're placed by script, so
    undo the UA's centered popover box. */

@@ -21,6 +21,7 @@
 import { Component } from '../components/component';
 import { defineComponent } from '../components/decorators';
 import type { BindConfig, DisplayType, FieldBindConfig } from '../binding/types';
+import type { ListView } from '../data/types';
 
 export class List extends Component {
   #templates = new Map<string, DocumentFragment>();
@@ -82,7 +83,26 @@ export class List extends Component {
       loadingTemplate: this.#templates.has('loading') ? 'loading' : undefined,
       errorTemplate: this.#templates.has('error') ? 'error' : undefined,
       infiniteScroll: this.hasAttribute('infinite') ? { threshold: Number(this.getAttribute('data-threshold')) || 300 } : false,
+      virtualize: this.#virtualize(),
     };
+  }
+
+  /** `virtualize="css"` (or bare `virtualize`) or `virtualize="window"`, with `data-item-size` in px. */
+  #virtualize(): BindConfig['virtualize'] {
+    if (!this.hasAttribute('virtualize')) return undefined;
+    const mode = this.getAttribute('virtualize') === 'window' ? 'window' : 'css';
+    const size = Number(this.getAttribute('data-item-size')) || undefined;
+    const scroller = this.getAttribute('data-scroller') ?? undefined;
+    return { mode, itemSize: size, scroller };
+  }
+
+  protected override onItemPosition(element: Element, index: number, view: ListView): void {
+    // Screen readers can say "12 of 340" even when only some items are rendered.
+    // Only roles that allow it: list items, options and feed articles.
+    const role = element.getAttribute('role') ?? (element.localName === 'li' ? 'listitem' : element.localName === 'article' ? 'article' : '');
+    if (!['listitem', 'option', 'article', 'treeitem', 'menuitem'].includes(role)) return;
+    element.setAttribute('aria-posinset', String(index + 1));
+    element.setAttribute('aria-setsize', String(view.totalCount ?? (view.hasMore ? -1 : view.ids.length)));
   }
 }
 

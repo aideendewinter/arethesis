@@ -24,13 +24,14 @@
  * @module components/component
  */
 
-import type { BindConfig } from '../binding/types';
+import type { BindConfig, VirtualizeOptions } from '../binding/types';
 import type { ListView, ListViewConfig, ObjectRef, StoredObject, SubscriptionEvent } from '../data/types';
 import type { BindSource, ComponentMetadata, ComponentState, DataFetcher } from './types';
 import type { MixinInstance } from '../mixins/types';
 import { getComponentMetadata } from './decorators';
 import { templateLoader } from './template-loader';
 import { getRuntime } from './runtime';
+import { computeWindow } from '../utils/virtual-window';
 import { mixinRegistry } from '../mixins/registry';
 import { HttpError } from '../http/http-error';
 
@@ -428,6 +429,10 @@ export abstract class Component extends HTMLElement {
     }
     const config = this.bindConfig ?? { fields: {} };
     const container = this.#itemsContainer();
+    const v = config.virtualize;
+    const css = v === 'css' || (typeof v === 'object' && v.mode === 'css');
+    container.classList.toggle('ar-virtual-css', css);
+    if (css && typeof v === 'object' && v.itemSize) (container as HTMLElement).style.setProperty('--ar-item-size', `${v.itemSize}px`);
     container.setAttribute('aria-busy', String(view.status === 'loading' || view.status === 'loading-more'));
 
     if (view.ids.length === 0) {
@@ -452,9 +457,11 @@ export abstract class Component extends HTMLElement {
     const { binder } = getRuntime();
     for (const el of this.#items.values()) {
       binder.unbind(el);
+      this.onItemRemove(el);
       el.remove();
     }
     this.#items.clear();
+    this.#stopVirtual();
     removePlaceholders(container);
   }
 
@@ -488,19 +495,41 @@ export abstract class Component extends HTMLElement {
   async #reconcile(container: Element, view: ListView, config: BindConfig): Promise<void> {
     const { store, binder } = getRuntime();
     const templateId = config.itemTemplate ?? 'item';
-    const wanted = new Set(view.ids);
+    const virtual = this.#virtualOptions(config);
+    const range = virtual ? this.#computeRange(container, view, virtual) : { start: 0, end: view.ids.length };
+    const pinned = virtual ? this.#pinnedIds(container) : new Set<string>();
+    // In window mode, only the items on screen (and pinned ones, such as the
+    // focused row) are rendered.
+    const rendered: Array<{ id: string; index: number }> = [];
+    view.ids.forEach((id, index) => {
+      if ((index >= range.start && index < range.end) || pinned.has(id)) rendered.push({ id, index });
+    });
+    const wanted = new Set(rendered.map(r => r.id));
 
     for (const [id, el] of this.#items) {
       if (!wanted.has(id)) {
         binder.unbind(el);
+        this.onItemRemove(el);
         el.remove();
         this.#items.delete(id);
       }
     }
 
+    const spacers = virtual ? this.#spacers(container) : null;
     let itemTemplate: DocumentFragment | null = null;
-    let previous: Element | null = null;
-    for (const id of view.ids) {
+    let previous: Element | null = spacers?.before ?? null;
+    // New items are collected and inserted in runs, one DOM insertion each.
+    let run: Element[] = [];
+    let runAfter: Element | null = null;
+    const flush = (): void => {
+      if (!run.length) return;
+      const fragment = document.createDocumentFragment();
+      fragment.append(...run);
+      if (runAfter) runAfter.after(fragment);
+      else container.prepend(fragment);
+      run = [];
+    };
+    for (const { id, index } of rendered) {
       const obj = store.get(view.type, id);
       if (!obj) continue;
       let el = this.#items.get(id);
@@ -514,16 +543,201 @@ export abstract class Component extends HTMLElement {
         this.#items.set(id, el);
         binder.bind(el, obj.data, this.#withWriteBack(config, view.type, id));
         this.onItemRender(el, obj);
+        if (!run.length) runAfter = previous;
+        run.push(el);
+      } else {
+        flush();
+        // Move into position only if needed (keeps focus and avoids layout churn).
+        const expectedNext: ChildNode | null = previous ? previous.nextSibling : container.firstChild;
+        if (el !== expectedNext) {
+          if (previous) previous.after(el);
+          else container.prepend(el);
+        }
       }
-      // Move into position only if needed (keeps focus and avoids layout churn).
-      const expectedNext: ChildNode | null = previous ? previous.nextSibling : container.firstChild;
-      if (el !== expectedNext) {
-        if (previous) previous.after(el);
-        else container.prepend(el);
-      }
+      this.onItemPosition(el, index, view);
       previous = el;
     }
+    flush();
+    if (spacers && virtual) {
+      const size = this.#itemSize(virtual);
+      // Pinned items outside the window take up some of the spacers' room.
+      const pinnedBefore = rendered.filter(r => r.index < range.start).length;
+      const pinnedAfter = rendered.filter(r => r.index >= range.end).length;
+      spacers.before.style.height = `${Math.max(0, range.start - pinnedBefore) * size}px`;
+      spacers.after.style.height = `${Math.max(0, view.ids.length - range.end - pinnedAfter) * size}px`;
+      (previous ?? spacers.before).after(spacers.after);
+      if (!this.#measured && virtual.itemSize === undefined) {
+        const first = this.#items.values().next().value as HTMLElement | undefined;
+        const height = first?.getBoundingClientRect().height ?? 0;
+        if (height > 0) {
+          this.#measured = height;
+          // Re-run with the real size.
+          this.#scheduleWindow();
+        }
+      }
+      this.#watchScroll(virtual);
+    }
     if (this.#sentinel && this.#sentinel.parentElement === container) container.append(this.#sentinel);
+  }
+
+  // ── Virtualized lists ────────────────────────────────────────────────────
+
+  #virtualScroll: AbortController | null = null;
+  #virtualFrame = 0;
+  #virtualRange: { start: number; end: number } | null = null;
+  #measured = 0;
+  #pins = new Map<string, number>();
+  #spacerEls: { before: HTMLElement; after: HTMLElement } | null = null;
+
+  #virtualOptions(config: BindConfig): Required<Pick<VirtualizeOptions, 'overscan' | 'scroller'>> & VirtualizeOptions | null {
+    const v = config.virtualize;
+    if (!v) return null;
+    const opts: VirtualizeOptions = typeof v === 'object' ? v : { mode: v === 'css' ? 'css' : 'window' };
+    if (opts.mode === 'css') return null;
+    return { overscan: 8, scroller: 'viewport', ...opts };
+  }
+
+  #itemSize(virtual: VirtualizeOptions): number {
+    return virtual.itemSize ?? (this.#measured || 40);
+  }
+
+  #scrollerOf(virtual: VirtualizeOptions): Element | null {
+    if (virtual.scroller === 'viewport' || !virtual.scroller) return null;
+    if (virtual.scroller === 'self') return this;
+    return this.querySelector(virtual.scroller);
+  }
+
+  #computeRange(container: Element, view: ListView, virtual: VirtualizeOptions & { overscan: number }): { start: number; end: number } {
+    const scroller = this.#scrollerOf(virtual);
+    const viewportTop = scroller ? scroller.getBoundingClientRect().top : 0;
+    const viewport = scroller ? scroller.clientHeight : window.innerHeight;
+    // The list starts where the spacer before it starts.
+    const top = (this.#spacerEls?.before.isConnected ? this.#spacerEls.before : container).getBoundingClientRect().top;
+    const range = computeWindow({
+      listTop: top - viewportTop,
+      // Before layout (or in tests) there's no size: render one screenful.
+      viewport: viewport || 800,
+      itemSize: this.#itemSize(virtual),
+      count: view.ids.length,
+      overscan: virtual.overscan,
+    });
+    this.#virtualRange = range;
+    return range;
+  }
+
+  #spacers(container: Element): { before: HTMLElement; after: HTMLElement } {
+    if (!this.#spacerEls || this.#spacerEls.before.parentElement !== container) {
+      const make = (): HTMLElement => {
+        const tag = container.localName === 'tbody' ? 'tr' : container.localName === 'ul' || container.localName === 'ol' ? 'li' : 'div';
+        const el = document.createElement(tag);
+        el.className = 'ar-virtual-spacer';
+        el.setAttribute('aria-hidden', 'true');
+        if (tag === 'li') el.setAttribute('role', 'presentation');
+        if (tag === 'tr') {
+          const td = document.createElement('td');
+          td.colSpan = 1000;
+          el.append(td);
+        }
+        return el;
+      };
+      this.#spacerEls?.before.remove();
+      this.#spacerEls?.after.remove();
+      this.#spacerEls = { before: make(), after: make() };
+    }
+    if (container.firstChild !== this.#spacerEls.before) container.prepend(this.#spacerEls.before);
+    return this.#spacerEls;
+  }
+
+  #pinnedIds(container: Element): Set<string> {
+    const ids = new Set(this.#pins.keys());
+    const focused = document.activeElement?.closest?.('[data-id]');
+    if (focused && focused.parentElement === container) ids.add(focused.getAttribute('data-id')!);
+    return ids;
+  }
+
+  #watchScroll(virtual: VirtualizeOptions): void {
+    if (this.#virtualScroll) return;
+    this.#virtualScroll = new AbortController();
+    const { signal } = this.#virtualScroll;
+    const target: EventTarget = this.#scrollerOf(virtual) ?? window;
+    target.addEventListener('scroll', () => this.#scheduleWindow(), { passive: true, signal });
+    window.addEventListener('resize', () => this.#scheduleWindow(), { signal });
+  }
+
+  #scheduleWindow(): void {
+    if (this.#virtualFrame) return;
+    const run = (): void => {
+      this.#virtualFrame = 0;
+      if (this.#bound?.kind !== 'list') return;
+      const view = this.#bound.view;
+      const config = this.bindConfig ?? { fields: {} };
+      const virtual = this.#virtualOptions(config);
+      if (!virtual) return;
+      const before = this.#virtualRange;
+      const container = this.#itemsContainer();
+      const next = this.#computeRange(container, view, virtual);
+      if (before && before.start === next.start && before.end === next.end) return;
+      void this.#reconcile(container, view, config);
+    };
+    // Mark as scheduled before asking for the frame, in case it runs at once.
+    this.#virtualFrame = -1;
+    const id = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(run) : (setTimeout(run, 16) as unknown as number);
+    if (this.#virtualFrame === -1) this.#virtualFrame = id;
+  }
+
+  #stopVirtual(): void {
+    this.#virtualScroll?.abort();
+    this.#virtualScroll = null;
+    if (this.#virtualFrame > 0 && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.#virtualFrame);
+    this.#virtualFrame = 0;
+    this.#virtualRange = null;
+    this.#spacerEls?.before.remove();
+    this.#spacerEls?.after.remove();
+    this.#spacerEls = null;
+    this.#pins.clear();
+  }
+
+  /**
+   * Keep an item rendered while it's off screen in a virtualized list (for
+   * example, while it's being edited). Returns a function that unpins it.
+   * The item holding focus is always kept.
+   */
+  protected pinItem(id: string): () => void {
+    this.#pins.set(id, (this.#pins.get(id) ?? 0) + 1);
+    return () => {
+      const n = (this.#pins.get(id) ?? 1) - 1;
+      if (n > 0) this.#pins.set(id, n);
+      else this.#pins.delete(id);
+    };
+  }
+
+  /** The index of an item in the bound list, or -1. */
+  protected itemIndex(id: string): number {
+    return this.#bound?.kind === 'list' ? this.#bound.view.ids.indexOf(id) : -1;
+  }
+
+  /**
+   * Scroll a virtualized list so the item at `index` is rendered, and return
+   * its element. In a list that isn't virtualized it just returns the element.
+   */
+  protected async revealItem(index: number): Promise<Element | null> {
+    if (this.#bound?.kind !== 'list') return null;
+    const view = this.#bound.view;
+    const id = view.ids[index];
+    if (id === undefined) return null;
+    const config = this.bindConfig ?? { fields: {} };
+    const virtual = this.#virtualOptions(config);
+    if (virtual && !this.#items.has(id)) {
+      const size = this.#itemSize(virtual);
+      const scroller = this.#scrollerOf(virtual);
+      const container = this.#itemsContainer();
+      const listTop = (this.#spacerEls?.before ?? container).getBoundingClientRect().top - (scroller?.getBoundingClientRect().top ?? 0);
+      const delta = listTop + index * size;
+      if (scroller) scroller.scrollTop += delta;
+      else window.scrollBy(0, delta);
+      await this.#reconcile(container, view, config);
+    }
+    return this.#items.get(id) ?? null;
   }
 
   #handleItemChange(obj: StoredObject | null, event: SubscriptionEvent): void {
@@ -643,6 +857,10 @@ export abstract class Component extends HTMLElement {
   protected onUnbind(): void {}
   /** After a collection item is created or updated. */
   protected onItemRender(_element: Element, _obj: StoredObject): void {}
+  /** Called with each rendered list item's index whenever the list renders (for `aria-rowindex` and the like). */
+  protected onItemPosition(_element: Element, _index: number, _view: ListView): void {}
+  /** Called before a list item's element is removed (it was deleted, or scrolled out of a virtualized list). */
+  protected onItemRemove(_element: Element): void {}
   /** After a bound ListView changes. */
   protected onListChange(_view: ListView): void {}
   /** After the retry button is used. */

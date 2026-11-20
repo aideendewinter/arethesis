@@ -508,3 +508,131 @@ describe('list placeholders', () => {
     expect(ul.firstElementChild!.getAttribute('data-placeholder')).toBe('empty');
   });
 });
+
+describe('virtualized lists', () => {
+  @defineComponent({
+    tag: 'virtual-list',
+    html: `<template id="main"><ul data-items></ul></template>
+      <template id="item"><li tabindex="-1" data-bind="name"></li></template>`,
+  })
+  class VirtualList extends Component {
+    static override bindConfig = { fields: { name: {} }, virtualize: { mode: 'window' as const, itemSize: 20, overscan: 2 } };
+    positions = new Map<string, number>();
+    protected override onItemPosition(el: Element, index: number): void {
+      this.positions.set(el.getAttribute('data-id')!, index);
+    }
+    pin(id: string): () => void {
+      return this.pinItem(id);
+    }
+    reveal(index: number): Promise<Element | null> {
+      return this.revealItem(index);
+    }
+    indexOf(id: string): number {
+      return this.itemIndex(id);
+    }
+  }
+
+  let listTop = 0;
+  const setup = async (count: number) => {
+    const instance = new Arethesis();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+      cb(0);
+      return 1;
+    });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const top = this.classList.contains('ar-virtual-spacer') || this.localName === 'ul' ? listTop : 0;
+      return new DOMRect(0, top, 100, 20);
+    });
+    listTop = 0;
+    const el = document.createElement('virtual-list') as VirtualList;
+    document.body.appendChild(el);
+    await el.ready;
+    const view = instance.listViews.getOrCreate({ type: 'VItem', id: `v${count}` });
+    for (let i = 0; i < count; i++) instance.store.upsert('VItem', String(i), { id: i, name: `Item ${i}` });
+    instance.listViews.populate(view.id, Array.from({ length: count }, (_, i) => String(i)));
+    el.bind(view);
+    await flush();
+    const ul = el.querySelector('ul')!;
+    const ids = () => Array.from(ul.querySelectorAll(':scope > li[data-id]')).map(li => Number(li.getAttribute('data-id')));
+    const spacers = () => Array.from(ul.querySelectorAll<HTMLElement>(':scope > .ar-virtual-spacer')).map(s => s.style.height);
+    const scrollTo = async (y: number) => {
+      listTop = -y;
+      window.dispatchEvent(new Event('scroll'));
+      await flush();
+    };
+    return { el, ul, ids, spacers, scrollTo, view };
+  };
+
+  it('renders a screenful plus overscan, with spacers for the rest', async () => {
+    const { ul, ids, spacers } = await setup(1000);
+    const visible = Math.ceil(window.innerHeight / 20) + 2;
+    expect(ids()).toEqual(Array.from({ length: visible }, (_, i) => i));
+    expect(spacers()).toEqual(['0px', `${(1000 - visible) * 20}px`]);
+    expect(ul.firstElementChild!.classList.contains('ar-virtual-spacer')).toBe(true);
+    expect(ul.firstElementChild!.getAttribute('role')).toBe('presentation');
+  });
+
+  it('follows scrolling and keeps the same element for items that stay', async () => {
+    const { el, ul, ids, spacers, scrollTo } = await setup(1000);
+    await scrollTo(100); // 5 rows down
+    const kept = ul.querySelector('li[data-id="10"]');
+    await scrollTo(200);
+    expect(ul.querySelector('li[data-id="10"]')).toBe(kept);
+    expect(ids()[0]).toBe(8); // 10 - overscan
+    expect(spacers()[0]).toBe(`${8 * 20}px`);
+    expect(el.positions.get('10')).toBe(10);
+    await scrollTo(20_000);
+    expect(ids().at(-1)).toBe(999);
+    expect(spacers()[1]).toBe('0px');
+  });
+
+  it('keeps the focused item and pinned items while they scroll away', async () => {
+    const { el, ul, ids, scrollTo } = await setup(1000);
+    (ul.querySelector('li[data-id="1"]') as HTMLElement).focus();
+    const unpin = el.pin('3');
+    await scrollTo(10_000);
+    expect(ids().slice(0, 2)).toEqual([1, 3]);
+    expect(document.activeElement?.getAttribute('data-id')).toBe('1');
+    unpin();
+    (document.activeElement as HTMLElement).blur();
+    await scrollTo(10_020);
+    expect(ids()).not.toContain(1);
+    expect(ids()).not.toContain(3);
+  });
+
+  it('reveals an item by index', async () => {
+    const { el } = await setup(1000);
+    const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(((_x: number, y: number) => {
+      listTop -= y;
+    }) as typeof window.scrollBy);
+    const item = await el.reveal(500);
+    expect(scrollBy).toHaveBeenCalled();
+    expect(item?.getAttribute('data-id')).toBe('500');
+    expect(el.indexOf('500')).toBe(500);
+    expect(await el.reveal(5000)).toBeNull();
+  });
+
+  it('inserts new items in one batch', async () => {
+    const instance = new Arethesis();
+    @defineComponent({ tag: 'batch-list', html: '<template id="main"><ul data-items></ul></template><template id="item"><li data-bind="name"></li></template>' })
+    class BatchList extends Component {
+      static override bindConfig = { fields: { name: {} } };
+    }
+    const el = document.createElement('batch-list') as BatchList;
+    document.body.appendChild(el);
+    await el.ready;
+    const view = instance.listViews.getOrCreate({ type: 'BItem', id: 'batch' });
+    for (let i = 0; i < 20; i++) instance.store.upsert('BItem', String(i), { name: `B${i}` });
+    const ul = el.querySelector('ul')!;
+    const prepend = vi.spyOn(ul, 'prepend');
+    const after = vi.spyOn(Element.prototype, 'after');
+    instance.listViews.populate(view.id, Array.from({ length: 20 }, (_, i) => String(i)));
+    el.bind(view);
+    await flush();
+    // One insertion of a fragment holding all 20 rows.
+    expect(prepend).toHaveBeenCalledOnce();
+    expect(prepend.mock.calls[0][0]).toBeInstanceOf(DocumentFragment);
+    expect(after).not.toHaveBeenCalled();
+    expect(ul.children).toHaveLength(20);
+  });
+});

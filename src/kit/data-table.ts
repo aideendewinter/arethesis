@@ -71,6 +71,11 @@ export interface DataTableConfig {
   emptyText?: string;
   /** Infinite scroll threshold in px. @default 400 */
   threshold?: number;
+  /**
+   * Render only the rows on screen, for long lists. Rows must be one height;
+   * set `rowHeight` if they aren't measured right. @default false
+   */
+  virtualize?: boolean | { rowHeight?: number; overscan?: number };
 }
 
 const HTML = `
@@ -149,10 +154,18 @@ export class DataTable extends Component {
       loadingTemplate: 'loading',
       errorTemplate: 'error',
       infiniteScroll: { threshold: config.threshold ?? 400, root: 'self' },
+      virtualize: config.virtualize
+        ? {
+          mode: 'window',
+          scroller: '.ar-table__scroll',
+          itemSize: typeof config.virtualize === 'object' ? config.virtualize.rowHeight : undefined,
+          overscan: typeof config.virtualize === 'object' ? config.virtualize.overscan : undefined,
+        }
+        : undefined,
     };
     this.bind(this.#view!, bindConfig);
 
-    const grid = mixinRegistry.ensure('grid-navigation', gridNavigationMixin).apply(table, 'grid-navigation', { cellSelector: 'td[data-col], th[data-col]', rowSelector: 'tr' });
+    const grid = mixinRegistry.ensure('grid-navigation', gridNavigationMixin).apply(table, 'grid-navigation', { cellSelector: 'td[data-col], th[data-col]', rowSelector: 'tr:not(.ar-virtual-spacer)' });
     if (grid) this.#instances.push(grid);
     this.listen(table, 'grid:edit', (e: Event) => {
       const { cell, key } = (e as CustomEvent<{ cell: HTMLElement; key?: string }>).detail;
@@ -247,10 +260,17 @@ export class DataTable extends Component {
     element.setAttribute('aria-selected', String(obj.id === this.#selected));
   }
 
+  protected override onItemPosition(element: Element, index: number): void {
+    // Row 1 is the header.
+    element.setAttribute('aria-rowindex', String(index + 2));
+  }
+
   protected override onListChange(view: ListView): void {
     const status = this.querySelector('.ar-table__status');
     const table = this.querySelector('table');
-    if (table) table.setAttribute('aria-rowcount', String(view.totalCount ?? -1));
+    // Count the header row; -1 means "unknown" while more pages may follow.
+    const rows = view.totalCount ?? (view.hasMore ? undefined : view.ids.length);
+    if (table) table.setAttribute('aria-rowcount', String(rows === undefined ? -1 : rows + 1));
     (mixinRegistry.get(table as HTMLElement, 'grid-navigation')?.refresh as (() => void) | undefined)?.();
     if (!status) return;
     const shown = view.ids.length;
@@ -295,6 +315,8 @@ export class DataTable extends Component {
     const inputType = opts.type ?? (isNumber ? 'number' : col.displayType === 'date' ? 'date' : 'text');
     const typed = !!key && key.length === 1;
     const host = this.querySelector<HTMLElement>('.ar-table__scroll')!;
+    // Keep the row rendered while it's edited, even if it scrolls away.
+    const unpin = this.pinItem(id);
     this.#editor = openCellEditor({
       cell,
       host,
@@ -316,6 +338,7 @@ export class DataTable extends Component {
       commit: value => this.#save(type, id, { [field]: isNumber ? Number(value) : value }),
       onClose: ({ move, reason }) => {
         this.#editor = null;
+        unpin();
         // Clicking elsewhere moved focus already; otherwise go back to (or on from) the cell.
         if (reason !== 'blur') this.#moveFrom(cell, move);
       },
