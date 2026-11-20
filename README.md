@@ -16,7 +16,8 @@ npm install arethesis
 - **Config-driven HTTP.** Named endpoints, response mapping, nested normalization, cursor pagination, safe retries, batching and cache modes.
 - **Live by default.** SSE cache invalidation, WebSocket channels, Azure Web PubSub, and convergent operational transformation for collaborative text.
 - **Offline-ready.** IndexedDB persistence, TTLs, optimistic updates with field-level rollback.
-- **Accessible behaviors.** Nine keyboard-friendly mixins with ARIA built in: sortable, grid navigation, dropdown, context menu and more.
+- **Pay for what you use.** One module per file and per-feature entry points (`arethesis/core`, `arethesis/realtime`, `arethesis/components/<name>`), with bundle sizes checked in CI.
+- **Accessible behaviors.** Ten keyboard-friendly mixins with ARIA built in: sortable, grid navigation, dropdown, context menu and more.
 - **Secure defaults.** Sanitized HTML and URLs, origin-scoped auth headers, prototype-pollution-safe merges, and a logout that wipes cached data.
 
 **[Live examples →](https://aideendewinter.github.io/arethesis/)**: a 10,000-row directory, a kanban board, a collaborative editor, a live dashboard, a signup form, and an offline/caching playground. Run them locally with `npm run examples`; the source is in [`examples/`](examples/).
@@ -83,7 +84,7 @@ When the server sends `invalidate { type: "Person", id: 42 }` over SSE, every `<
 | **Collaboration** | `TextOperation` OT, `OTClient`, a reference `CollabServer`, and `CollabSession` with presence, live cursors and selections, per-user undo, and comments anchored to their text |
 | **Mixins** | `draggable`, `editable`, `grid-navigation`, `infinite-scroll`, `sortable`, `resizable`, `dropdown`, `listbox`, `tooltip`, `context-menu` |
 | **Plugins** | `date-utils`, `async-validators`, a dependency-free `rich-text` editor, and an API for your own |
-| **Component kit** | `<a-data-table>` with spreadsheet-style editing, `<a-sheet>` (formulas, fill, clipboard), `<a-chart>` (streaming SVG charts), `<a-markdown-editor>`, `<a-command-palette>`, `<a-flex-view>`, `<a-list>`, `<a-form>`, and a themeable stylesheet: light, dark and high contrast, without a flash on load, plus the optional Polychrome palette |
+| **Component kit** | `<a-data-table>` with spreadsheet-style editing and virtualized rows, `<a-sheet>` (formulas, fill, clipboard), `<a-chart>` (streaming SVG charts), `<a-kanban>`, `<a-combobox>`, `<a-tree>` (lazy branches), `<a-calendar>`, `<a-tabs>`, `<a-dialog>` and `confirm()`, `<a-toast>`, `<a-presence>`, `<a-markdown-editor>`, `<a-command-palette>`, `<a-flex-view>`, `<a-list>`, `<a-form>`, and a themeable stylesheet: light, dark and high contrast, without a flash on load, plus the optional Polychrome palette. Import them all, or one at a time (`arethesis/components/kanban`) |
 | **Design tokens** | The theme as [W3C design tokens](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (2025.10) with a resolver, published as `arethesis/tokens/*` |
 
 ## Documentation
