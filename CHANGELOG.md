@@ -6,10 +6,15 @@
 
 - **Polychrome theme** (`arethesis/components/theme-polychrome.css`): an optional palette in the pigments of painted Greek architecture: Egyptian blue, cinnabar, malachite and ochre on limestone, or terracotta and bone on black glaze in dark mode. It has light, dark and high-contrast variants, its own design tokens (`polychrome.resolver.json`), a boot script (`theme-polychrome-boot.js`) and `themeBootHtml({ palette: 'polychrome' })`.
 - New tokens in both themes: `--ar-accent-2` (a secondary accent), `--ar-font-display` and `--ar-font-serif`.
+- **`<a-markdown-editor>`**: a Markdown editor around a plain textarea, with syntax highlighting, line numbers, a toolbar, a live sanitized preview, find and replace, list editing, per-user undo and highlighted ranges. It works under `CollabSession`. `renderMarkdown`, `markdownOutline` and the highlighter are exported too.
+- **Per-user undo** for collaborative editing (`{ undo: true }`, `UndoManager`): undo reverts only your own edits.
+- **Comments on shared documents**: `session.annotate()` and friends. They stay attached to their text as people edit, and the server stores them.
+- Remote collaborators' selections are drawn as well as their carets. `TextareaAdapter` fires `collab:apply` when it changes the value.
 
 ### Changed
 
 - The examples have a new look in the Polychrome theme, with self-hosted fonts (Cinzel and Gentium Book Plus, SIL OFL) and a new home page.
+- The collaborative editor example is now a Markdown studio, with an outline, comments, presence by section, and Socrates as an optional co-author.
 
 ## 0.1.5
 

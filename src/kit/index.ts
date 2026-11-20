@@ -20,6 +20,12 @@ export { FlexView } from './flex-view';
 export type { FlexPanelConfig, FlexViewConfig } from './flex-view';
 export { List } from './list';
 export { Form } from './form';
+export { MarkdownEditor } from './markdown-editor';
+export type { MarkdownLayout, MarkdownMark } from './markdown-editor';
+export { renderMarkdown, renderInline, markdownOutline } from './markdown/render';
+export type { OutlineEntry } from './markdown/render';
+export { highlightMarkdown, highlightLine, highlightInline } from './markdown/highlight';
+export type { LineState } from './markdown/highlight';
 export {
   setTheme,
   setContrast,

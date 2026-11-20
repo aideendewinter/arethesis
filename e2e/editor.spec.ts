@@ -6,8 +6,8 @@ test('two windows edit concurrently and converge', async ({ context, page, error
   await other.goto('/editor/index.html');
   const a = page.locator('#doc');
   const b = other.locator('#doc');
-  await expect(a).toHaveValue(/Launch plan/);
-  await expect(b).toHaveValue(/Launch plan/);
+  await expect(a).toHaveValue(/notes for the symposium/);
+  await expect(b).toHaveValue(/notes for the symposium/);
   await expect(page.locator('.people li')).toHaveCount(2);
   // Both editors have loaded the document (they're read-only until then).
   await expect(a).not.toHaveAttribute('aria-busy');
@@ -34,7 +34,7 @@ test('two windows edit concurrently and converge', async ({ context, page, error
 test('keeps offline edits and syncs them on reconnect', async ({ page, errors }) => {
   await page.goto('/editor/index.html');
   const doc = page.locator('#doc');
-  await expect(doc).toHaveValue(/Launch plan/);
+  await expect(doc).toHaveValue(/notes for the symposium/);
   await page.locator('#offline').check();
   await expect(page.locator('#collab-status')).toHaveAttribute('data-status', 'offline');
   await doc.focus();
@@ -111,5 +111,74 @@ test('on a slow network the badge shows edits being saved', async ({ page, error
   await page.keyboard.type(' Quick.', { delay: 40 });
   await page.waitForTimeout(800);
   expect(await page.evaluate(() => [...(window as unknown as { statuses: Set<string> }).statuses])).not.toContain('syncing');
+  void errors;
+});
+
+test("undo reverts only your own edits, not another window's", async ({ context, page, errors }) => {
+  const other = await context.newPage();
+  await page.goto('/editor/index.html');
+  await other.goto('/editor/index.html');
+  const a = page.locator('#doc');
+  const b = other.locator('#doc');
+  await expect(a).not.toHaveAttribute('aria-busy');
+  await expect(b).not.toHaveAttribute('aria-busy');
+
+  await a.focus();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\nMine.');
+  await expect(b).toHaveValue(/Mine\.$/, { timeout: 10_000 });
+  await b.focus();
+  await other.keyboard.press('Control+Home');
+  await other.keyboard.type('Theirs. ');
+  await expect(a).toHaveValue(/^Theirs\. /, { timeout: 10_000 });
+
+  await a.focus();
+  await page.keyboard.press('Control+z');
+  await expect(a).not.toHaveValue(/Mine\./);
+  await expect(a).toHaveValue(/^Theirs\. /);
+  await expect(b).not.toHaveValue(/Mine\./, { timeout: 10_000 });
+  void errors;
+});
+
+test('a comment stays on its words while someone types before it', async ({ context, page, errors }) => {
+  const other = await context.newPage();
+  await page.goto('/editor/index.html');
+  await other.goto('/editor/index.html');
+  await expect(page.locator('#doc')).not.toHaveAttribute('aria-busy');
+  await expect(other.locator('#doc')).not.toHaveAttribute('aria-busy');
+
+  await page.evaluate(() => {
+    const t = document.querySelector<HTMLTextAreaElement>('#doc')!;
+    const i = t.value.indexOf('Aristophanes');
+    t.focus();
+    t.setSelectionRange(i, i + 'Aristophanes'.length);
+    t.dispatchEvent(new Event('select'));
+  });
+  await page.getByRole('button', { name: 'Comment', exact: true }).click();
+  await page.getByLabel('Comment', { exact: true }).fill('Seat him far from Socrates.');
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(other.locator('.comment__body')).toHaveText('Seat him far from Socrates.', { timeout: 10_000 });
+
+  await other.locator('#doc').focus();
+  await other.keyboard.press('Control+Home');
+  await other.keyboard.type('Draft! ');
+  for (const p of [page, other]) {
+    await expect(p.locator('#doc')).toHaveValue(/^Draft! /, { timeout: 10_000 });
+    await expect(p.locator('.comment__quote').first()).toHaveText('Aristophanes');
+  }
+  void errors;
+});
+
+test('the preview renders Markdown and never runs HTML from the document', async ({ page, errors }) => {
+  await page.goto('/editor/index.html');
+  await expect(page.locator('#doc')).not.toHaveAttribute('aria-busy');
+  await page.locator('#doc').focus();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\n<img src=x onerror="window.pwned=1"> [x](javascript:alert(1)) **safe**');
+  const preview = page.getByRole('region', { name: 'Preview' });
+  await expect(preview.locator('strong', { hasText: 'safe' })).toBeVisible();
+  await expect(preview.locator('img')).toHaveCount(0);
+  await expect(preview.locator('a[href^="javascript"]')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { pwned?: number }).pwned)).toBeUndefined();
   void errors;
 });

@@ -70,6 +70,27 @@ session.on('presence', peers => renderAvatars(peers));
 session.close();
 ```
 
+### Undo
+
+Pass `{ undo: true }` for per-user undo: Ctrl/Cmd+Z (and Shift+Z or Y, and the browser's Edit menu) revert only *your* edits, even after other people have typed around them. Without it, the browser's own undo applies, which knows nothing about remote edits. `session.undo()`, `session.redo()`, `canUndo` and `canRedo` are there for buttons. The `UndoManager` class behind it is exported for custom editors: `record` local operations, `transform` it with remote ones.
+
+### Comments
+
+Annotations are ranges that stay attached to their text as everyone edits. Typing right at either end stays outside the range; deleting the text collapses it, so you can still show the comment as "on deleted text".
+
+```ts
+const id = session.annotate(from, to, 'Which world?');            // local positions
+session.updateAnnotation(id, { resolved: true, replies: [{ body: 'This one.', user }] });
+session.removeAnnotation(id);
+session.on('annotations', list => renderComments(list));           // positions in the local document
+```
+
+The server stores them with the document and sends them to everyone who joins. A comment made while your edits are still in flight is sent once they are acknowledged, so its positions always refer to a revision the server knows.
+
+### Decorating the textarea
+
+`TextareaAdapter` fires `collab:apply` (`{ op, remote }`) on the textarea whenever it changes the value itself, so highlighters and the like can follow remote edits as well as `input`. `<a-markdown-editor>` uses it (see [the component kit](./component-kit.md)).
+
 Edits made while offline are kept. On reconnect the client receives the operations it missed (including its own unacknowledged one, if the server got it) and resends the rest, so nothing is lost or applied twice.
 
 ### Server

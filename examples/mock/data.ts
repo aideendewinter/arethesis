@@ -98,15 +98,33 @@ export function generateTasks(): Task[] {
   });
 }
 
-export const INITIAL_DOC = `# Launch plan
+export const INITIAL_DOC = `# Περὶ ἀρετῆς: notes for the symposium
 
-Arethesis 0.1 ships with a normalized store, config-driven HTTP,
-live updates over SSE and WebSockets, and collaborative editing.
+> Can virtue be taught? Or is it got by practice, or does it come by nature?
+> (Meno's opening question, *Meno* 70a, paraphrased)
 
-## Checklist
-- Final pass on the docs
-- Record the demo video
-- Announce it!
+## Agenda
+1. Socrates opens with the question
+2. Meno tries a definition, then another
+3. The slave boy and the doubled square
+4. Wine, and whatever Aristophanes brings
 
-Open this page in a second window and type in both.
+## Positions so far
+- **Meno**: virtue is being able to rule over others
+- **Gorgias**, by proxy: a different virtue for every role in life
+- **Socrates**: we don't yet know what virtue *is*, so how can we say how it's got?
+
+## To do
+- [x] Book the andron for twelve couches
+- [ ] Ask Diotima whether she'll speak
+- [ ] Find a better English word than "virtue" for *aretē*
+
+## Seating
+| Guest | Bringing | Couch |
+|:--|:--|--:|
+| Phaedrus | figs | 1 |
+| Agathon | wine | 2 |
+| Aristophanes | jokes | 3 |
+
+Open this page in a second window and type in both, or let Socrates join.
 `;

@@ -80,6 +80,35 @@ To rebrand, override custom properties as above, or copy the tokens, change them
 
 Contributing to Arethesis: `theme.css` and `theme-polychrome.css` are generated from `src/kit/tokens/`. Edit the tokens, then run `npm run tokens`. The tests fail if the CSS is out of date, if a token breaks the spec, or if a theme drops below its contrast target.
 
+## `<a-markdown-editor>`
+
+A Markdown editor around a plain `<textarea>`, which stays the real editing surface: forms, spellcheck, IME, assistive technology and `CollabSession` keep working.
+
+```html
+<label for="notes">Notes</label>
+<a-markdown-editor layout="split">  <!-- split | write | preview -->
+  <textarea id="notes" name="notes"></textarea>
+</a-markdown-editor>
+```
+
+- **Highlighting** in a layer behind the textarea's transparent text, re-done only for the lines that change, with line numbers that follow soft wraps.
+- **Toolbar** (a WAI-ARIA toolbar): bold, italic, strikethrough, code, headings, quotes, lists, checklists, links and code blocks. Ctrl/Cmd+B, I and K. Enter continues a list, Tab and Shift+Tab indent list items.
+- **Live preview**, sanitized, scrolled in step with the source.
+- **Find and replace** with Ctrl/Cmd+F. Replace all is one edit, so one undo.
+- **Undo and redo** of your own edits. Under a `CollabSession` it follows other people's edits (through the textarea's `collab:apply` event) and never undoes them.
+- **Marks:** `editor.annotations = [{ id, from, to, color, active }]` highlights ranges, such as comments.
+
+API: `outline` (headings, also sent as `markdown:outline`), `revealOffset(offset)`, `format(command)`, `replaceRange(from, to, text)`, `undo()`, `redo()`, `openFind()`, `refresh()`. Events: `markdown:selection` `{ from, to }`, `markdown:outline`, `markdown:layout`.
+
+Collaborative:
+
+```ts
+const session = app.collab.open('notes', editor.textarea!, { user });
+session.on('annotations', list => (editor.annotations = list.map(a => ({ ...a, color: a.user?.color }))));
+```
+
+The renderer and highlighter are exported on their own too: `renderMarkdown(source)` returns sanitized HTML (CommonMark core plus GFM tables, task lists and strikethrough; raw HTML is shown as text), and `markdownOutline`, `highlightMarkdown` and `highlightLine` power the rest. Add `class="ar-prose"` to style rendered Markdown anywhere.
+
 ## `<a-data-table>`
 
 ```ts

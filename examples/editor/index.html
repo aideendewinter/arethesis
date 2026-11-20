@@ -12,24 +12,49 @@
         <div class="field"><label for="name">Your name</label><input id="name" autocomplete="off"></div>
         <span class="status-pill" id="collab-status"></span>
         <div class="field"><label for="network">Network</label><select id="network"></select></div>
-        <label class="switch"><input type="checkbox" id="ghost"> Ghost writer</label>
+        <label class="switch"><input type="checkbox" id="ghost"> Invite Socrates</label>
         <label class="switch"><input type="checkbox" id="offline"> Go offline</label>
         <button class="btn btn--ghost" type="button" id="new-window">Open a second window ↗</button>
       </div>
       <div class="editor-layout">
-        <div class="editor-wrap card">
-          <label for="doc" class="ar-visually-hidden">Shared document</label>
-          <textarea id="doc" class="editor" spellcheck="false"></textarea>
+        <div class="editor-main">
+          <label for="doc" class="ar-visually-hidden">Shared document (Markdown)</label>
+          <a-markdown-editor id="editor" layout="split">
+            <textarea id="doc" spellcheck="true"></textarea>
+          </a-markdown-editor>
         </div>
-        <aside class="card editor-side" aria-label="Collaborators">
-          <h2>In this document</h2>
-          <ul id="people" class="people"></ul>
-          <dl class="facts">
-            <dt>Revision</dt><dd id="revision">0</dd>
-            <dt>Words</dt><dd id="words">0</dd>
-            <dt>Sync</dt><dd id="sync">–</dd>
-          </dl>
-          <p class="hint">Edits made offline are kept and merged when you reconnect.</p>
+        <aside class="editor-side" aria-label="Document details">
+          <section class="card side-section">
+            <h2>In this document</h2>
+            <ul id="people" class="people"></ul>
+          </section>
+          <section class="card side-section">
+            <h2>Outline</h2>
+            <nav aria-label="Outline"><ol id="outline" class="outline"></ol></nav>
+          </section>
+          <section class="card side-section" aria-labelledby="comments-title">
+            <div class="side-section__head">
+              <h2 id="comments-title">Comments</h2>
+              <button class="btn btn--ghost btn--small" type="button" id="add-comment" disabled>Comment</button>
+            </div>
+            <form id="comment-form" class="comment-form" hidden>
+              <blockquote id="comment-quote" class="comment-quote"></blockquote>
+              <label for="comment-body" class="ar-visually-hidden">Comment</label>
+              <textarea id="comment-body" rows="3" placeholder="Ask a question, or make a point…" required></textarea>
+              <div class="comment-form__actions"><button class="btn btn--small" type="submit">Post</button><button class="btn btn--ghost btn--small" type="button" id="comment-cancel">Cancel</button></div>
+            </form>
+            <ol id="comments" class="comments"></ol>
+            <p id="comments-empty" class="hint">Select some text to start a discussion. Comments stay pinned to their words as people edit.</p>
+            <label class="checkbox hint"><input type="checkbox" id="show-resolved"> Show resolved</label>
+          </section>
+          <section class="card side-section">
+            <dl class="facts">
+              <dt>Revision</dt><dd id="revision">0</dd>
+              <dt>Words</dt><dd id="words">0</dd>
+              <dt>Sync</dt><dd id="sync">–</dd>
+            </dl>
+            <p class="hint">Undo (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) only reverts your own edits. Edits made offline are kept and merged when you reconnect.</p>
+          </section>
         </aside>
       </div>
     </main>
