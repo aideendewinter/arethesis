@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Treasury Spreadsheet · Arethesis</title>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main>
+      <div class="toolbar">
+        <div class="field"><label for="name">Your name</label><input id="name" autocomplete="off"></div>
+        <span class="status-pill" id="sse-status"></span>
+        <div class="field"><label for="network">Network</label><select id="network"></select></div>
+        <label class="switch"><input type="checkbox" id="auditor"> Pericles audits the books</label>
+        <button class="btn btn--ghost" type="button" id="new-window">Open a second window ↗</button>
+      </div>
+      <div class="treasury-layout">
+        <a-sheet id="sheet"></a-sheet>
+        <aside class="treasury-side">
+          <section class="card side-section">
+            <h2>Tribute by polis</h2>
+            <a-chart id="tribute"></a-chart>
+          </section>
+          <section class="card side-section">
+            <h2>Try it</h2>
+            <ul class="how">
+              <li>Click a cell to edit it, or select one and type. Formulas start with <code>=</code>: <code>=SUM(C2:C13)</code>, <code>=IF(E2, C2, 0)</code>.</li>
+              <li>Drag or Shift+arrows to select a range, then <kbd>Ctrl</kbd>+<kbd>D</kbd> to fill down; references shift.</li>
+              <li>Copy a range and paste it into another spreadsheet app, or paste one in.</li>
+              <li>Make a cycle (<code>=C2</code> in <code>C2</code>) and see <code>#CYCLE!</code> instead of a hang.</li>
+              <li>Edits from other windows, or Pericles, flash with their author's name.</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>

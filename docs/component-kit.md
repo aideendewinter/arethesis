@@ -109,6 +109,22 @@ session.on('annotations', list => (editor.annotations = list.map(a => ({ ...a, c
 
 The renderer and highlighter are exported on their own too: `renderMarkdown(source)` returns sanitized HTML (CommonMark core plus GFM tables, task lists and strikethrough; raw HTML is shown as text), and `markdownOutline`, `highlightMarkdown` and `highlightLine` power the rest. Add `class="ar-prose"` to style rendered Markdown anywhere.
 
+## `<a-sheet>`
+
+A spreadsheet: formulas, range selection, clipboard, fill and undo.
+
+```ts
+sheet.configure({ rows: 200, cols: 12, cells: { A1: 'Polis', B1: 'Tribute', B9: '=SUM(B2:B8)' }, label: 'Ledger' });
+sheet.on('sheet:change', ({ changes }) => save(changes));       // your edits, raw content by address
+sheet.setCells({ B2: '6' }, { remote: true, by: 'Pericles' });   // someone else's (briefly highlighted)
+sheet.getValue('B9');                                            // computed: number, text, boolean or FormulaError
+```
+
+- **Formulas** start with `=`: arithmetic, `&`, comparisons, references (`A1`, `$A$1`), ranges (`A1:B9`), and SUM, AVERAGE, MIN, MAX, COUNT, IF, ROUND, ABS, CONCAT. A dependency graph recalculates only what changed, in order; cycles show `#CYCLE!` instead of hanging. Other errors are `#REF!`, `#DIV/0!`, `#VALUE!`, `#NAME?` and `#ERROR!`, each with an explanation on hover.
+- **Keys:** editing works like `<a-data-table>` (a click edits, typing replaces, Enter saves and moves down). Shift+arrows (or dragging) select a range, Delete clears it, Ctrl/Cmd+D and R fill down and right with shifted references, Ctrl/Cmd+C, X and V copy, cut and paste as tab-separated text (compatible with other spreadsheet apps), and Ctrl/Cmd+Z and Y undo and redo your own edits.
+- **Accessibility:** one focusable `role="grid"` with `aria-activedescendant`, row and column headers, `aria-selected` ranges and announcements; only visible rows are rendered.
+- Options: `readOnly(addr)`, `formatNumber(value, addr)`, `widths`. The engine is exported as `SheetModel`, with `parseFormula`, `evaluateFormula` and `shiftFormula`.
+
 ## `<a-chart>`
 
 Line, area, bar and stacked-bar charts in SVG, with no dependencies.

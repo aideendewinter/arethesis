@@ -15,6 +15,7 @@ const DEMOS: Array<[string, string]> = [
   ['kanban', 'Kanban'],
   ['editor', 'Collaborative editor'],
   ['dashboard', 'Live dashboard'],
+  ['treasury', 'Treasury'],
   ['signup', 'Signup form'],
   ['offline', 'Offline & caching'],
 ];

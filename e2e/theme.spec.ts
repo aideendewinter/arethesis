@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 
 // The examples wear the Polychrome theme: limestone (245, 238, 223) by day, black glaze (20, 16, 12) by night.
-const pages = ['index.html', 'directory/index.html', 'kanban/index.html', 'editor/index.html', 'dashboard/index.html', 'signup/index.html', 'offline/index.html'];
+const pages = ['index.html', 'directory/index.html', 'kanban/index.html', 'editor/index.html', 'dashboard/index.html', 'treasury/index.html', 'signup/index.html', 'offline/index.html'];
 const background = (page: import('@playwright/test').Page) =>
   page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
 

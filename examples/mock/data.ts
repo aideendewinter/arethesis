@@ -128,3 +128,43 @@ export const INITIAL_DOC = `# Περὶ ἀρετῆς: notes for the symposium
 
 Open this page in a second window and type in both, or let Socrates join.
 `;
+
+/**
+ * The treasury ledger: tribute (phoros) owed to the Delian League, in
+ * talents. The poleis are real members; the figures are illustrative.
+ */
+export function treasuryCells(): Record<string, string> {
+  const rows: Array<[string, string, number, boolean]> = [
+    ['Aegina', 'Islands', 30, true],
+    ['Thasos', 'Thrace', 30, true],
+    ['Paros', 'Islands', 18, true],
+    ['Byzantium', 'Hellespont', 15, false],
+    ['Abdera', 'Thrace', 15, true],
+    ['Lampsacus', 'Hellespont', 12, true],
+    ['Naxos', 'Islands', 6.67, false],
+    ['Andros', 'Islands', 6, true],
+    ['Miletus', 'Ionia', 5, true],
+    ['Ephesus', 'Ionia', 7.5, true],
+    ['Erythrae', 'Ionia', 7, false],
+    ['Lindos', 'Caria', 8.5, true],
+  ];
+  const cells: Record<string, string> = {
+    A1: 'Polis', B1: 'Region', C1: 'Tribute (talents)', D1: 'In drachmae', E1: 'Paid', F1: 'Share of total',
+  };
+  rows.forEach(([polis, region, talents, paid], i) => {
+    const r = i + 2;
+    cells[`A${r}`] = polis;
+    cells[`B${r}`] = region;
+    cells[`C${r}`] = String(talents);
+    cells[`D${r}`] = `=C${r}*6000`;
+    cells[`E${r}`] = paid ? 'TRUE' : 'FALSE';
+    cells[`F${r}`] = `=ROUND(C${r}/C$15*100, 1)`;
+  });
+  Object.assign(cells, {
+    A15: 'Total', C15: '=SUM(C2:C13)', D15: '=SUM(D2:D13)',
+    A16: 'Average', C16: '=ROUND(AVERAGE(C2:C13), 2)',
+    A17: 'Largest', C17: '=MAX(C2:C13)',
+    A18: 'Poleis paying', C18: '=COUNT(C2:C13)', D18: '=IF(C15>150, "Treasury healthy", "Send the triremes")',
+  });
+  return cells;
+}

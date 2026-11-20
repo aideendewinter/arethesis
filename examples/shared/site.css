@@ -344,6 +344,12 @@ kbd { font: 0.8em var(--ar-font-mono); padding: 0.05em 0.35em; border: 1px solid
 .comment__actions { display: flex; gap: 0.3rem; margin-top: 0.5rem; }
 #comments-empty { margin: 0 0 0.5rem; }
 
+/* Treasury */
+.treasury-layout { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; gap: 1.25rem; align-items: start; }
+@media (max-width: 1100px) { .treasury-layout { grid-template-columns: minmax(0, 1fr); } }
+.treasury-layout a-sheet { --ar-sheet-height: min(36rem, 70vh); box-shadow: var(--ar-shadow); }
+.treasury-side { display: grid; gap: 1rem; }
+
 /* Dashboard */
 stat-card { display: block; }
 .stat__label { display: none; }

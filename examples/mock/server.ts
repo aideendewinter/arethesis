@@ -6,7 +6,7 @@
 
 import { CollabServer } from '../../src/realtime/ot/server';
 import type { CollabMessage } from '../../src/realtime/types';
-import { generatePeople, generateTasks, INITIAL_DOC, rng, DEPARTMENTS, ROLES, type Person, type Task } from './data';
+import { generatePeople, generateTasks, INITIAL_DOC, rng, DEPARTMENTS, ROLES, treasuryCells, type Person, type Task } from './data';
 
 export interface MockRequest {
   method: string;
@@ -83,6 +83,9 @@ export class MockServer {
   private random = rng(99);
   private collab: CollabServer;
   private teammates: ReturnType<typeof setInterval> | null = null;
+  private auditor: ReturnType<typeof setInterval> | null = null;
+  /** The shared spreadsheet: raw cell contents by address. */
+  private sheet = treasuryCells();
   private taskCounter = 100;
 
   constructor(private out: ServerOutput) {
@@ -152,6 +155,29 @@ export class MockServer {
       person.updatedAt = new Date().toISOString();
       this.out.sse('upsert', { type: 'Person', data: { ...person }, by: 'teammate' });
     }, 1500);
+  }
+
+  /** Toggle Pericles editing the treasury sheet. */
+  setAuditor(on: boolean): void {
+    if (this.auditor) clearInterval(this.auditor);
+    this.auditor = null;
+    if (!on) return;
+    this.auditor = setInterval(() => {
+      const row = 2 + Math.floor(this.random() * 12);
+      const changes: Record<string, string> = this.random() < 0.7
+        ? { [`C${row}`]: String(Math.max(1, Math.round((Number(this.sheet[`C${row}`]) || 5) * (0.85 + this.random() * 0.3) * 2) / 2)) }
+        : { [`E${row}`]: this.sheet[`E${row}`] === 'TRUE' ? 'FALSE' : 'TRUE' };
+      this.applySheet(changes, 'Pericles', 'server');
+    }, 1800);
+  }
+
+  private applySheet(changes: Record<string, string>, by: string, client: string): void {
+    for (const [addr, raw] of Object.entries(changes)) {
+      if (!/^[A-Z]{1,2}\d{1,4}$/.test(addr) || typeof raw !== 'string') continue;
+      if (raw === '') delete this.sheet[addr];
+      else this.sheet[addr] = raw.slice(0, 2000);
+      this.out.sse('upsert', { type: 'Cell', data: { id: `treasury!${addr}`, raw, by, client } });
+    }
   }
 
   async handle(req: MockRequest): Promise<MockResponse> {
@@ -229,6 +255,12 @@ export class MockServer {
     }
 
     // ── Dashboard ──────────────────────────────────────────
+    if (path === '/sheets/treasury' && method === 'GET') return { status: 200, body: { id: 'treasury', cells: this.sheet } };
+    if (path === '/sheets/treasury' && method === 'PATCH') {
+      const { changes, by, client } = (body ?? {}) as { changes?: Record<string, string>; by?: string; client?: string };
+      this.applySheet(changes ?? {}, String(by ?? 'Someone'), String(client ?? ''));
+      return { status: 200, body: { ok: true } };
+    }
     if ((m = /^\/charts\/(\w+)$/.exec(path)) && method === 'GET') {
       const chart = this.charts[m[1] as keyof typeof this.charts];
       return chart ? { status: 200, body: chart } : { status: 404 };
@@ -301,7 +333,8 @@ export class MockServer {
     this.collab.disconnect(socketId);
   }
 
-  control(command: { latency?: number; failureRate?: number; offline?: boolean; teammates?: boolean }): void {
+  control(command: { latency?: number; failureRate?: number; offline?: boolean; teammates?: boolean; auditor?: boolean }): void {
+    if (command.auditor !== undefined) this.setAuditor(command.auditor);
     if (command.latency !== undefined) this.latency = command.latency;
     if (command.failureRate !== undefined) this.failureRate = command.failureRate;
     if (command.offline !== undefined) this.offline = command.offline;
