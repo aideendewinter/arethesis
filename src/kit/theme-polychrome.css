@@ -1,0 +1,256 @@
+/*
+ * Arethesis Polychrome theme
+ *
+ * The default theme recolored in the pigments of painted Greek architecture
+ * and pottery: Egyptian blue, cinnabar, malachite and ochre on limestone, or
+ * terracotta and bone on black glaze in dark mode. Load it after theme.css:
+ *
+ *   import 'arethesis/components/theme.css';
+ *   import 'arethesis/components/theme-polychrome.css';
+ *
+ * It only sets custom properties, with the same light, dark and high-contrast
+ * selectors as theme.css. --ar-font-display and --ar-font-serif name Cinzel
+ * and Gentium Book Plus (both SIL OFL), which are not bundled: load them with
+ * @font-face, or the stacks fall back to system serifs.
+ *
+ * Generated from src/kit/tokens/polychrome.* by `npm run tokens`; do not edit by hand.
+ */
+
+:root {
+  --ar-font-display: 'Cinzel', 'Trajan Pro', ui-serif, 'Georgia', serif;
+  --ar-font-serif: 'Gentium Book Plus', 'Gentium Plus', 'Palatino Linotype', 'Palatino', ui-serif, 'Georgia', serif;
+  --ar-radius: 4px;
+  --ar-radius-sm: 3px;
+  --ar-bg: #f5eedf;
+  --ar-surface-2: #e4d6bc;
+  --ar-surface: #ede3cf;
+  --ar-border: #cdbb9b;
+  --ar-text: #1d1712;
+  --ar-text-muted: #594b3b;
+  --ar-accent-2: #a32c17;
+  --ar-accent: #1d4b98;
+  --ar-accent-hover: #163b7a;
+  --ar-accent-soft: #dfe4f0;
+  --ar-accent-text: #ffffff;
+  --ar-danger: #8a1a38;
+  --ar-danger-soft: #f3dde0;
+  --ar-danger-text: #ffffff;
+  --ar-success: #235f41;
+  --ar-success-soft: #dcebdc;
+  --ar-success-text: #ffffff;
+  --ar-warning: #7d5108;
+  --ar-warning-soft: #f3e4c2;
+  --ar-shadow: 0 1px 2px 0 rgb(59 42 23 / 0.08), 0 6px 18px 0 rgb(59 42 23 / 0.1);
+  --ar-shadow-lg: 0 14px 40px 0 rgb(59 42 23 / 0.22);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ar-bg: #14100c;
+    --ar-surface-2: #28201a;
+    --ar-surface: #1d1712;
+    --ar-border: #3d3127;
+    --ar-text: #efe4d0;
+    --ar-text-muted: #b5a68f;
+    --ar-accent-2: #e5895a;
+    --ar-accent: #86a9ff;
+    --ar-accent-hover: #a3bfff;
+    --ar-accent-soft: #1c2338;
+    --ar-accent-text: #14100c;
+    --ar-danger: #ff90a8;
+    --ar-danger-soft: #3a1820;
+    --ar-danger-text: #14100c;
+    --ar-success: #72d19e;
+    --ar-success-soft: #142a1d;
+    --ar-success-text: #14100c;
+    --ar-warning: #e9b552;
+    --ar-warning-soft: #30240f;
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --ar-bg: #14100c;
+  --ar-surface-2: #28201a;
+  --ar-surface: #1d1712;
+  --ar-border: #3d3127;
+  --ar-text: #efe4d0;
+  --ar-text-muted: #b5a68f;
+  --ar-accent-2: #e5895a;
+  --ar-accent: #86a9ff;
+  --ar-accent-hover: #a3bfff;
+  --ar-accent-soft: #1c2338;
+  --ar-accent-text: #14100c;
+  --ar-danger: #ff90a8;
+  --ar-danger-soft: #3a1820;
+  --ar-danger-text: #14100c;
+  --ar-success: #72d19e;
+  --ar-success-soft: #142a1d;
+  --ar-success-text: #14100c;
+  --ar-warning: #e9b552;
+  --ar-warning-soft: #30240f;
+  --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+  --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+@media (prefers-contrast: more) {
+  :root:not([data-contrast='standard']) {
+    --ar-bg: #f5eedf;
+    --ar-surface-2: #e4d6bc;
+    --ar-surface: #ede3cf;
+    --ar-border: #6e5a40;
+    --ar-text: #000000;
+    --ar-text-muted: #3a2f24;
+    --ar-accent-2: #7a1d0c;
+    --ar-accent: #12336e;
+    --ar-accent-hover: #0c2654;
+    --ar-accent-soft: #dfe4f0;
+    --ar-accent-text: #ffffff;
+    --ar-danger: #6b0f28;
+    --ar-danger-soft: #f3dde0;
+    --ar-danger-text: #ffffff;
+    --ar-success: #123f29;
+    --ar-success-soft: #dcebdc;
+    --ar-success-text: #ffffff;
+    --ar-warning: #553600;
+    --ar-warning-soft: #f3e4c2;
+    --ar-shadow: 0 1px 2px 0 rgb(59 42 23 / 0.08), 0 6px 18px 0 rgb(59 42 23 / 0.1);
+    --ar-shadow-lg: 0 14px 40px 0 rgb(59 42 23 / 0.22);
+    color-scheme: light;
+  }
+}
+
+:root[data-contrast='more'] {
+  --ar-bg: #f5eedf;
+  --ar-surface-2: #e4d6bc;
+  --ar-surface: #ede3cf;
+  --ar-border: #6e5a40;
+  --ar-text: #000000;
+  --ar-text-muted: #3a2f24;
+  --ar-accent-2: #7a1d0c;
+  --ar-accent: #12336e;
+  --ar-accent-hover: #0c2654;
+  --ar-accent-soft: #dfe4f0;
+  --ar-accent-text: #ffffff;
+  --ar-danger: #6b0f28;
+  --ar-danger-soft: #f3dde0;
+  --ar-danger-text: #ffffff;
+  --ar-success: #123f29;
+  --ar-success-soft: #dcebdc;
+  --ar-success-text: #ffffff;
+  --ar-warning: #553600;
+  --ar-warning-soft: #f3e4c2;
+  --ar-shadow: 0 1px 2px 0 rgb(59 42 23 / 0.08), 0 6px 18px 0 rgb(59 42 23 / 0.1);
+  --ar-shadow-lg: 0 14px 40px 0 rgb(59 42 23 / 0.22);
+  color-scheme: light;
+}
+
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-contrast='standard']):not([data-theme='light']) {
+    --ar-bg: #000000;
+    --ar-surface-2: #17120e;
+    --ar-surface: #0c0907;
+    --ar-border: #a89880;
+    --ar-text: #ffffff;
+    --ar-text-muted: #ddd0bb;
+    --ar-accent-2: #f5b08c;
+    --ar-accent: #b4c9ff;
+    --ar-accent-hover: #cddaff;
+    --ar-accent-soft: #1c2338;
+    --ar-accent-text: #000000;
+    --ar-danger: #ffb8c7;
+    --ar-danger-soft: #3a1820;
+    --ar-danger-text: #000000;
+    --ar-success: #9ce6bd;
+    --ar-success-soft: #142a1d;
+    --ar-success-text: #000000;
+    --ar-warning: #f6cf86;
+    --ar-warning-soft: #30240f;
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root[data-theme='dark']:not([data-contrast='standard']) {
+    --ar-bg: #000000;
+    --ar-surface-2: #17120e;
+    --ar-surface: #0c0907;
+    --ar-border: #a89880;
+    --ar-text: #ffffff;
+    --ar-text-muted: #ddd0bb;
+    --ar-accent-2: #f5b08c;
+    --ar-accent: #b4c9ff;
+    --ar-accent-hover: #cddaff;
+    --ar-accent-soft: #1c2338;
+    --ar-accent-text: #000000;
+    --ar-danger: #ffb8c7;
+    --ar-danger-soft: #3a1820;
+    --ar-danger-text: #000000;
+    --ar-success: #9ce6bd;
+    --ar-success-soft: #142a1d;
+    --ar-success-text: #000000;
+    --ar-warning: #f6cf86;
+    --ar-warning-soft: #30240f;
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-contrast='more']:not([data-theme='light']) {
+    --ar-bg: #000000;
+    --ar-surface-2: #17120e;
+    --ar-surface: #0c0907;
+    --ar-border: #a89880;
+    --ar-text: #ffffff;
+    --ar-text-muted: #ddd0bb;
+    --ar-accent-2: #f5b08c;
+    --ar-accent: #b4c9ff;
+    --ar-accent-hover: #cddaff;
+    --ar-accent-soft: #1c2338;
+    --ar-accent-text: #000000;
+    --ar-danger: #ffb8c7;
+    --ar-danger-soft: #3a1820;
+    --ar-danger-text: #000000;
+    --ar-success: #9ce6bd;
+    --ar-success-soft: #142a1d;
+    --ar-success-text: #000000;
+    --ar-warning: #f6cf86;
+    --ar-warning-soft: #30240f;
+    --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+    --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'][data-contrast='more'] {
+  --ar-bg: #000000;
+  --ar-surface-2: #17120e;
+  --ar-surface: #0c0907;
+  --ar-border: #a89880;
+  --ar-text: #ffffff;
+  --ar-text-muted: #ddd0bb;
+  --ar-accent-2: #f5b08c;
+  --ar-accent: #b4c9ff;
+  --ar-accent-hover: #cddaff;
+  --ar-accent-soft: #1c2338;
+  --ar-accent-text: #000000;
+  --ar-danger: #ffb8c7;
+  --ar-danger-soft: #3a1820;
+  --ar-danger-text: #000000;
+  --ar-success: #9ce6bd;
+  --ar-success-soft: #142a1d;
+  --ar-success-text: #000000;
+  --ar-warning: #f6cf86;
+  --ar-warning-soft: #30240f;
+  --ar-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 16px 0 rgb(0 0 0 / 0.35);
+  --ar-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}

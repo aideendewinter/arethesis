@@ -9,7 +9,10 @@ import {
   criticalCss,
   cssVariable,
   loadTokens,
+  polychromeCss,
+  POLYCHROME_RESOLVER_FILE,
   resolveTokens,
+  THEME_RULES,
   tokenToCss,
   TOKENS_DIR,
   validateResolver,
@@ -20,6 +23,7 @@ import {
 import {
   applyStoredTheme,
   CRITICAL_CSS,
+  POLYCHROME_CRITICAL_CSS,
   getContrast,
   getTheme,
   setContrast,
@@ -29,6 +33,7 @@ import {
 } from '../theme';
 
 const loaded = loadTokens();
+const polychrome = loadTokens(TOKENS_DIR, POLYCHROME_RESOLVER_FILE);
 const srgb = (hex: string, alpha?: number) => ({
   colorSpace: 'srgb',
   components: [1, 3, 5].map(i => Math.round((parseInt(hex.slice(i, i + 2), 16) / 255) * 10000) / 10000),
@@ -42,18 +47,30 @@ describe('shipped design tokens', () => {
     expect([...loaded.files.keys()].sort()).toEqual(['base.tokens.json', 'dark-high-contrast.tokens.json', 'dark.tokens.json', 'light-high-contrast.tokens.json', 'light.tokens.json']);
   });
 
-  it('define the same tokens in every theme context', () => {
-    const paths = CONTEXTS.map(theme => [...resolveTokens(loaded, { theme }).keys()].sort());
-    for (const p of paths) expect(p).toEqual(paths[0]);
-    expect(paths[0]).toContain('color.bg');
-    expect(paths[0]).toContain('shadow.lg');
-    expect(paths[0]).toContain('font');
+  it('include the Polychrome theme, layered on the default files', () => {
+    expect([...polychrome.files.keys()]).toEqual(expect.arrayContaining(['light.tokens.json', 'polychrome.light.tokens.json', 'polychrome.dark-high-contrast.tokens.json']));
   });
 
-  it('match theme.css and the generated boot CSS exactly (run `npm run tokens` after editing them)', () => {
+  it('match theme.css, theme-polychrome.css and the generated boot CSS exactly (run `npm run tokens` after editing them)', () => {
     const css = readFileSync(resolve(TOKENS_DIR, '../theme.css'), 'utf8');
     expect(withThemeCss(css, loaded)).toBe(css);
     expect(CRITICAL_CSS).toBe(criticalCss(loaded));
+    expect(readFileSync(resolve(TOKENS_DIR, '../theme-polychrome.css'), 'utf8')).toBe(polychromeCss(polychrome, loaded));
+    expect(POLYCHROME_CRITICAL_CSS).toBe(criticalCss(polychrome));
+  });
+
+  it('give the Polychrome overlay every varying token in every context, so theme.css cannot leak through', () => {
+    const css = polychromeCss(polychrome, loaded);
+    const blocks = THEME_RULES.map(({ selector }) => {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, selector).toBeGreaterThan(-1);
+      return css.slice(at, css.indexOf('}', at));
+    });
+    for (const path of ['color.bg', 'color.text', 'color.accent', 'color.border', 'color.accent.2']) {
+      for (const block of blocks) expect(block).toContain(`${cssVariable(path)}:`);
+    }
+    expect(blocks[0]).toContain('--ar-font-display:');
+    expect(blocks[0]).not.toContain('--ar-font-mono:'); // unchanged from theme.css
   });
 
   // WCAG 2 relative luminance and contrast ratio.
@@ -66,27 +83,38 @@ describe('shipped design tokens', () => {
     return (hi + 0.05) / (lo + 0.05);
   };
 
-  it.each(CONTEXTS)('meets its contrast target in %s (AA, or AAA for high contrast)', theme => {
-    const tokens = resolveTokens(loaded, { theme });
-    const hex = (path: string) => colorToCss(tokens.get(path)!.value);
-    const target = theme.includes('high-contrast') ? 7 : 4.5;
-    const backgrounds = ['color.bg', 'color.surface', 'color.surface.2'];
-    for (const fg of ['color.text', 'color.text.muted', 'color.accent', 'color.danger', 'color.success', 'color.warning']) {
-      for (const bg of backgrounds) expect(contrast(hex(fg), hex(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(target);
-    }
-    const pairs: Array<[string, string]> = [
-      ['color.accent.text', 'color.accent'],
-      ['color.accent.text', 'color.accent.hover'],
-      ['color.danger.text', 'color.danger'],
-      ['color.success.text', 'color.success'],
-      ['color.text', 'color.accent.soft'],
-      ['color.danger', 'color.danger.soft'],
-      ['color.success', 'color.success.soft'],
-      ['color.warning', 'color.warning.soft'],
-    ];
-    for (const [fg, bg] of pairs) expect(contrast(hex(fg), hex(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(target);
-    // Borders are UI components: 3:1 in high contrast.
-    if (theme.includes('high-contrast')) for (const bg of backgrounds) expect(contrast(hex('color.border'), hex(bg))).toBeGreaterThanOrEqual(3);
+  describe.each([['default', loaded], ['polychrome', polychrome]] as const)('%s palette', (_, set) => {
+    it('defines the same tokens in every theme context, and the same as the default', () => {
+      const paths = CONTEXTS.map(theme => [...resolveTokens(set, { theme }).keys()].sort());
+      for (const p of paths) expect(p).toEqual(paths[0]);
+      expect(paths[0]).toEqual([...resolveTokens(loaded, { theme: 'light' }).keys()].sort());
+      expect(paths[0]).toContain('color.bg');
+      expect(paths[0]).toContain('shadow.lg');
+      expect(paths[0]).toContain('font.display');
+    });
+
+    it.each(CONTEXTS)('meets its contrast target in %s (AA, or AAA for high contrast)', theme => {
+      const tokens = resolveTokens(set, { theme });
+      const hex = (path: string) => colorToCss(tokens.get(path)!.value);
+      const target = theme.includes('high-contrast') ? 7 : 4.5;
+      const backgrounds = ['color.bg', 'color.surface', 'color.surface.2'];
+      for (const fg of ['color.text', 'color.text.muted', 'color.accent', 'color.accent.2', 'color.danger', 'color.success', 'color.warning']) {
+        for (const bg of backgrounds) expect(contrast(hex(fg), hex(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(target);
+      }
+      const pairs: Array<[string, string]> = [
+        ['color.accent.text', 'color.accent'],
+        ['color.accent.text', 'color.accent.hover'],
+        ['color.danger.text', 'color.danger'],
+        ['color.success.text', 'color.success'],
+        ['color.text', 'color.accent.soft'],
+        ['color.danger', 'color.danger.soft'],
+        ['color.success', 'color.success.soft'],
+        ['color.warning', 'color.warning.soft'],
+      ];
+      for (const [fg, bg] of pairs) expect(contrast(hex(fg), hex(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(target);
+      // Borders are UI components: 3:1 in high contrast.
+      if (theme.includes('high-contrast')) for (const bg of backgrounds) expect(contrast(hex('color.border'), hex(bg))).toBeGreaterThanOrEqual(3);
+    });
   });
 });
 
@@ -226,6 +254,7 @@ describe('theme boot and helpers', () => {
     expect(html).toContain(`<style nonce="abcscript">${CRITICAL_CSS}</style>`);
     expect(html).toContain('<script nonce="abcscript">try{');
     expect(themeBootHtml()).toMatch(/^<style>.*<\/style><script>.*<\/script>$/);
+    expect(themeBootHtml({ palette: 'polychrome' })).toContain(`<style>${POLYCHROME_CRITICAL_CSS}</style>`);
   });
 
   it('applies the stored theme and contrast before paint (drop-in script)', () => {

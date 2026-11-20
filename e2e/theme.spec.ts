@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 
+// The examples wear the Polychrome theme: limestone (245, 238, 223) by day, black glaze (20, 16, 12) by night.
 const pages = ['index.html', 'directory/index.html', 'kanban/index.html', 'editor/index.html', 'dashboard/index.html', 'signup/index.html', 'offline/index.html'];
 const background = (page: import('@playwright/test').Page) =>
   page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
@@ -15,7 +16,7 @@ test('pages paint in the saved theme before any script runs (no white flash)', a
   for (const path of pages) {
     await page.goto(`/${path}`, { waitUntil: 'commit' });
     await page.waitForFunction(() => document.body !== null);
-    expect(await background(page), path).toBe('rgb(15, 17, 23)');
+    expect(await background(page), path).toBe('rgb(20, 16, 12)');
     expect(await page.evaluate(() => document.documentElement.dataset.theme), path).toBe('dark');
     // The half-built page stays hidden until its chrome is ready.
     expect(await page.evaluate(() => getComputedStyle(document.body).visibility), path).toBe('hidden');
@@ -28,13 +29,13 @@ test('pages paint in the saved theme before any script runs (no white flash)', a
   await page.evaluate(() => localStorage.setItem('ar-theme', 'light'));
   await page.goto('/kanban/index.html', { waitUntil: 'commit' });
   await page.waitForFunction(() => document.body !== null);
-  expect(await background(page)).toBe('rgb(255, 255, 255)');
+  expect(await background(page)).toBe('rgb(245, 238, 223)');
 
   // No saved choice: follow the system.
   await page.evaluate(() => localStorage.removeItem('ar-theme'));
   await page.goto('/kanban/index.html', { waitUntil: 'commit' });
   await page.waitForFunction(() => document.body !== null);
-  expect(await background(page)).toBe('rgb(15, 17, 23)');
+  expect(await background(page)).toBe('rgb(20, 16, 12)');
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   void held;
 });
@@ -62,7 +63,7 @@ test('high contrast follows the OS, can be toggled, and is remembered without a 
   // Turn it off: standard colors, remembered across pages.
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  expect(await text()).toBe('rgb(22, 26, 35)');
+  expect(await text()).toBe('rgb(29, 23, 18)');
   await page.goto('/directory/index.html');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
 

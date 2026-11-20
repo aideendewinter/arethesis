@@ -1,0 +1,45 @@
+{
+  "$description": "Polychrome base tokens: inscriptional display type, a serif with polytonic Greek for reading, and squarer, stone-cut corners. Applied on top of base.tokens.json. The fonts are not bundled: load Cinzel and Gentium Book Plus (both SIL OFL) yourself, or the stacks fall back to system serifs.",
+  "font": {
+    "$type": "fontFamily",
+    "display": {
+      "$value": [
+        "Cinzel",
+        "Trajan Pro",
+        "ui-serif",
+        "Georgia",
+        "serif"
+      ],
+      "$description": "Display headings, set like a carved inscription."
+    },
+    "serif": {
+      "$value": [
+        "Gentium Book Plus",
+        "Gentium Plus",
+        "Palatino Linotype",
+        "Palatino",
+        "ui-serif",
+        "Georgia",
+        "serif"
+      ],
+      "$description": "Reading text and quotations, with full polytonic Greek."
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "$root": {
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$description": "Cards, panels and dialogs."
+    },
+    "sm": {
+      "$value": {
+        "value": 3,
+        "unit": "px"
+      },
+      "$description": "Buttons, inputs and small controls."
+    }
+  }
+}

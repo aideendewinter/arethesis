@@ -70,6 +70,17 @@
           ],
           "hex": "#e4e6ff"
         }
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.5412,
+            0.0627,
+            0.2627
+          ],
+          "hex": "#8a1043"
+        }
       }
     },
     "danger": {

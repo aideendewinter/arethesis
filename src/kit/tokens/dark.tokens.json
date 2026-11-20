@@ -126,6 +126,18 @@
           "hex": "#0f1117"
         },
         "$description": "Text on an accent background."
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9569,
+            0.4471,
+            0.7137
+          ],
+          "hex": "#f472b6"
+        },
+        "$description": "Secondary accent: decorative highlights, second data series and emphasis."
       }
     },
     "danger": {

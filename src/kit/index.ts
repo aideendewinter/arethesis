@@ -29,6 +29,7 @@ export {
   themeBootScript,
   themeBootHtml,
   CRITICAL_CSS,
+  POLYCHROME_CRITICAL_CSS,
   THEME_STORAGE_KEY,
   CONTRAST_STORAGE_KEY,
 } from './theme';

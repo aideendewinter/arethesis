@@ -23,6 +23,24 @@
         "monospace"
       ],
       "$description": "Code and tabular figures."
+    },
+    "display": {
+      "$value": [
+        "ui-serif",
+        "Georgia",
+        "Times New Roman",
+        "serif"
+      ],
+      "$description": "Display headings."
+    },
+    "serif": {
+      "$value": [
+        "ui-serif",
+        "Georgia",
+        "Times New Roman",
+        "serif"
+      ],
+      "$description": "Long-form reading text and quotations."
     }
   },
   "radius": {

@@ -1,0 +1,183 @@
+{
+  "$description": "High-contrast overrides for the polychrome dark theme (WCAG AAA text contrast).",
+  "color": {
+    "$type": "color",
+    "bg": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "hex": "#000000"
+      }
+    },
+    "surface": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0471,
+            0.0353,
+            0.0275
+          ],
+          "hex": "#0c0907"
+        }
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0902,
+            0.0706,
+            0.0549
+          ],
+          "hex": "#17120e"
+        }
+      }
+    },
+    "border": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.6588,
+          0.5961,
+          0.502
+        ],
+        "hex": "#a89880"
+      }
+    },
+    "text": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "hex": "#ffffff"
+        }
+      },
+      "muted": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.8667,
+            0.8157,
+            0.7333
+          ],
+          "hex": "#ddd0bb"
+        }
+      }
+    },
+    "accent": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7059,
+            0.7882,
+            1.0
+          ],
+          "hex": "#b4c9ff"
+        }
+      },
+      "hover": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.8039,
+            0.8549,
+            1.0
+          ],
+          "hex": "#cddaff"
+        }
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "hex": "#000000"
+        }
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9608,
+            0.6902,
+            0.549
+          ],
+          "hex": "#f5b08c"
+        }
+      }
+    },
+    "danger": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            0.7216,
+            0.7804
+          ],
+          "hex": "#ffb8c7"
+        }
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "hex": "#000000"
+        }
+      }
+    },
+    "success": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6118,
+            0.902,
+            0.7412
+          ],
+          "hex": "#9ce6bd"
+        }
+      },
+      "text": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "hex": "#000000"
+        }
+      }
+    },
+    "warning": {
+      "$root": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9647,
+            0.8118,
+            0.5255
+          ],
+          "hex": "#f6cf86"
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,8 @@
 /** Page chrome for the examples: navigation, theme toggle, source viewer and toasts. */
-import './site.css';
 import 'arethesis/components/theme.css';
+import 'arethesis/components/theme-polychrome.css';
+import './fonts.css';
+import './site.css';
 import { VERSION } from 'arethesis';
 import { applyStoredTheme, getContrast, getTheme, setContrast, setTheme } from 'arethesis/components';
 
@@ -17,7 +19,8 @@ const DEMOS: Array<[string, string]> = [
   ['offline', 'Offline & caching'],
 ];
 
-const LOGO = `<svg class="site-nav__logo" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#g)"/><path d="M9 23 16 8l7 15M11.8 17.5h8.4" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// An alpha cut like an inscription, in an Egyptian-blue roundel ringed with cinnabar.
+const LOGO = `<svg class="site-nav__logo" viewBox="0 0 32 32" aria-hidden="true"><circle class="logo__ring" cx="16" cy="16" r="15"/><circle class="logo__field" cx="16" cy="16" r="12.5"/><path class="logo__glyph" d="M10.2 22.5 16 8.6l5.8 13.9M12.4 17.6h7.2M8.6 22.5h3.4M20 22.5h3.4"/></svg>`;
 
 export interface ShellOptions {
   /** Demo key ('directory', …) or 'home'. */
@@ -74,7 +77,7 @@ export function mountShell(options: ShellOptions): HTMLElement {
   const footer = document.createElement('footer');
   footer.className = 'site-footer';
   footer.innerHTML = `<div class="site-footer__inner">
-    <p>Every example runs entirely in your browser, against a mock backend in a SharedWorker.</p>
+    <p>Every example runs entirely in your browser, against a mock backend in a SharedWorker. No marble was bleached in the making of this site.</p>
     <p class="site-footer__links">
       <span>Arethesis ${VERSION}</span>
       <a href="${REPO_URL}">GitHub</a>
@@ -171,16 +174,21 @@ export function toast(message: string, kind: 'info' | 'success' | 'error' = 'inf
   setTimeout(() => el.remove(), 4000);
 }
 
-/** Initials and a stable color for an avatar. */
+/**
+ * Pigments for avatars: Egyptian blue, cinnabar, malachite, ochre, Tyrian
+ * purple, umber, verdigris, murex violet, red ochre and green earth. Each one
+ * is dark enough for white initials to meet WCAG AA (7:1 or better).
+ */
+export const PIGMENTS = ['#1d4b98', '#a32c17', '#235f41', '#7a4e07', '#8a1a38', '#5c3a1e', '#1d5e66', '#4f2d7f', '#8c3b12', '#2f4a1c'];
+
+/** Initials and a stable pigment for an avatar. */
 export function avatar(name: string): { initials: string; color: string } {
   const initials = name.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
   let hash = 0;
   for (const c of name) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
-  // Dark enough for white text to meet WCAG AA (4.5:1) at every hue.
-  return { initials, color: `hsl(${hash % 360} 55% 29%)` };
+  return { initials, color: PIGMENTS[hash % PIGMENTS.length] };
 }
 
-/** Reflect a connection status on a pill element. */
 /**
  * Show a status in a pill without resizing it. Every label sits in the same
  * grid cell and only the current one is visible (hidden ones are also hidden

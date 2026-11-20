@@ -16,7 +16,9 @@
       "import": "./dist/components.js"
     },
     "./components/theme.css": "./dist/theme.css",
+    "./components/theme-polychrome.css": "./dist/theme-polychrome.css",
     "./components/theme-boot.js": "./dist/theme-boot.js",
+    "./components/theme-polychrome-boot.js": "./dist/theme-polychrome-boot.js",
     "./tokens/*": "./dist/tokens/*",
     "./package.json": "./package.json"
   },

@@ -1,0 +1,78 @@
+{
+  "name": "Arethesis Polychrome",
+  "version": "2025-10-01",
+  "description": "Arethesis Polychrome theme: the default theme recolored in the pigments of painted Greek architecture and pottery. Resolve with the input { \"theme\": \"light\" | \"dark\" | \"light-high-contrast\" | \"dark-high-contrast\" }.",
+  "sets": {
+    "base": {
+      "description": "Typography, radii and spacing, with the polychrome type and corners.",
+      "sources": [
+        {
+          "$ref": "base.tokens.json"
+        },
+        {
+          "$ref": "polychrome.base.tokens.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "description": "Color theme and contrast level.",
+      "contexts": {
+        "light": [
+          {
+            "$ref": "light.tokens.json"
+          },
+          {
+            "$ref": "polychrome.light.tokens.json"
+          }
+        ],
+        "dark": [
+          {
+            "$ref": "dark.tokens.json"
+          },
+          {
+            "$ref": "polychrome.dark.tokens.json"
+          }
+        ],
+        "light-high-contrast": [
+          {
+            "$ref": "light.tokens.json"
+          },
+          {
+            "$ref": "light-high-contrast.tokens.json"
+          },
+          {
+            "$ref": "polychrome.light.tokens.json"
+          },
+          {
+            "$ref": "polychrome.light-high-contrast.tokens.json"
+          }
+        ],
+        "dark-high-contrast": [
+          {
+            "$ref": "dark.tokens.json"
+          },
+          {
+            "$ref": "dark-high-contrast.tokens.json"
+          },
+          {
+            "$ref": "polychrome.dark.tokens.json"
+          },
+          {
+            "$ref": "polychrome.dark-high-contrast.tokens.json"
+          }
+        ]
+      },
+      "default": "light"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    }
+  ]
+}

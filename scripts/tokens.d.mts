@@ -10,6 +10,8 @@ export interface ResolvedToken {
 }
 export const TOKENS_DIR: string;
 export const RESOLVER_FILE: string;
+export const POLYCHROME_RESOLVER_FILE: string;
+export const POLYCHROME_CSS_HEADER: string;
 export const RESOLVER_VERSION: string;
 export const CONTEXTS: string[];
 export const THEME_STORAGE_KEY: string;
@@ -20,14 +22,15 @@ export const THEME_RULES: Array<{ context: string; scheme: string; media?: strin
 export function colorProblems(value: unknown): string[];
 export function validateTokens(doc: unknown, file?: string): string[];
 export function validateResolver(doc: unknown, exists?: (file: string) => boolean): string[];
-export function loadTokens(dir?: string): Loaded;
+export function loadTokens(dir?: string, resolverFile?: string): Loaded;
 export function flatten(doc: Record<string, unknown>, into?: Map<string, ResolvedToken>): Map<string, ResolvedToken>;
 export function resolveTokens(loaded: Loaded, input?: Record<string, string>): Map<string, ResolvedToken>;
 export function cssVariable(path: string): string;
 export function srgbToHex(components: number[]): string;
 export function colorToCss(value: unknown): string;
 export function tokenToCss(token: ResolvedToken): string;
-export function themeCss(loaded?: Loaded): string;
+export function themeCss(loaded?: Loaded, options?: { over?: Loaded }): string;
+export function polychromeCss(loaded?: Loaded, over?: Loaded): string;
 export function withThemeCss(css: string, loaded?: Loaded): string;
 export function criticalCss(loaded?: Loaded): string;
 export function bootScript(options?: { themeKey?: string; contrastKey?: string }): string;

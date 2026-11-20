@@ -17,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 export const TOKENS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../src/kit/tokens');
 export const RESOLVER_FILE = 'arethesis.resolver.json';
+/** The optional Polychrome theme, layered on top of the default one. */
+export const POLYCHROME_RESOLVER_FILE = 'polychrome.resolver.json';
 export const RESOLVER_VERSION = '2025-10-01';
 /** Theme contexts, in the order their CSS is emitted. */
 export const CONTEXTS = ['light', 'dark', 'light-high-contrast', 'dark-high-contrast'];
@@ -177,10 +179,10 @@ export function validateResolver(doc, exists = () => true) {
 
 // ── Loading and resolving ──────────────────────────────────────────────────
 
-/** Read and validate every token file and the resolver. Throws on problems. */
-export function loadTokens(dir = TOKENS_DIR) {
+/** Read and validate a resolver and every token file it uses. Throws on problems. */
+export function loadTokens(dir = TOKENS_DIR, resolverFile = RESOLVER_FILE) {
   const read = file => JSON.parse(readFileSync(resolve(dir, file), 'utf8'));
-  const resolver = read(RESOLVER_FILE);
+  const resolver = read(resolverFile);
   const files = new Map();
   const exists = file => {
     try {
@@ -345,12 +347,30 @@ function rules(contexts, body, { pretty }) {
   });
 }
 
-/** The custom properties for every theme context, with the selectors from THEME_RULES. */
-export function themeCss(loaded = loadTokens()) {
-  const all = Object.fromEntries(CONTEXTS.map(c => [c, resolveTokens(loaded, { theme: c })]));
+const resolveAll = loaded => Object.fromEntries(CONTEXTS.map(c => [c, resolveTokens(loaded, { theme: c })]));
+/** Paths whose CSS value differs between theme contexts. */
+const varyingPaths = all => new Set([...all.light.keys()].filter(path => new Set(CONTEXTS.map(c => tokenToCss(all[c].get(path)))).size > 1));
+
+/**
+ * The custom properties for every theme context, with the selectors from THEME_RULES.
+ *
+ * With `over`, the output is an overlay for a stylesheet loaded after `over`'s
+ * own CSS: :root gets only the tokens that differ from `over`, and every other
+ * context gets each token that varies in either theme, so none of `over`'s
+ * context rules can leak through.
+ */
+export function themeCss(loaded = loadTokens(), { over } = {}) {
+  const all = resolveAll(loaded);
   // Tokens that vary between contexts; the rest are only emitted once, in :root.
-  const varying = new Set([...all.light.keys()].filter(path => new Set(CONTEXTS.map(c => tokenToCss(all[c].get(path)))).size > 1));
-  const t = Object.fromEntries(CONTEXTS.map(c => [c, c === 'light' ? all.light : new Map([...all[c]].filter(([path]) => varying.has(path)))]));
+  const varying = varyingPaths(all);
+  let rootPaths = null;
+  if (over) {
+    const base = resolveAll(over);
+    for (const path of varyingPaths(base)) varying.add(path);
+    rootPaths = new Set([...all.light.keys()].filter(path => varying.has(path) || !base.light.has(path) || tokenToCss(base.light.get(path)) !== tokenToCss(all.light.get(path))));
+  }
+  const pick = (tokens, keep) => new Map([...tokens].filter(([path]) => keep.has(path)));
+  const t = Object.fromEntries(CONTEXTS.map(c => [c, c === 'light' ? (rootPaths ? pick(all.light, rootPaths) : all.light) : pick(all[c], varying)]));
   const body = (tokens, scheme, indent) => [...[...tokens].map(([path, token]) => `${indent}${cssVariable(path)}: ${tokenToCss(token)};`), `${indent}color-scheme: ${scheme};`].join('\n');
   return rules(t, body, { pretty: true }).join('\n\n');
 }
@@ -364,6 +384,29 @@ export function withThemeCss(css, loaded) {
   const end = css.indexOf(CSS_END);
   if (start === -1 || end === -1) throw new Error('theme.css is missing the generated design token markers');
   return `${css.slice(0, start)}${CSS_START}\n\n${themeCss(loaded)}\n\n${css.slice(end)}`;
+}
+
+export const POLYCHROME_CSS_HEADER = `/*
+ * Arethesis Polychrome theme
+ *
+ * The default theme recolored in the pigments of painted Greek architecture
+ * and pottery: Egyptian blue, cinnabar, malachite and ochre on limestone, or
+ * terracotta and bone on black glaze in dark mode. Load it after theme.css:
+ *
+ *   import 'arethesis/components/theme.css';
+ *   import 'arethesis/components/theme-polychrome.css';
+ *
+ * It only sets custom properties, with the same light, dark and high-contrast
+ * selectors as theme.css. --ar-font-display and --ar-font-serif name Cinzel
+ * and Gentium Book Plus (both SIL OFL), which are not bundled: load them with
+ * @font-face, or the stacks fall back to system serifs.
+ *
+ * Generated from src/kit/tokens/polychrome.* by \`npm run tokens\`; do not edit by hand.
+ */`;
+
+/** The whole of theme-polychrome.css. */
+export function polychromeCss(loaded = loadTokens(TOKENS_DIR, POLYCHROME_RESOLVER_FILE), over = loadTokens()) {
+  return `${POLYCHROME_CSS_HEADER}\n\n${themeCss(loaded, { over })}\n`;
 }
 
 // ── Flash-free boot ────────────────────────────────────────────────────────

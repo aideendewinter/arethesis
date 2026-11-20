@@ -47,6 +47,19 @@ const head = themeBootHtml({ nonce });
 
 The snippet applies the saved theme and contrast. It also adds a few critical rules: background, text color and `color-scheme` for every theme, so the first frame is right even before `theme.css` loads.
 
+### The Polychrome theme
+
+An optional second palette, the one the examples use. Greek temples and statues were painted in strong colors; the white-marble look is what's left once the paint wears off. Polychrome recolors the theme in those pigments: Egyptian blue, cinnabar, malachite and ochre on limestone in light mode, and terracotta and bone on black glaze in dark mode, like red-figure pottery. It has light, dark and high-contrast variants with the same contrast targets as the default.
+
+```ts
+import 'arethesis/components/theme.css';
+import 'arethesis/components/theme-polychrome.css'; // after theme.css
+```
+
+It only sets custom properties, so everything else works the same. For the boot snippet, use `theme-polychrome-boot.js` or `themeBootHtml({ palette: 'polychrome' })`.
+
+Polychrome also sets `--ar-font-display` (Cinzel, for headings) and `--ar-font-serif` (Gentium Book Plus, for reading text, with polytonic Greek). Both fonts are SIL OFL and are **not bundled**: load them with `@font-face` (the examples self-host them in `examples/shared/fonts/`), or the stacks fall back to system serifs. The default theme defines both properties as system serif stacks, and both palettes define `--ar-accent-2`, a secondary accent for decoration and second data series.
+
 ### Design tokens
 
 The theme's values come from design tokens in the [W3C Design Tokens Format](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (2025.10): colors, shadows, font stacks, radii and spacing. They ship with the package, so designers and other tools can use the same source:
@@ -57,6 +70,7 @@ The theme's values come from design tokens in the [W3C Design Tokens Format](htt
 | `arethesis/tokens/base.tokens.json` | Fonts, radii, spacing |
 | `arethesis/tokens/light.tokens.json`, `dark.tokens.json` | Colors and shadows |
 | `arethesis/tokens/light-high-contrast.tokens.json`, `dark-high-contrast.tokens.json` | High-contrast overrides, applied on top of light or dark |
+| `arethesis/tokens/polychrome.resolver.json` | The Polychrome theme: the same files, with the `polychrome.*.tokens.json` overrides layered on top |
 
 - **Colors** use the spec's sRGB form (`colorSpace`, `components`), with a 6-digit `hex` fallback for tools that still expect hex.
 - **CSS names:** each token maps to a custom property named after its path, without the `color` group. For example, `color.text.muted` becomes `--ar-text-muted`, and `radius.sm` becomes `--ar-radius-sm`.
@@ -64,7 +78,7 @@ The theme's values come from design tokens in the [W3C Design Tokens Format](htt
 
 To rebrand, override custom properties as above, or copy the tokens, change them and generate your own CSS with Style Dictionary or a similar tool.
 
-Contributing to Arethesis: `theme.css` is generated from `src/kit/tokens/`. Edit the tokens, then run `npm run tokens`. The tests fail if the CSS is out of date, if a token breaks the spec, or if a theme drops below its contrast target.
+Contributing to Arethesis: `theme.css` and `theme-polychrome.css` are generated from `src/kit/tokens/`. Edit the tokens, then run `npm run tokens`. The tests fail if the CSS is out of date, if a token breaks the spec, or if a theme drops below its contrast target.
 
 ## `<a-data-table>`
 

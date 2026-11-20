@@ -2,7 +2,7 @@ import { CollabSession, WebSocketManager, type CollabUser, type RemoteCursor } f
 import { connectMockBackend } from '../mock/client';
 import { startApp } from '../shared/boot';
 import { bindNetworkControl } from '../shared/network';
-import { avatar, mountShell, setStatusPill, toast } from '../shared/shell';
+import { avatar, mountShell, PIGMENTS, setStatusPill, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
 mountShell({
@@ -101,7 +101,7 @@ document.querySelector<HTMLInputElement>('#ghost')!.addEventListener('change', e
   }
   const ws = new WebSocketManager({ url: 'wss://mock.local/collab', socketFactory: backend.webSocket });
   const hidden = document.createElement('textarea');
-  const ghostSession = new CollabSession(ws, 'launch-plan', hidden, { user: { name: 'Ghost writer', color: '#0f766e' }, cursors: false });
+  const ghostSession = new CollabSession(ws, 'launch-plan', hidden, { user: { name: 'Ghost writer', color: PIGMENTS[6] }, cursors: false });
   let queue = '';
   let at = 0;
   const timer = setInterval(() => {

@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'node:path';
-import { bootScript, criticalCss, loadTokens } from '../scripts/tokens.mjs';
+import { bootScript, criticalCss, loadTokens, POLYCHROME_RESOLVER_FILE, TOKENS_DIR } from '../scripts/tokens.mjs';
 
 const root = import.meta.dirname;
 const pages = ['directory', 'kanban', 'editor', 'dashboard', 'signup', 'offline'];
@@ -13,7 +13,8 @@ const pages = ['directory', 'kanban', 'editor', 'dashboard', 'signup', 'offline'
  * until the shell has rendered the page chrome, so it appears in one go.
  */
 function themeBoot(): Plugin {
-  const loaded = loadTokens();
+  // The examples wear the Polychrome theme.
+  const loaded = loadTokens(TOKENS_DIR, POLYCHROME_RESOLVER_FILE);
   const style = [
     criticalCss(loaded),
     // Hide the half-built page until the shell marks it ready. If a script
@@ -39,6 +40,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: /^arethesis\/components\/theme\.css$/, replacement: resolve(root, '../src/kit/theme.css') },
+      { find: /^arethesis\/components\/theme-polychrome\.css$/, replacement: resolve(root, '../src/kit/theme-polychrome.css') },
       { find: /^arethesis\/components$/, replacement: resolve(root, '../src/kit/index.ts') },
       { find: /^arethesis$/, replacement: resolve(root, '../src/index.ts') },
     ],

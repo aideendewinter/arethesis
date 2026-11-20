@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Polychrome theme** (`arethesis/components/theme-polychrome.css`): an optional palette in the pigments of painted Greek architecture: Egyptian blue, cinnabar, malachite and ochre on limestone, or terracotta and bone on black glaze in dark mode. It has light, dark and high-contrast variants, its own design tokens (`polychrome.resolver.json`), a boot script (`theme-polychrome-boot.js`) and `themeBootHtml({ palette: 'polychrome' })`.
+- New tokens in both themes: `--ar-accent-2` (a secondary accent), `--ar-font-display` and `--ar-font-serif`.
+
+### Changed
+
+- The examples have a new look in the Polychrome theme, with self-hosted fonts (Cinzel and Gentium Book Plus, SIL OFL) and a new home page.
+
 ## 0.1.5
 
 ### Fixed

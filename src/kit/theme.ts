@@ -10,13 +10,14 @@
  * ```html
  * <!-- either load the drop-in script… -->
  * <script src="/node_modules/arethesis/dist/theme-boot.js"></script>
+ * <!-- (theme-polychrome-boot.js with the Polychrome theme) -->
  * <!-- …or inline it from your server or build: themeBootHtml() -->
  * ```
  *
  * @module kit/theme
  */
 
-import { CRITICAL_CSS } from './theme-boot.generated';
+import { CRITICAL_CSS, POLYCHROME_CRITICAL_CSS } from './theme-boot.generated';
 
 export const THEME_STORAGE_KEY = 'ar-theme';
 export const CONTRAST_STORAGE_KEY = 'ar-contrast';
@@ -31,7 +32,7 @@ export interface ThemeStorageOptions {
   contrastKey?: string;
 }
 
-export { CRITICAL_CSS };
+export { CRITICAL_CSS, POLYCHROME_CRITICAL_CSS };
 
 function remember(key: string, value: string | null): void {
   try {
@@ -96,9 +97,11 @@ export function themeBootScript({ themeKey = THEME_STORAGE_KEY, contrastKey = CO
  * `<style>` and `<script>` tags to put at the top of `<head>`, so the first
  * paint already has the right background, text color and theme. For servers
  * and build tools; in the browser, use the drop-in `theme-boot.js` instead.
- * Pass `nonce` if your Content Security Policy requires one.
+ * Pass `nonce` if your Content Security Policy requires one, and
+ * `palette: 'polychrome'` if you load theme-polychrome.css.
  */
-export function themeBootHtml(options: ThemeStorageOptions & { nonce?: string } = {}): string {
+export function themeBootHtml(options: ThemeStorageOptions & { nonce?: string; palette?: 'default' | 'polychrome' } = {}): string {
   const nonce = options.nonce ? ` nonce="${options.nonce.replace(/[^\w+/=-]/g, '')}"` : '';
-  return `<style${nonce}>${CRITICAL_CSS}</style><script${nonce}>${themeBootScript(options)}</script>`;
+  const css = options.palette === 'polychrome' ? POLYCHROME_CRITICAL_CSS : CRITICAL_CSS;
+  return `<style${nonce}>${css}</style><script${nonce}>${themeBootScript(options)}</script>`;
 }

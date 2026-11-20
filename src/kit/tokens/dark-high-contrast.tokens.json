@@ -105,6 +105,17 @@
           ],
           "hex": "#000000"
         }
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1.0,
+            0.702,
+            0.851
+          ],
+          "hex": "#ffb3d9"
+        }
       }
     },
     "danger": {
