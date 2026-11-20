@@ -215,6 +215,28 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-tree>`
+
+A tree whose branches load as they're opened. The top level is a ListView, and so is each node's children, so they page, cache, and update over SSE like any other list.
+
+```ts
+tree.configure({
+  root: { type: 'Folder', endpoint: 'listFolders', filters: { parent: 'root' } },
+  children: folder => folder.childCount ? { type: 'Folder', endpoint: 'listFolders', filters: { parent: folder.id } } : null,
+  hasChildren: folder => folder.childCount > 0,
+  label: 'name',                 // a field, or a function
+  selection: 'multi',            // 'none' (default), 'single' or 'multi'
+  render: (el, folder) => el.classList.toggle('is-shared', folder.shared),
+});
+```
+
+- **Semantics:** a `role="tree"` with flat `treeitem`s carrying `aria-level`, `aria-setsize`, `aria-posinset`, `aria-expanded` and `aria-selected`. A node whose children are loading is `aria-busy`. A list with more pages ends in a "Show more" item.
+- **Keys:** Up and Down move. Right opens a node, or moves to its first child; Left closes it, or moves to its parent. Home and End go to the ends, `*` opens every sibling, and typing jumps to a match. Enter activates (and selects), and Space toggles the selection in a multi-select tree. Ctrl/Cmd+click adds to the selection.
+- **Form control:** with `selection` and a `name`, it submits the selected ids (one form entry each).
+- **In code:** `tree.toggle(key, open?)`, `tree.expandedKeys` and `tree.value` (the selected ids). A node's key is the ids from the top joined by `/`, such as `"3/14"`; pass keys in `expanded` to open nodes at first.
+
+Events: `tree:select` (`{ ids }`), `tree:toggle` (`{ key, id, expanded }`) and `tree:activate` (`{ key, id, data }`).
+
 ## `<a-dialog>`
 
 A native `<dialog>` with a heading and a close button, whose `open()` returns a promise of the result.

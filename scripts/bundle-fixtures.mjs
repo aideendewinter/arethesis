@@ -90,9 +90,15 @@ export const fixtures = [
     mustNotContain: ['a-data-table', 'sortable:start', 'a-combobox'],
   },
   {
+    name: 'components/tree',
+    code: `import 'arethesis/components/tree';`,
+    mustContain: ['a-tree', 'treeitem'],
+    mustNotContain: ['a-data-table', 'sortable:start', 'a-combobox'],
+  },
+  {
     name: 'components (all)',
     code: `import 'arethesis/components';`,
-    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox', 'a-toast', 'a-tabs', 'a-dialog'],
+    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox', 'a-toast', 'a-tabs', 'a-dialog', 'a-tree'],
   },
   {
     name: 'arethesis (everything)',

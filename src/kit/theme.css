@@ -567,6 +567,26 @@ html.is-sorting-active, html.is-sorting-active * { cursor: grabbing !important; 
 }
 .is-dragging { cursor: grabbing !important; user-select: none; z-index: 10; }
 
+/* ── Tree ──────────────────────────────────────────────────────────────── */
+a-tree { display: block; }
+.ar-tree { list-style: none; margin: 0; padding: 0.25rem; }
+.ar-tree__item {
+  display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.5rem 0.3rem calc(0.5rem + var(--ar-tree-depth, 0) * 1.25rem);
+  border-radius: var(--ar-radius-sm); cursor: default; user-select: none; content-visibility: auto; contain-intrinsic-size: auto 2rem;
+}
+.ar-tree__item:hover { background: var(--ar-surface); }
+.ar-tree__item:focus-visible { outline: none; box-shadow: var(--ar-focus); }
+.ar-tree__item[aria-selected='true'] { background: var(--ar-accent-soft); color: var(--ar-text); }
+.ar-tree__toggle { flex: none; width: 1rem; height: 1rem; display: inline-grid; place-items: center; cursor: pointer; }
+.ar-tree__item[aria-expanded] > .ar-tree__toggle::before {
+  content: ''; width: 0.4rem; height: 0.4rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(-45deg); opacity: 0.7; transition: transform 0.12s;
+}
+.ar-tree__item[aria-expanded='true'] > .ar-tree__toggle::before { transform: rotate(45deg); }
+.ar-tree__item[aria-busy='true'] > .ar-tree__toggle::before { border-width: 2px; border-color: var(--ar-border) var(--ar-accent) var(--ar-accent) var(--ar-border); border-radius: 50%; transform: none; width: 0.6rem; height: 0.6rem; animation: ar-spin 0.8s linear infinite; }
+@keyframes ar-spin { to { transform: rotate(360deg); } }
+.ar-tree__more { color: var(--ar-accent); padding-left: calc(1.85rem + var(--ar-tree-depth, 0) * 1.25rem); cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .ar-tree__item[aria-busy='true'] > .ar-tree__toggle::before { animation: none; } .ar-tree__toggle::before { transition: none; } }
+
 /* ── Dialog ────────────────────────────────────────────────────────────── */
 a-dialog { display: contents; }
 .ar-dialog {

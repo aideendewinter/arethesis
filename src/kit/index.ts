@@ -30,6 +30,7 @@ import './elements/combobox';
 import './elements/toast';
 import './elements/tabs';
 import './elements/dialog';
+import './elements/tree';
 
 export { DataTable } from './data-table';
 export type { DataTableColumn, DataTableConfig } from './data-table';
@@ -53,6 +54,8 @@ export type { ComboboxConfig, ComboboxOption, ComboboxSource } from './combobox'
 export { Toaster, toast, connectToasts } from './toast';
 export type { ToastOptions, ToastHandle, ToastKind, ConnectToastsOptions } from './toast';
 export { Tabs } from './tabs';
+export { Tree } from './tree';
+export type { TreeConfig } from './tree';
 export { Dialog, confirm } from './dialog';
 export type { ConfirmOptions } from './dialog';
 export { Kanban } from './kanban';
