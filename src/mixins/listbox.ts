@@ -20,7 +20,6 @@
  */
 
 import type { MixinInstance } from './types';
-import { mixinRegistry } from './registry';
 import { emit } from './utils';
 import { uniqueId } from '../utils/dom';
 
@@ -240,5 +239,3 @@ export function listboxMixin(element: HTMLElement, config: ListboxOptions): Mixi
     },
   };
 }
-
-mixinRegistry.register('listbox', listboxMixin as never);

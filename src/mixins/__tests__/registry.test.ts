@@ -92,4 +92,12 @@ describe('MixinRegistry', () => {
     reg.init(root.firstElementChild!); // root element itself, already applied
     expect(log.filter(l => l.startsWith('apply:'))).toHaveLength(3);
   });
+
+  it('ensure() registers a mixin only if the name is free', () => {
+    const reg = new MixinRegistry();
+    const log: string[] = [];
+    expect(reg.ensure('m', fake('first', log))).toBe(reg);
+    reg.ensure('m', fake('second', log)).apply(document.createElement('div'), 'm');
+    expect(log).toEqual(['apply:first:{}']);
+  });
 });

@@ -8,7 +8,6 @@
  */
 
 import type { DraggableOptions, DragDetail, MixinInstance } from './types';
-import { mixinRegistry } from './registry';
 import { emit, readTranslate } from './utils';
 
 export function draggableMixin(element: HTMLElement, options: DraggableOptions = {}): MixinInstance {
@@ -138,5 +137,3 @@ export function draggableMixin(element: HTMLElement, options: DraggableOptions =
     },
   };
 }
-
-mixinRegistry.register('draggable', draggableMixin);

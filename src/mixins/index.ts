@@ -1,5 +1,5 @@
 /**
- * Built-in mixins. Importing this module registers all of them.
+ * Built-in mixins. Call `registerBuiltInMixins()` to use them by name; `import 'arethesis'` does.
  *
  * @module mixins
  */
@@ -16,7 +16,7 @@ import { tooltipMixin } from './tooltip';
 import { contextMenuMixin } from './context-menu';
 import { listboxMixin } from './listbox';
 
-/** Register the built-in mixins (idempotent; called by Arethesis). */
+/** Register the built-in mixins, for `data-mixin` (idempotent; `import 'arethesis'` does this). */
 export function registerBuiltInMixins(): void {
   const all = {
     draggable: draggableMixin,

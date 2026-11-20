@@ -10,7 +10,6 @@
  */
 
 import type { InfiniteScrollOptions, MixinInstance } from './types';
-import { mixinRegistry } from './registry';
 import { emit } from './utils';
 import { getRuntime, hasRuntime } from '../components/runtime';
 
@@ -103,5 +102,3 @@ export function infiniteScrollMixin(element: HTMLElement, options: InfiniteScrol
     },
   };
 }
-
-mixinRegistry.register('infinite-scroll', infiniteScrollMixin);

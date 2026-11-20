@@ -8,6 +8,33 @@ npm install arethesis
 
 Arethesis ships as ES modules with TypeScript types. It has no runtime dependencies.
 
+## Import only what you use
+
+`import … from 'arethesis'` gives you everything, with the defaults installed: the built-in mixins work in `data-mixin`, the built-in plugins load by name, and `app.collab` is ready. For a smaller bundle, start from the lean core and add what you need. Your bundler drops the rest.
+
+| Import | What you get |
+| --- | --- |
+| `arethesis` | Everything, with the defaults installed |
+| `arethesis/core` | The store, list views, HTTP, components, binding and utilities. Nothing is registered globally |
+| `arethesis/realtime` | SSE, WebSocket and Azure Web PubSub managers, and OT |
+| `arethesis/collab` | Collaborative editing; importing it enables `app.collab` |
+| `arethesis/mixins` | The mixins; call `registerBuiltInMixins()` to use them in `data-mixin` |
+| `arethesis/plugins/<name>` | One plugin: `date-utils`, `async-validators` or `rich-text` |
+| `arethesis/components` | Every kit element |
+| `arethesis/components/<name>` | One kit element, such as `data-table` or `chart` |
+
+```ts
+import { getArethesis } from 'arethesis/core';
+import 'arethesis/components/data-table';
+import { richTextPlugin } from 'arethesis/plugins/rich-text';
+
+await getArethesis().use(richTextPlugin()).init({ http: { baseUrl: '/api' } });
+```
+
+`init()` loads auth, persistence and the real-time managers only when you configure them.
+
+Without a bundler, use the minified files in `arethesis/cdn/`: `arethesis.min.js` and `components.min.js`, which share their chunks.
+
 ## Initialize once per page
 
 ```ts

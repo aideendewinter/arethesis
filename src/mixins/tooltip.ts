@@ -9,7 +9,6 @@
  */
 
 import type { MixinInstance, TooltipOptions } from './types';
-import { mixinRegistry } from './registry';
 import { placeFloating } from './utils';
 import { uniqueId } from '../utils/dom';
 
@@ -83,5 +82,3 @@ export function tooltipMixin(element: HTMLElement, options: TooltipOptions = {})
     },
   };
 }
-
-mixinRegistry.register('tooltip', tooltipMixin);

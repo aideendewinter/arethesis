@@ -1,7 +1,8 @@
 # Component kit
 
 ```ts
-import 'arethesis/components';
+import 'arethesis/components';            // every element, or one at a time:
+import 'arethesis/components/data-table'; // just <a-data-table>
 import 'arethesis/components/theme.css';
 ```
 

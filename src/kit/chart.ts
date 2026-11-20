@@ -577,4 +577,7 @@ function barPath(x: number, top: number, w: number, h: number, base: number, rou
   return `<path class="ar-chart__bar" style="fill:${color}" d="M${l},${t}V${round(b - r)}Q${l},${b} ${round(l + r)},${b}H${round(rgt - r)}Q${rgt},${b} ${rgt},${round(b - r)}V${t}Z"/>`;
 }
 
-defineComponent({ tag: 'a-chart' })(Chart);
+/** Define `<a-chart>` (idempotent). `import 'arethesis/components/chart'` calls this. */
+export function defineChart(): void {
+  defineComponent({ tag: 'a-chart' })(Chart);
+}

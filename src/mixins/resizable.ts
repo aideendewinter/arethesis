@@ -11,7 +11,6 @@
  */
 
 import type { MixinInstance, ResizableOptions } from './types';
-import { mixinRegistry } from './registry';
 import { emit } from './utils';
 
 type Edge = NonNullable<ResizableOptions['handles']>[number];
@@ -131,5 +130,3 @@ export function resizableMixin(element: HTMLElement, options: ResizableOptions =
     },
   };
 }
-
-mixinRegistry.register('resizable', resizableMixin);

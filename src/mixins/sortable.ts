@@ -28,7 +28,6 @@
  */
 
 import type { MixinInstance, SortableOptions, SortDetail } from './types';
-import { mixinRegistry } from './registry';
 import { announce, emit } from './utils';
 
 const groups = new Map<string, Set<HTMLElement>>();
@@ -580,5 +579,3 @@ export function sortableMixin(element: HTMLElement, options: SortableOptions = {
     },
   };
 }
-
-mixinRegistry.register('sortable', sortableMixin);

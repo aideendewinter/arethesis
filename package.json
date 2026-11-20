@@ -3,22 +3,55 @@
   "version": "0.2.0",
   "description": "Data-driven Light DOM Web Components: a normalized store, config-driven HTTP, live updates, collaborative editing and accessible UI mixins — with zero runtime dependencies.",
   "type": "module",
-  "main": "./dist/arethesis.js",
-  "module": "./dist/arethesis.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/arethesis.js"
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./realtime": {
+      "types": "./dist/realtime/index.d.ts",
+      "import": "./dist/realtime/index.js"
+    },
+    "./collab": {
+      "types": "./dist/collab/index.d.ts",
+      "import": "./dist/collab/index.js"
+    },
+    "./mixins": {
+      "types": "./dist/mixins/index.d.ts",
+      "import": "./dist/mixins/index.js"
+    },
+    "./mixins/*": {
+      "types": "./dist/mixins/*.d.ts",
+      "import": "./dist/mixins/*.js"
+    },
+    "./plugins/*": {
+      "types": "./dist/plugins/*.d.ts",
+      "import": "./dist/plugins/*.js"
     },
     "./components": {
       "types": "./dist/kit/index.d.ts",
-      "import": "./dist/components.js"
+      "import": "./dist/kit/index.js"
+    },
+    "./components/theme": {
+      "types": "./dist/kit/theme.d.ts",
+      "import": "./dist/kit/theme.js"
     },
     "./components/theme.css": "./dist/theme.css",
     "./components/theme-polychrome.css": "./dist/theme-polychrome.css",
     "./components/theme-boot.js": "./dist/theme-boot.js",
     "./components/theme-polychrome-boot.js": "./dist/theme-polychrome-boot.js",
+    "./components/*": {
+      "types": "./dist/kit/elements/*.d.ts",
+      "import": "./dist/kit/elements/*.js"
+    },
+    "./cdn/*": "./dist/cdn/*",
     "./tokens/*": "./dist/tokens/*",
     "./package.json": "./package.json"
   },
@@ -30,7 +63,7 @@
   ],
   "scripts": {
     "dev": "vite --config examples/vite.config.ts",
-    "build": "node scripts/build-tokens.mjs --check && tsc -p tsconfig.json && vite build && node scripts/copy-theme.mjs",
+    "build": "node scripts/build-tokens.mjs --check && tsc -p tsconfig.json && vite build && vite build --config vite.config.cdn.ts && node scripts/copy-theme.mjs",
     "tokens": "node scripts/build-tokens.mjs",
     "typecheck": "tsc -p tsconfig.test.json",
     "lint": "eslint .",
@@ -43,7 +76,9 @@
     "e2e": "playwright test",
     "docs": "typedoc",
     "prepublishOnly": "npm run typecheck && npm run lint && npm run test:run && npm run build",
-    "version": "node scripts/sync-version.mjs"
+    "version": "node scripts/sync-version.mjs",
+    "size": "node scripts/size-budget.mjs",
+    "treeshake": "node scripts/check-treeshake.mjs"
   },
   "keywords": [
     "web-components",
@@ -87,10 +122,23 @@
     "vitest": "5.1.0"
   },
   "sideEffects": [
-    "./dist/*.js",
-    "./src/**",
-    "./examples/**",
-    "*.css"
+    "*.css",
+    "./dist/index.js",
+    "./dist/defaults.js",
+    "./dist/arethesis.js",
+    "./dist/components.js",
+    "./dist/kit/index.js",
+    "./dist/kit/elements/*.js",
+    "./dist/collab/index.js",
+    "./dist/cdn/**",
+    "./dist/theme-boot.js",
+    "./dist/theme-polychrome-boot.js",
+    "./src/index.ts",
+    "./src/defaults.ts",
+    "./src/collab/index.ts",
+    "./src/kit/index.ts",
+    "./src/kit/elements/*.ts",
+    "./examples/**"
   ],
   "engines": {
     "node": ">=18"

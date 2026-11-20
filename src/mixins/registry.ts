@@ -29,6 +29,16 @@ export class MixinRegistry {
     this.definitions.set(name, def as unknown as MixinDefinition);
   }
 
+  /**
+   * Register `definition` under `name` unless that name is already taken, and
+   * return the registry. Code that applies a built-in mixin calls this first,
+   * so it works without the built-ins being registered globally.
+   */
+  ensure<O>(name: string, definition: MixinDefinition<O> | MixinFunction<O>): this {
+    if (!this.definitions.has(name)) this.register(name, definition);
+    return this;
+  }
+
   has(name: string): boolean {
     return this.definitions.has(name);
   }

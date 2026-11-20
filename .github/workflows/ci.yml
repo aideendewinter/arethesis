@@ -19,6 +19,9 @@ jobs:
       - run: npm run lint
       - run: npm run coverage
       - run: npm run build
+      - run: npm run treeshake
+      - run: npm run size
+      - run: node scripts/check-exports.mjs
       - run: npm pack --dry-run
 
   e2e:

@@ -613,4 +613,7 @@ export class Sheet extends Component {
   }
 }
 
-defineComponent({ tag: 'a-sheet' })(Sheet);
+/** Define `<a-sheet>` (idempotent). `import 'arethesis/components/sheet'` calls this. */
+export function defineSheet(): void {
+  defineComponent({ tag: 'a-sheet' })(Sheet);
+}

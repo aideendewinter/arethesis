@@ -17,16 +17,17 @@ import type { EndpointConfig, FetchOptions, Params, RequestConfig } from '../htt
 import type { ListView, ListViewConfig, TypeConfig } from '../data/types';
 import type { PluginRef, PluginRegistrationOptions } from '../plugins/types';
 
+import type { PersistenceManager } from '../data/persistence-manager';
+import type { AuthManager } from '../http/auth-manager';
+import type { SSEManager } from '../realtime/sse-manager';
+import type { WebSocketManager } from '../realtime/websocket-manager';
+import type { AzurePubSubManager } from '../realtime/azure-pubsub-manager';
+import type { CollabManager } from '../realtime/collab/collab-session';
+
 import { ObjectStore } from '../data/object-store';
 import { ListViewRegistry } from '../data/list-view-registry';
 import { OptimisticUpdateManager } from '../data/optimistic-updates';
-import { PersistenceManager } from '../data/persistence-manager';
 import { HttpClient } from '../http/http-client';
-import { AuthManager } from '../http/auth-manager';
-import { SSEManager } from '../realtime/sse-manager';
-import { WebSocketManager } from '../realtime/websocket-manager';
-import { AzurePubSubManager } from '../realtime/azure-pubsub-manager';
-import { CollabManager } from '../realtime/collab/collab-session';
 import { ValidationEngine } from '../binding/validation-engine';
 import { DataBinder } from '../binding/data-binder';
 import { setRuntime } from '../components/runtime';
@@ -34,8 +35,7 @@ import { templateLoader } from '../components/template-loader';
 import { mixinRegistry } from '../mixins/registry';
 import { PluginManager } from '../plugins/plugin-manager';
 import { Emitter } from '../utils/emitter';
-import { registerBuiltInMixins } from '../mixins/index';
-import { registerBuiltInPlugins } from '../plugins/builtins';
+import { getCollabFactory } from './collab-hook';
 
 import { VERSION } from '../version';
 export { VERSION };
@@ -63,8 +63,6 @@ export class Arethesis extends Emitter<ArethesisEvents> {
   readonly binder: DataBinder;
   /** Plugins. */
   readonly plugins: PluginManager;
-  /** Collaborative editing (needs `websocket`). */
-  readonly collab: CollabManager;
   /** Mixin registry. */
   readonly mixins = mixinRegistry;
 
@@ -78,18 +76,16 @@ export class Arethesis extends Emitter<ArethesisEvents> {
   private initialized = false;
   private initPromise: Promise<void> | null = null;
   private stopObserving: (() => void) | null = null;
+  private collabManager: CollabManager | null = null;
 
   constructor() {
     super();
-    registerBuiltInMixins();
-    registerBuiltInPlugins();
     this.optimistic = new OptimisticUpdateManager(this.store, this.listViews);
     this.binder = new DataBinder(this.validation);
     this.plugins = new PluginManager(this);
-    this.collab = new CollabManager(() => this.ws);
     this.http.connect({ store: this.store, listViews: this.listViews });
     this.listViews.setLoader((view, options) => this.http.loadListView(view, options));
-    setRuntime({ store: this.store, listViews: this.listViews, binder: this.binder, http: this.http });
+    setRuntime({ store: this.store, listViews: this.listViews, binder: this.binder, http: this.http, optimistic: this.optimistic });
   }
 
   /** The shared instance. */
@@ -106,6 +102,19 @@ export class Arethesis extends Emitter<ArethesisEvents> {
 
   get config(): ArethesisConfig {
     return this._config;
+  }
+
+  /**
+   * Collaborative editing (needs `websocket`). Available once collaboration is
+   * loaded: `import 'arethesis'` loads it, and so does `import 'arethesis/collab'`.
+   */
+  get collab(): CollabManager {
+    if (!this.collabManager) {
+      const factory = getCollabFactory();
+      if (!factory) throw new Error('Collaboration is not loaded. Add `import \'arethesis/collab\'`.');
+      this.collabManager = factory(() => this.ws);
+    }
+    return this.collabManager;
   }
 
   get isInitialized(): boolean {
@@ -150,7 +159,10 @@ export class Arethesis extends Emitter<ArethesisEvents> {
     for (const [name, endpoint] of Object.entries(config.endpoints ?? {})) this.defineEndpoint(name, endpoint);
     for (const [name, message] of Object.entries(config.validation?.messages ?? {})) this.validation.setMessage(name, message);
 
+    // Optional services are loaded only when configured, so apps that don't
+    // use them don't download them.
     if (config.auth) {
+      const { AuthManager } = await import('../http/auth-manager');
       this.auth = new AuthManager(config.auth, {
         fetch: () => config.http?.fetch ?? globalThis.fetch.bind(globalThis),
         resolveUrl: url => this.http.resolveUrl(url),
@@ -165,15 +177,18 @@ export class Arethesis extends Emitter<ArethesisEvents> {
       return this.auth && this.http.isTrustedUrl(httpUrl) ? this.auth.ensureValidToken() : null;
     };
     if (config.sse) {
+      const { SSEManager } = await import('../realtime/sse-manager');
       this.sse = new SSEManager({ ...config.sse, url: this.http.resolveUrl(config.sse.url) });
       this.sse.connectStore(this.store, this.listViews);
       this.sse.setTokenProvider(tokenFor(this.sse.config.url));
     }
     if (config.websocket) {
+      const { WebSocketManager } = await import('../realtime/websocket-manager');
       this.ws = new WebSocketManager(config.websocket);
       this.ws.setTokenProvider(tokenFor(config.websocket.url));
     }
     if (config.azurePubSub) {
+      const { AzurePubSubManager } = await import('../realtime/azure-pubsub-manager');
       this.azurePubSub = new AzurePubSubManager({
         ...config.azurePubSub,
         negotiateUrl: this.http.resolveUrl(config.azurePubSub.negotiateUrl),
@@ -197,6 +212,7 @@ export class Arethesis extends Emitter<ArethesisEvents> {
   }
 
   private async initPersistence(options: ConstructorParameters<typeof PersistenceManager>[0]): Promise<void> {
+    const { PersistenceManager } = await import('../data/persistence-manager');
     const persistence = new PersistenceManager(options);
     const db = await persistence.open();
     if (!db) return;

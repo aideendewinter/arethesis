@@ -28,7 +28,12 @@ export class PluginManager {
   resolve(ref: PluginRef, options?: unknown): { plugin: ArethesisPlugin; options: unknown } {
     if (typeof ref === 'string') {
       const factory = builtIns.get(ref);
-      if (!factory) throw new Error(`Unknown plugin "${ref}". Built-in plugins: ${[...builtIns.keys()].join(', ')}`);
+      if (!factory) {
+        const known = [...builtIns.keys()];
+        throw new Error(known.length
+          ? `Unknown plugin "${ref}". Registered plugins: ${known.join(', ')}`
+          : `Unknown plugin "${ref}". No plugins are registered by name: import 'arethesis' (which registers the built-ins), or pass the plugin itself, e.g. app.use(richTextPlugin()) from 'arethesis/plugins/rich-text'.`);
+      }
       return { plugin: factory(), options };
     }
     if ('plugin' in ref) {

@@ -86,4 +86,7 @@ export class List extends Component {
   }
 }
 
-defineComponent({ tag: 'a-list' })(List);
+/** Define `<a-list>` (idempotent). `import 'arethesis/components/list'` calls this. */
+export function defineList(): void {
+  defineComponent({ tag: 'a-list' })(List);
+}

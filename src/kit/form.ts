@@ -33,7 +33,6 @@ import { getRuntime } from '../components/runtime';
 import type { BindConfig, FieldBindConfig, FieldValidationConfig, ValidationRule } from '../binding/types';
 import type { BindingHandle } from '../binding/data-binder';
 import { HttpError } from '../http/http-error';
-import { getArethesis } from '../core/arethesis';
 
 type Control = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -152,7 +151,7 @@ export class Form extends Component {
   }
 
   async #send(endpointName: string, data: Record<string, unknown>): Promise<void> {
-    const app = getArethesis();
+    const app = getRuntime();
     const endpoint = app.http.getEndpoint(endpointName);
     if (!endpoint) throw new Error(`<a-form>: unknown endpoint "${endpointName}"`);
     const source = this.getAttribute('data-source');
@@ -194,4 +193,7 @@ export class Form extends Component {
   }
 }
 
-defineComponent({ tag: 'a-form' })(Form);
+/** Define `<a-form>` (idempotent). `import 'arethesis/components/form'` calls this. */
+export function defineForm(): void {
+  defineComponent({ tag: 'a-form' })(Form);
+}

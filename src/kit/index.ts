@@ -1,11 +1,14 @@
 /**
  * Arethesis component kit: ready-made, accessible components built on the
- * framework. Import once to register the elements, and include the theme:
+ * framework. Import once to register every element, and include the theme:
  *
  * ```ts
  * import 'arethesis/components';
  * import 'arethesis/components/theme.css';
  * ```
+ *
+ * Or import only the elements you use, such as
+ * `import 'arethesis/components/data-table'`.
  *
  * The theme is built from design tokens (W3C Design Tokens Format 2025.10),
  * published as `arethesis/tokens/*`. See `setTheme`, `setContrast` and
@@ -13,6 +16,15 @@
  *
  * @packageDocumentation
  */
+
+import './elements/data-table';
+import './elements/flex-view';
+import './elements/list';
+import './elements/form';
+import './elements/chart';
+import './elements/command-palette';
+import './elements/sheet';
+import './elements/markdown-editor';
 
 export { DataTable } from './data-table';
 export type { DataTableColumn, DataTableConfig } from './data-table';

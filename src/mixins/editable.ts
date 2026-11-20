@@ -11,7 +11,6 @@
  */
 
 import type { EditableOptions, MixinInstance } from './types';
-import { mixinRegistry } from './registry';
 import { emit } from './utils';
 import { uniqueId } from '../utils/dom';
 
@@ -180,5 +179,3 @@ export function editableMixin(element: HTMLElement, options: EditableOptions = {
     },
   };
 }
-
-mixinRegistry.register('editable', editableMixin);

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **Import only what you use.** The package is now one module per source file, and bundlers can tree-shake it. An app that only uses `ObjectStore` bundles about 2 KB gzipped instead of the whole framework.
+  - New entry points: `arethesis/core` (lean, nothing registered globally), `arethesis/realtime`, `arethesis/collab`, `arethesis/mixins`, `arethesis/mixins/<name>`, `arethesis/plugins/<name>`, and `arethesis/components/<name>` for a single kit element.
+  - `import 'arethesis'` and `import 'arethesis/components'` work as before.
+  - `app.init()` loads auth, persistence and the real-time managers only when they're configured.
+  - Minified bundles for `<script type="module">` are in `arethesis/cdn/`.
+  - CI checks bundle sizes and that partial imports stay small.
+- Importing a mixin or plugin module no longer registers it as a side effect. `import 'arethesis'` still registers all the built-ins. With `arethesis/core`, call `registerBuiltInMixins()` from `arethesis/mixins`, or `mixinRegistry.register()` for just the ones you use.
+- `app.collab` needs `import 'arethesis/collab'` when you use `arethesis/core`. `import 'arethesis'` includes it.
+
+### Added
+
+- `mixinRegistry.ensure(name, mixin)` registers a mixin unless the name is taken.
+
 ## 0.2.0
 
 ### Added

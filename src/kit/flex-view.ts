@@ -32,6 +32,8 @@ import type { BindConfig } from '../binding/types';
 import type { ListViewConfig, ObjectRef } from '../data/types';
 import type { MixinInstance } from '../mixins/types';
 import { mixinRegistry } from '../mixins/registry';
+import { resizableMixin } from '../mixins/resizable';
+import { sortableMixin } from '../mixins/sortable';
 
 export interface FlexPanelConfig {
   /** Stable key, used to remember order and size. */
@@ -360,14 +362,14 @@ export class FlexView extends Component {
       if (child.resizable !== false) {
         // Width: a splitter in the gap after the panel. Height: the bottom edge.
         this.#addSplitter(panel, signal);
-        const r = mixinRegistry.apply(panel, 'resizable', { handles: ['s'], minHeight: 120 });
+        const r = mixinRegistry.ensure('resizable', resizableMixin).apply(panel, 'resizable', { handles: ['s'], minHeight: 120 });
         if (r) this.#instances.push(r);
         panel.addEventListener('resizable:end', () => this.#save(), { signal });
       }
     }
 
     if (config.reorderable !== false) {
-      const sortable = mixinRegistry.apply(container, 'sortable', { items: '.ar-flex__panel', handle: '.ar-flex__header', direction: 'horizontal' });
+      const sortable = mixinRegistry.ensure('sortable', sortableMixin).apply(container, 'sortable', { items: '.ar-flex__panel', handle: '.ar-flex__header', direction: 'horizontal' });
       if (sortable) this.#instances.push(sortable);
       container.addEventListener('sortable:end', () => queueMicrotask(() => {
         this.#save();
@@ -395,4 +397,7 @@ export class FlexView extends Component {
   }
 }
 
-defineComponent({ tag: 'a-flex-view' })(FlexView);
+/** Define `<a-flex-view>` (idempotent). `import 'arethesis/components/flex-view'` calls this. */
+export function defineFlexView(): void {
+  defineComponent({ tag: 'a-flex-view' })(FlexView);
+}

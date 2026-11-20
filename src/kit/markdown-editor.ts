@@ -803,4 +803,7 @@ export class MarkdownEditor extends Component {
   }
 }
 
-defineComponent({ tag: 'a-markdown-editor' })(MarkdownEditor);
+/** Define `<a-markdown-editor>` (idempotent). `import 'arethesis/components/markdown-editor'` calls this. */
+export function defineMarkdownEditor(): void {
+  defineComponent({ tag: 'a-markdown-editor' })(MarkdownEditor);
+}

@@ -33,7 +33,8 @@ import type { BindConfig, DisplayType, FieldBindConfig, FieldValidationConfig } 
 import type { ListView, ListViewConfig, SortConfig, StoredObject } from '../data/types';
 import type { MixinInstance } from '../mixins/types';
 import { mixinRegistry } from '../mixins/registry';
-import { getArethesis } from '../core/arethesis';
+import { gridNavigationMixin } from '../mixins/grid-navigation';
+import { resizableMixin } from '../mixins/resizable';
 import { cssEscape } from '../utils/dom';
 import { announce } from '../mixins/utils';
 import { openCellEditor, type CellEditor, type CellMove } from './cell-editor';
@@ -151,7 +152,7 @@ export class DataTable extends Component {
     };
     this.bind(this.#view!, bindConfig);
 
-    const grid = mixinRegistry.apply(table, 'grid-navigation', { cellSelector: 'td[data-col], th[data-col]', rowSelector: 'tr' });
+    const grid = mixinRegistry.ensure('grid-navigation', gridNavigationMixin).apply(table, 'grid-navigation', { cellSelector: 'td[data-col], th[data-col]', rowSelector: 'tr' });
     if (grid) this.#instances.push(grid);
     this.listen(table, 'grid:edit', (e: Event) => {
       const { cell, key } = (e as CustomEvent<{ cell: HTMLElement; key?: string }>).detail;
@@ -213,7 +214,7 @@ export class DataTable extends Component {
       } else {
         th.textContent = col.label;
       }
-      const resize = mixinRegistry.apply(th, 'resizable', { handles: ['e'], minWidth: 60 });
+      const resize = mixinRegistry.ensure('resizable', resizableMixin).apply(th, 'resizable', { handles: ['e'], minWidth: 60 });
       if (resize) this.#instances.push(resize);
       return th;
     }));
@@ -345,7 +346,7 @@ export class DataTable extends Component {
 
   async #save(type: string, id: string, changes: Record<string, unknown>): Promise<void> {
     const save = this.#config?.save;
-    const app = getArethesis();
+    const app = getRuntime();
     const apiCall = async (): Promise<Record<string, unknown> | void> => {
       if (!save) return;
       if (typeof save === 'function') return (await save(id, changes)) as Record<string, unknown> | void;
@@ -392,4 +393,7 @@ function caretFromPoint(cell: HTMLElement, x: number, y: number): number | undef
   return undefined;
 }
 
-defineComponent({ tag: 'a-data-table', html: HTML })(DataTable);
+/** Define `<a-data-table>` (idempotent). `import 'arethesis/components/data-table'` calls this. */
+export function defineDataTable(): void {
+  defineComponent({ tag: 'a-data-table', html: HTML })(DataTable);
+}

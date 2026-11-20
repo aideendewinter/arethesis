@@ -10,7 +10,6 @@
  */
 
 import type { DropdownOptions, MixinInstance } from './types';
-import { mixinRegistry } from './registry';
 import { emit } from './utils';
 import { uniqueId } from '../utils/dom';
 
@@ -225,5 +224,3 @@ export function dropdownMixin(host: HTMLElement, options: DropdownOptions = {}):
     },
   };
 }
-
-mixinRegistry.register('dropdown', dropdownMixin);

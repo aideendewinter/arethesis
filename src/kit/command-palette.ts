@@ -397,4 +397,7 @@ function highlight(text: string, indices?: number[]): Node[] {
   return out;
 }
 
-defineComponent({ tag: 'a-command-palette' })(CommandPalette);
+/** Define `<a-command-palette>` (idempotent). `import 'arethesis/components/command-palette'` calls this. */
+export function defineCommandPalette(): void {
+  defineComponent({ tag: 'a-command-palette' })(CommandPalette);
+}

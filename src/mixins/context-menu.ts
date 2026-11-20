@@ -9,7 +9,6 @@
  */
 
 import type { ContextMenuItem, ContextMenuOptions, MixinInstance } from './types';
-import { mixinRegistry } from './registry';
 import { emit } from './utils';
 import { uniqueId } from '../utils/dom';
 
@@ -170,5 +169,3 @@ export function contextMenuMixin(element: HTMLElement, options: ContextMenuOptio
     },
   };
 }
-
-mixinRegistry.register('context-menu', contextMenuMixin);

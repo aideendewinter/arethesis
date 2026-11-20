@@ -9,12 +9,14 @@ import type { ObjectStore } from '../data/object-store';
 import type { ListViewRegistry } from '../data/list-view-registry';
 import type { DataBinder } from '../binding/data-binder';
 import type { HttpClient } from '../http/http-client';
+import type { OptimisticUpdateManager } from '../data/optimistic-updates';
 
 export interface ComponentRuntime {
   store: ObjectStore;
   listViews: ListViewRegistry;
   binder: DataBinder;
   http: HttpClient;
+  optimistic: OptimisticUpdateManager;
 }
 
 let runtime: ComponentRuntime | null = null;

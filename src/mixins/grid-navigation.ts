@@ -11,7 +11,6 @@
  */
 
 import type { GridNavigationOptions, MixinInstance } from './types';
-import { mixinRegistry } from './registry';
 import { emit } from './utils';
 
 export function gridNavigationMixin(element: HTMLElement, options: GridNavigationOptions = {}): MixinInstance {
@@ -199,5 +198,3 @@ export function gridNavigationMixin(element: HTMLElement, options: GridNavigatio
     },
   };
 }
-
-mixinRegistry.register('grid-navigation', gridNavigationMixin);
