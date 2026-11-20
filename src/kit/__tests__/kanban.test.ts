@@ -174,6 +174,16 @@ describe('<a-kanban> details', () => {
     expect(await first).toBe(true);
   });
 
+  it('asks beforeDelete first', async () => {
+    const remove = vi.fn(async () => undefined);
+    const beforeDelete = vi.fn(async (t: Task) => t.id !== 'a');
+    const { board } = await mount({ remove, beforeDelete });
+    expect(await board.deleteCard('a')).toBe(false);
+    expect(remove).not.toHaveBeenCalled();
+    expect(await board.deleteCard('b')).toBe(true);
+    expect(beforeDelete).toHaveBeenCalledTimes(2);
+  });
+
   it('reports failed creates and deletes, and does nothing without the requests', async () => {
     const { board } = await mount({ create: async () => { throw new Error('no'); }, remove: async () => { throw new Error('no'); } });
     const errors: string[] = [];

@@ -128,6 +128,7 @@ describe('<a-command-palette> details', () => {
     expect(p.isOpen).toBe(false);
     // The backdrop (the dialog itself) closes it.
     p.open();
+    p.querySelector('dialog')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
     p.querySelector('dialog')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(p.isOpen).toBe(false);
     p.open();

@@ -1,7 +1,7 @@
 import { applyMixin } from 'arethesis';
 import { startApp } from '../shared/boot';
 import { bindNetworkControl } from '../shared/network';
-import { storeSource, type Kanban } from 'arethesis/components';
+import { confirm, storeSource, type Kanban } from 'arethesis/components';
 import { addCommands, avatar, bindStatus, mountShell, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
@@ -55,6 +55,7 @@ board.configure<Task>({
   create: data => app.request<Task>({ url: '/tasks', method: 'POST', body: data }),
   defaults: { label: 'feature', assignee: 'Alice' },
   remove: id => app.request({ url: '/tasks/:id', method: 'DELETE', params: { id } }),
+  beforeDelete: task => confirm({ title: 'Delete this card?', body: `“${task.title}” will be gone for everyone.`, confirmLabel: 'Delete', danger: true }),
 });
 board.addEventListener('kanban:move-error', () => toast('Couldn’t move the card. It’s back where it was.', 'error'));
 board.addEventListener('kanban:delete', () => toast('Card deleted'));

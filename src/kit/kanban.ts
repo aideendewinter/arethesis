@@ -81,6 +81,8 @@ export interface KanbanConfig<T extends Record<string, unknown> = Record<string,
   defaults?: Partial<T>;
   /** Enables deleting cards, from the menu or the Delete key. */
   remove?: Request<[id: string], unknown>;
+  /** Asked before a delete; return false to keep the card (for example, `confirm()` from `arethesis/components/dialog`). */
+  beforeDelete?: (data: T) => boolean | Promise<boolean>;
   /** Extra items for each card's menu, reported in `kanban:action` (`{ id, action }`). */
   menu?: ContextMenuItem[] | false;
 }
@@ -377,6 +379,8 @@ export class Kanban extends Component {
     if (!config?.remove) return false;
     const { optimistic } = getRuntime();
     if (optimistic.isPending(config.type, id)) return false;
+    const data = getRuntime().store.getData<Record<string, unknown>>(config.type, id);
+    if (config.beforeDelete && data && !(await config.beforeDelete(data))) return false;
     // Keep focus on the board: move it to a neighbouring card first.
     const el = this.#cards.get(id);
     if (el?.contains(document.activeElement)) ((el.nextElementSibling ?? el.previousElementSibling) as HTMLElement | null)?.focus();

@@ -30,6 +30,7 @@ import { defineComponent } from '../components/decorators';
 import { getRuntime } from '../components/runtime';
 import { fuzzyFilter, highlightMatch as highlight, type FuzzyMatch } from '../utils/fuzzy';
 import { uniqueId } from '../utils/dom';
+import { modal, type Modal } from './internal/modal';
 
 export interface PaletteCommand {
   id: string;
@@ -125,7 +126,7 @@ export class CommandPalette extends Component {
   #rows: Row[] = [];
   #active = 0;
   #recent = loadRecent();
-  #returnFocus: HTMLElement | null = null;
+  #modal: Modal | null = null;
   #searchToken = 0;
   #built = false;
   #id = uniqueId('ar-palette');
@@ -188,11 +189,8 @@ export class CommandPalette extends Component {
     this.#input.placeholder = this.getAttribute('placeholder') ?? 'Type a command or search…';
     this.listen(this.#input, 'input', () => void this.#update());
     this.listen(this.#input, 'keydown', (e: Event) => this.#onKey(e as KeyboardEvent));
-    this.listen(this.#dialog, 'close', () => this.#afterClose());
-    // A click on the backdrop closes it.
-    this.listen(this.#dialog, 'click', (e: Event) => {
-      if (e.target === this.#dialog) this.close();
-    });
+    this.#modal?.destroy();
+    this.#modal = modal(this.#dialog, { initialFocus: () => this.#input, onClose: () => this.emit('palette:close', {}) });
     this.listen(this.#list, 'mousedown', (e: Event) => e.preventDefault());
     this.listen(this.#list, 'click', (e: Event) => {
       const option = (e.target as Element).closest<HTMLElement>('[role=option]');
@@ -207,28 +205,14 @@ export class CommandPalette extends Component {
   /** Open the palette, optionally with a query. */
   open(query = ''): void {
     if (this.isOpen) return;
-    this.#returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.#input.value = query;
-    if (typeof this.#dialog.showModal === 'function') this.#dialog.showModal();
-    else this.#dialog.setAttribute('open', '');
-    this.#input.focus();
+    this.#modal!.open();
     void this.#update();
     this.emit('palette:open', {});
   }
 
   close(): void {
-    if (!this.isOpen) return;
-    if (typeof this.#dialog.close === 'function') this.#dialog.close();
-    else {
-      this.#dialog.removeAttribute('open');
-      this.#afterClose();
-    }
-  }
-
-  #afterClose(): void {
-    this.#returnFocus?.focus?.();
-    this.#returnFocus = null;
-    this.emit('palette:close', {});
+    if (this.isOpen) this.#modal!.close();
   }
 
   async #update(): Promise<void> {

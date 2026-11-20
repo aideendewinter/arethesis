@@ -215,6 +215,38 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-dialog>`
+
+A native `<dialog>` with a heading and a close button, whose `open()` returns a promise of the result.
+
+```html
+<a-dialog id="rename" heading="Rename card">
+  <form method="dialog">
+    <label>Title <input name="title" autofocus></label>
+    <button value="cancel" formnovalidate>Cancel</button>
+    <button value="save">Save</button>
+  </form>
+</a-dialog>
+```
+
+```ts
+const result = await document.querySelector('#rename').open(); // 'save', 'cancel', or '' if dismissed
+```
+
+- **Modal by default:** focus moves into the dialog (to `[autofocus]`, or its first control), the page behind is inert, and focus returns to where it was on close. `modal="false"` opens it without a backdrop.
+- **What closes it:** its buttons; a `<form method="dialog">` (which closes with the pressed button's `value`); and, depending on `closedby`, the backdrop and Escape (`any`, the default), Escape only (`closerequest`), or neither (`none`, which also hides the close button). A drag that starts inside and ends on the backdrop doesn't close it.
+- **In code:** `open()`, `close(value)`, `isOpen` and `returnValue`. Events: `dialog:open`, and `dialog:close` (`{ returnValue }`).
+
+For a yes-or-no question, `confirm()` builds one for you:
+
+```ts
+import { confirm } from 'arethesis/components/dialog';
+
+if (await confirm({ title: 'Delete this card?', body: 'It can’t be undone.', confirmLabel: 'Delete', danger: true })) remove();
+```
+
+It's an `alertdialog`, and with `danger` the Cancel button has focus, so a stray Enter is safe. `<a-kanban>`'s `beforeDelete` takes it directly.
+
 ## `<a-tabs>`
 
 Tabs over plain markup. Before scripts run (or without them), it's headings and sections. With them, the headings become a tab list.

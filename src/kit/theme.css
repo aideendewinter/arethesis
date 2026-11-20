@@ -567,6 +567,28 @@ html.is-sorting-active, html.is-sorting-active * { cursor: grabbing !important; 
 }
 .is-dragging { cursor: grabbing !important; user-select: none; z-index: 10; }
 
+/* ── Dialog ────────────────────────────────────────────────────────────── */
+a-dialog { display: contents; }
+.ar-dialog {
+  width: min(32rem, calc(100vw - 2rem)); max-height: min(40rem, calc(100vh - 2rem)); padding: 0; overflow: auto;
+  border: 1px solid var(--ar-border); border-radius: var(--ar-radius); background: var(--ar-bg); color: var(--ar-text); box-shadow: var(--ar-shadow-lg);
+}
+.ar-dialog::backdrop { background: rgb(15 18 25 / 0.45); }
+.ar-dialog[open] { animation: ar-dialog-in 0.15s ease-out; }
+@keyframes ar-dialog-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+.ar-dialog__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem 0.25rem; }
+.ar-dialog__heading { margin: 0; font-size: 1.1rem; }
+.ar-dialog__close { font: inherit; font-size: 1.4rem; line-height: 1; padding: 0.15rem 0.45rem; color: var(--ar-text-muted); background: none; border: 0; border-radius: var(--ar-radius-sm); cursor: pointer; }
+.ar-dialog__close:hover { color: var(--ar-text); background: var(--ar-surface); }
+.ar-dialog__close:focus-visible { outline: none; box-shadow: var(--ar-focus); }
+.ar-dialog__body { padding: 0.5rem 1.25rem 1.25rem; }
+.ar-dialog__actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.ar-dialog__button { font: inherit; font-weight: 600; padding: 0.5em 1em; border-radius: var(--ar-radius-sm); border: 1px solid transparent; background: var(--ar-accent); color: var(--ar-accent-text); cursor: pointer; }
+.ar-dialog__button--secondary { background: var(--ar-bg); color: var(--ar-text); border-color: var(--ar-border); }
+.ar-dialog__button--danger { background: var(--ar-danger); color: var(--ar-danger-text); }
+.ar-dialog__button:focus-visible { outline: none; box-shadow: var(--ar-focus); }
+@media (prefers-reduced-motion: reduce) { .ar-dialog[open] { animation: none; } }
+
 /* ── Tabs ──────────────────────────────────────────────────────────────── */
 a-tabs { display: block; }
 a-tabs[orientation='vertical'] { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: start; }

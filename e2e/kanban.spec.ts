@@ -38,6 +38,11 @@ test('adds and deletes cards', async ({ page, errors }) => {
   await expect(card).not.toHaveAttribute('data-pending');
   await card.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Delete' }).click();
+  // A confirmation dialog, with Cancel focused for safety.
+  const dialog = page.getByRole('alertdialog', { name: 'Delete this card?' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await dialog.getByRole('button', { name: 'Delete' }).click();
   await expect(card).toHaveCount(0);
   void errors;
 });

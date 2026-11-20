@@ -84,9 +84,15 @@ export const fixtures = [
     mustNotContain: ['a-data-table', 'sortable:start', 'a-combobox'],
   },
   {
+    name: 'components/dialog',
+    code: `import { confirm } from 'arethesis/components/dialog'; void confirm({ title: 'Sure?' });`,
+    mustContain: ['a-dialog', 'showModal'],
+    mustNotContain: ['a-data-table', 'sortable:start', 'a-combobox'],
+  },
+  {
     name: 'components (all)',
     code: `import 'arethesis/components';`,
-    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox', 'a-toast', 'a-tabs'],
+    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox', 'a-toast', 'a-tabs', 'a-dialog'],
   },
   {
     name: 'arethesis (everything)',
