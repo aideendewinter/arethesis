@@ -289,7 +289,8 @@ person-card { display: block; min-height: 12rem; }
 .facts dd { margin: 0; }
 
 /* Kanban */
-kanban-board { display: block; }
+a-kanban { display: block; }
+#board .ar-kanban { grid-template-columns: repeat(4, minmax(15rem, 1fr)); }
 .board { display: grid; grid-template-columns: repeat(4, minmax(15rem, 1fr)); gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; }
 .column { display: flex; flex-direction: column; background: var(--ar-surface); border: 1px solid var(--ar-border); border-radius: var(--ar-radius); min-height: 22rem; }
 .column__header { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem 0.4rem; }

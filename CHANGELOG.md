@@ -19,6 +19,7 @@
 
 ### Added
 
+- **`<a-kanban>`**: a board of cards drawn from the store, grouped by a field and sorted by another. Drag with a mouse, finger or keyboard, or move cards from their menu. Moves are optimistic and roll back if the server refuses. It has optional work-in-progress limits, inline add, and delete. The kanban example now uses it.
 - **Virtualized lists.** `virtualize` on a list binding renders only the items on screen (`'window'`) or lets the browser skip off-screen ones (`'css'`). `<a-data-table>` takes `virtualize: true`, keeps `aria-rowindex` on every row, and keeps the row being edited. `<a-list>` takes a `virtualize` attribute. New `Component` hooks: `onItemPosition`, `onItemRemove`, `pinItem`, `itemIndex` and `revealItem`.
 - **`FormAssociatedComponent`**: a base class for components that are form controls. They submit with a native `<form>`, report `validity`, and handle reset, disabled fieldsets and state restore. `DataBinder` and `<a-form>` treat them as controls.
 - `attachPopup()` (in `arethesis/mixins`): the popover helper behind the mixins, for your own floating UI.

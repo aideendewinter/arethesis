@@ -25,6 +25,7 @@ import './elements/chart';
 import './elements/command-palette';
 import './elements/sheet';
 import './elements/markdown-editor';
+import './elements/kanban';
 
 export { DataTable } from './data-table';
 export type { DataTableColumn, DataTableConfig } from './data-table';
@@ -43,6 +44,8 @@ export { parse as parseFormula, evaluate as evaluateFormula, shiftFormula, Formu
 export type { CellValue, ErrorCode } from './sheet/formula';
 export { openCellEditor } from './cell-editor';
 export type { CellEditor, CellEditorOptions, CellMove, CellEditorType } from './cell-editor';
+export { Kanban } from './kanban';
+export type { KanbanColumn, KanbanConfig } from './kanban';
 export { MarkdownEditor } from './markdown-editor';
 export type { MarkdownLayout, MarkdownMark } from './markdown-editor';
 export { renderMarkdown, renderInline, markdownOutline } from './markdown/render';

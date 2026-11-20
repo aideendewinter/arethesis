@@ -215,6 +215,36 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-kanban>`
+
+A board of cards in columns. The cards are objects of one type in the store, grouped by a field and sorted by another, so changes from anywhere (an SSE update, another tab, an edit elsewhere on the page) show up on the board.
+
+```ts
+const board = document.querySelector('a-kanban');
+board.configure({
+  type: 'Task',
+  list: { type: 'Task', endpoint: 'listTasks' },   // loads the cards
+  groupBy: 'status',
+  orderField: 'order',
+  columns: [
+    { value: 'todo', label: 'To do' },
+    { value: 'doing', label: 'In progress', limit: 5 },
+    { value: 'done', label: 'Done' },
+  ],
+  card: { html: '<p class="ar-kanban__title" data-bind="title"></p>', fields: { title: {} }, label: t => t.title },
+  save: { endpoint: 'updateTask' },        // PATCH /tasks/:id with { status, order }
+  create: { endpoint: 'createTask' },      // adds "+ Add a card" to each column
+  remove: { endpoint: 'deleteTask' },      // adds Delete to the menu and the Delete key
+});
+```
+
+- **Moving cards:** drag with a mouse or finger, or use the keyboard (Space picks up, arrows move, Space drops). Each card also has a menu (right-click, Shift+F10) with "Move to…" for every column. Moves are optimistic: the card moves at once, and goes back with `kanban:move-error` if the server refuses. A card is placed between its new neighbours by giving it an `order` halfway between theirs.
+- **Limits:** a column's `limit` shows its count as "3 / 5", and the column gets `data-over-limit` when it's exceeded.
+- **Events:** `kanban:move` (cancelable, before a move), `kanban:moved`, `kanban:move-error`, `kanban:create`, `kanban:delete`, `kanban:error`, and `kanban:action` for your own `menu` items.
+- **In code:** `board.move(id, column, index)`, `board.createCard(column, fields)`, `board.deleteCard(id)`, `board.orderAt(column, index)`.
+
+`save`, `create` and `remove` also take a function, such as `(id, changes) => api.patch(…)`.
+
 ## `<a-list>`
 
 A list with no JavaScript. Fields come from `data-bind` in the item template; `data-display`, `data-format` and `data-attribute` configure them.

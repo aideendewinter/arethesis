@@ -60,9 +60,15 @@ export const fixtures = [
     mustNotContain: ['a-sheet', '#CYCLE!', 'compose: length mismatch', 'collab:join'],
   },
   {
+    name: 'components/kanban',
+    code: `import 'arethesis/components/kanban';`,
+    mustContain: ['a-kanban', 'sortable:start'],
+    mustNotContain: ['a-data-table', '#CYCLE!', 'compose: length mismatch'],
+  },
+  {
     name: 'components (all)',
     code: `import 'arethesis/components';`,
-    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor'],
+    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban'],
   },
   {
     name: 'arethesis (everything)',
