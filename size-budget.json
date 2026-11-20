@@ -1,7 +1,7 @@
 {
   "cdn/arethesis.min.js": 30500,
-  "cdn/components.min.js": 41400,
-  "cdn/ (all files)": 96900,
+  "cdn/components.min.js": 43500,
+  "cdn/ (all files)": 99100,
   "app: core: ObjectStore only": 2000,
   "app: core: app, no services configured": 25900,
   "app: core + realtime": 29200,
@@ -13,6 +13,7 @@
   "app: components/tabs": 8800,
   "app: components/dialog": 8800,
   "app: components/tree": 10800,
-  "app: components (all)": 58900,
+  "app: components/calendar": 11200,
+  "app: components (all)": 61200,
   "app: arethesis (everything)": 51600
 }

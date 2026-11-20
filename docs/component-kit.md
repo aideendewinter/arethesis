@@ -215,6 +215,33 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-calendar>`
+
+A month of days to move through and pick from, which can also show events from a list.
+
+```html
+<a-calendar name="start" min="2026-01-01"></a-calendar>
+<a-calendar name="trip" selection="range" value="2026-11-02/2026-11-06"></a-calendar>
+```
+
+```ts
+calendar.configure({
+  list: { type: 'Event', endpoint: 'listEvents' },
+  dateField: 'startsAt',
+  label: e => e.title,
+  range: { start: 'from', end: 'to' },   // these filters follow the month shown
+  isDisabled: d => d.getDay() === 0,     // no Sundays
+});
+```
+
+- **Keys:** arrows move by a day or a week; Home and End go to the start and end of the week; Page Up and Page Down change the month (with Shift, the year), keeping the day where they can; Enter or Space picks. The month's name is announced as it changes.
+- **Weeks:** they start on the locale's first day of the week (from `Intl.Locale`), or on `first-day` (0 is Sunday). Day and month names are in the page's language.
+- **Picking:** `selection` is `single` (the default), `range` (two picks, either way round; Escape cancels after the first) or `none`. Dates outside `min` and `max`, or where `isDisabled` returns true, can't be picked.
+- **Form control:** a date submits as `YYYY-MM-DD`. A range's `value` is `start/end` (an ISO 8601 interval) and submits as `name[start]` and `name[end]`.
+- **Events:** each day lists up to three of its items and how many more there are, and reading the day says how many there are. With `range`, the list's filters change to the six weeks on screen whenever the month changes.
+
+Events: `calendar:select` (`{ value, start, end }`), `calendar:month` (`{ year, month }`) and `calendar:activate` (`{ date, items }`) for a day with items. `calendar.showMonth(date)` and `calendar.month` move and read the month in code.
+
 ## `<a-tree>`
 
 A tree whose branches load as they're opened. The top level is a ListView, and so is each node's children, so they page, cache, and update over SSE like any other list.
