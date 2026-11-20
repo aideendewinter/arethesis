@@ -42,6 +42,12 @@ export const fixtures = [
     mustNotContain: ['customElements.define', 'EventSource', 'collab:join', 'compose: length mismatch', 'sortable:start'],
   },
   {
+    name: 'core + realtime',
+    code: `import { getArethesis } from 'arethesis/core'; import 'arethesis/realtime'; void getArethesis().init({ sse: { url: '/events' } });`,
+    mustContain: ['EventSource'],
+    mustNotContain: ['collab:join', 'compose: length mismatch', 'customElements.define'],
+  },
+  {
     name: 'components/list',
     code: `import 'arethesis/components/list';`,
     mustContain: ['a-list'],

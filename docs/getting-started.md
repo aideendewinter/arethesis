@@ -16,7 +16,7 @@ Arethesis ships as ES modules with TypeScript types. It has no runtime dependenc
 | --- | --- |
 | `arethesis` | Everything, with the defaults installed |
 | `arethesis/core` | The store, list views, HTTP, components, binding and utilities. Nothing is registered globally |
-| `arethesis/realtime` | SSE, WebSocket and Azure Web PubSub managers, and OT |
+| `arethesis/realtime` | SSE, WebSocket and Azure Web PubSub managers, and OT; importing it enables the `sse`, `websocket` and `azurePubSub` options |
 | `arethesis/collab` | Collaborative editing; importing it enables `app.collab` |
 | `arethesis/mixins` | The mixins; call `registerBuiltInMixins()` to use them in `data-mixin` |
 | `arethesis/plugins/<name>` | One plugin: `date-utils`, `async-validators` or `rich-text` |
@@ -31,7 +31,7 @@ import { richTextPlugin } from 'arethesis/plugins/rich-text';
 await getArethesis().use(richTextPlugin()).init({ http: { baseUrl: '/api' } });
 ```
 
-`init()` loads auth, persistence and the real-time managers only when you configure them.
+With `arethesis/core`, `init()` throws if you pass `sse`, `websocket` or `azurePubSub` without importing `arethesis/realtime`, and names the import.
 
 Without a bundler, use the minified files in `arethesis/cdn/`: `arethesis.min.js` and `components.min.js`, which share their chunks.
 

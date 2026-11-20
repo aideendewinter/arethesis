@@ -12,7 +12,7 @@
  */
 
 import { CollabManager } from '../realtime/collab/collab-session';
-import { setCollabFactory } from '../core/collab-hook';
+import { setCollabFactory } from '../core/hooks';
 
 setCollabFactory(ws => new CollabManager(ws));
 

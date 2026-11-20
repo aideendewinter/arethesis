@@ -1,11 +1,12 @@
 {
-  "cdn/arethesis.min.js": 36600,
+  "cdn/arethesis.min.js": 32100,
   "cdn/components.min.js": 31200,
-  "cdn/ (all files)": 83800,
+  "cdn/ (all files)": 85100,
   "app: core: ObjectStore only": 2000,
-  "app: core: app, no services configured": 27800,
-  "app: components/list": 6400,
-  "app: components/data-table": 13200,
-  "app: components (all)": 44500,
-  "app: arethesis (everything)": 49500
+  "app: core: app, no services configured": 24400,
+  "app: core + realtime": 27700,
+  "app: components/list": 6500,
+  "app: components/data-table": 14000,
+  "app: components (all)": 46000,
+  "app: arethesis (everything)": 50100
 }

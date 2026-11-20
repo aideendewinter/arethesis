@@ -7,11 +7,10 @@
 - **Import only what you use.** The package is now one module per source file, and bundlers can tree-shake it. An app that only uses `ObjectStore` bundles about 2 KB gzipped instead of the whole framework.
   - New entry points: `arethesis/core` (lean, nothing registered globally), `arethesis/realtime`, `arethesis/collab`, `arethesis/mixins`, `arethesis/mixins/<name>`, `arethesis/plugins/<name>`, and `arethesis/components/<name>` for a single kit element.
   - `import 'arethesis'` and `import 'arethesis/components'` work as before.
-  - `app.init()` loads auth, persistence and the real-time managers only when they're configured.
+  - With `arethesis/core`, add `import 'arethesis/realtime'` to use the `sse`, `websocket` and `azurePubSub` options, and `import 'arethesis/collab'` for `app.collab`. `import 'arethesis'` includes both.
   - Minified bundles for `<script type="module">` are in `arethesis/cdn/`.
   - CI checks bundle sizes and that partial imports stay small.
 - Importing a mixin or plugin module no longer registers it as a side effect. `import 'arethesis'` still registers all the built-ins. With `arethesis/core`, call `registerBuiltInMixins()` from `arethesis/mixins`, or `mixinRegistry.register()` for just the ones you use.
-- `app.collab` needs `import 'arethesis/collab'` when you use `arethesis/core`. `import 'arethesis'` includes it.
 
 - **Tooltips, context menus and dropdown lists open as popovers** where the browser supports them. A scrolling table or a card with `overflow: hidden` no longer clips them, and lists follow their input as the page scrolls. Inside a modal `<dialog>` they open in the dialog.
 - A list's loading, empty and error placeholders are no longer wrapped in a `<div>`, so a loading `<li>` stays a direct child of its `<ul>`.

@@ -17,8 +17,6 @@ import type { EndpointConfig, FetchOptions, Params, RequestConfig } from '../htt
 import type { ListView, ListViewConfig, TypeConfig } from '../data/types';
 import type { PluginRef, PluginRegistrationOptions } from '../plugins/types';
 
-import type { PersistenceManager } from '../data/persistence-manager';
-import type { AuthManager } from '../http/auth-manager';
 import type { SSEManager } from '../realtime/sse-manager';
 import type { WebSocketManager } from '../realtime/websocket-manager';
 import type { AzurePubSubManager } from '../realtime/azure-pubsub-manager';
@@ -27,6 +25,8 @@ import type { CollabManager } from '../realtime/collab/collab-session';
 import { ObjectStore } from '../data/object-store';
 import { ListViewRegistry } from '../data/list-view-registry';
 import { OptimisticUpdateManager } from '../data/optimistic-updates';
+import { PersistenceManager } from '../data/persistence-manager';
+import { AuthManager } from '../http/auth-manager';
 import { HttpClient } from '../http/http-client';
 import { ValidationEngine } from '../binding/validation-engine';
 import { DataBinder } from '../binding/data-binder';
@@ -35,7 +35,7 @@ import { templateLoader } from '../components/template-loader';
 import { mixinRegistry } from '../mixins/registry';
 import { PluginManager } from '../plugins/plugin-manager';
 import { Emitter } from '../utils/emitter';
-import { getCollabFactory } from './collab-hook';
+import { getCollabFactory, getRealtime } from './hooks';
 
 import { VERSION } from '../version';
 export { VERSION };
@@ -159,10 +159,7 @@ export class Arethesis extends Emitter<ArethesisEvents> {
     for (const [name, endpoint] of Object.entries(config.endpoints ?? {})) this.defineEndpoint(name, endpoint);
     for (const [name, message] of Object.entries(config.validation?.messages ?? {})) this.validation.setMessage(name, message);
 
-    // Optional services are loaded only when configured, so apps that don't
-    // use them don't download them.
     if (config.auth) {
-      const { AuthManager } = await import('../http/auth-manager');
       this.auth = new AuthManager(config.auth, {
         fetch: () => config.http?.fetch ?? globalThis.fetch.bind(globalThis),
         resolveUrl: url => this.http.resolveUrl(url),
@@ -177,18 +174,18 @@ export class Arethesis extends Emitter<ArethesisEvents> {
       return this.auth && this.http.isTrustedUrl(httpUrl) ? this.auth.ensureValidToken() : null;
     };
     if (config.sse) {
-      const { SSEManager } = await import('../realtime/sse-manager');
+      const { SSEManager } = getRealtime('sse');
       this.sse = new SSEManager({ ...config.sse, url: this.http.resolveUrl(config.sse.url) });
       this.sse.connectStore(this.store, this.listViews);
       this.sse.setTokenProvider(tokenFor(this.sse.config.url));
     }
     if (config.websocket) {
-      const { WebSocketManager } = await import('../realtime/websocket-manager');
+      const { WebSocketManager } = getRealtime('websocket');
       this.ws = new WebSocketManager(config.websocket);
       this.ws.setTokenProvider(tokenFor(config.websocket.url));
     }
     if (config.azurePubSub) {
-      const { AzurePubSubManager } = await import('../realtime/azure-pubsub-manager');
+      const { AzurePubSubManager } = getRealtime('azurePubSub');
       this.azurePubSub = new AzurePubSubManager({
         ...config.azurePubSub,
         negotiateUrl: this.http.resolveUrl(config.azurePubSub.negotiateUrl),
@@ -212,7 +209,6 @@ export class Arethesis extends Emitter<ArethesisEvents> {
   }
 
   private async initPersistence(options: ConstructorParameters<typeof PersistenceManager>[0]): Promise<void> {
-    const { PersistenceManager } = await import('../data/persistence-manager');
     const persistence = new PersistenceManager(options);
     const db = await persistence.open();
     if (!db) return;

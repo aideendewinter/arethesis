@@ -5,11 +5,12 @@
  * ```ts
  * import { getArethesis, Component, defineComponent } from 'arethesis/core';
  * import { registerBuiltInMixins } from 'arethesis/mixins'; // for data-mixin
+ * import 'arethesis/realtime';                                // for sse/websocket
  * import 'arethesis/collab';                                  // for app.collab
  * ```
  *
- * Auth, persistence and real-time services are loaded on demand by
- * `app.init()` when they're configured.
+ * For the `sse`, `websocket` and `azurePubSub` options, add
+ * `import 'arethesis/realtime'`.
  *
  * @packageDocumentation
  */

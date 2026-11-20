@@ -21,11 +21,6 @@ export default defineConfig({
     sourcemap: true,
     minify: true,
     rollupOptions: {
-      // The full bundle imports the optional services statically as well, so
-      // init()'s lazy imports can't split them out here. That's expected.
-      onwarn(warning, warn) {
-        if (warning.code !== 'INEFFECTIVE_DYNAMIC_IMPORT') warn(warning);
-      },
       output: {
         entryFileNames: '[name].min.js',
         chunkFileNames: 'chunks/[hash].min.js',
