@@ -478,3 +478,33 @@ describe('Component: templateId', () => {
     expect(el.querySelector('p.main')).not.toBeNull();
   });
 });
+
+describe('list placeholders', () => {
+  it('are direct children of the list, so a loading <li> stays inside its <ul>', async () => {
+    const app = new Arethesis();
+    @defineComponent({
+      tag: 'placeholder-list',
+      html: `<template id="main"><ul data-items></ul></template>
+        <template id="item"><li data-bind="name"></li></template>
+        <template id="loading"><li class="skeleton"></li><li class="skeleton"></li></template>
+        <template id="empty">Nothing here</template>`,
+    })
+    class PlaceholderList extends Component {
+      static override bindConfig = { fields: { name: {} }, loadingTemplate: 'loading', emptyTemplate: 'empty' };
+    }
+    const el = document.createElement('placeholder-list') as PlaceholderList;
+    document.body.appendChild(el);
+    await el.ready;
+    const view = app.listViews.getOrCreate({ type: 'PlaceholderThing', id: 'placeholders' });
+    el.bind(view);
+    await flush();
+    const ul = el.querySelector('ul')!;
+    expect(Array.from(ul.children).map(c => c.tagName)).toEqual(['LI', 'LI']);
+    expect(ul.querySelectorAll(':scope > [data-placeholder="loading"]')).toHaveLength(2);
+    app.listViews.populate(view.id, []);
+    await flush();
+    expect(ul.children).toHaveLength(1);
+    expect(ul.firstElementChild!.textContent).toBe('Nothing here');
+    expect(ul.firstElementChild!.getAttribute('data-placeholder')).toBe('empty');
+  });
+});

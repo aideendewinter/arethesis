@@ -441,7 +441,7 @@ export abstract class Component extends HTMLElement {
       return;
     }
 
-    container.querySelector(':scope > [data-placeholder]')?.remove();
+    removePlaceholders(container);
     this.#setState(view.status === 'error' ? 'error' : 'loaded');
     await this.#reconcile(container, view, config);
     if (config.infiniteScroll) this.#ensureSentinel(container, view, config);
@@ -455,23 +455,34 @@ export abstract class Component extends HTMLElement {
       el.remove();
     }
     this.#items.clear();
-    container.querySelector(':scope > [data-placeholder]')?.remove();
+    removePlaceholders(container);
   }
 
   async #renderPlaceholder(container: Element, templateId: string, error?: Error): Promise<void> {
     const fragment = await this.loadTemplate(templateId);
     if (!fragment) return;
-    const wrapper = document.createElement('div');
-    wrapper.setAttribute('data-placeholder', templateId);
-    wrapper.style.display = 'contents';
-    wrapper.append(fragment);
-    container.querySelector(':scope > [data-placeholder]')?.remove();
-    container.append(wrapper);
+    // Mark the template's own elements rather than wrapping them, so a
+    // loading `<li>` stays a direct child of its `<ul>`/`<ol>`.
+    for (const node of Array.from(fragment.childNodes)) {
+      if (node.nodeType === Node.ELEMENT_NODE) continue;
+      if (node.nodeType === Node.TEXT_NODE && node.textContent!.trim()) {
+        const span = document.createElement('span');
+        node.replaceWith(span);
+        span.append(node);
+      } else {
+        node.remove();
+      }
+    }
+    const nodes = Array.from(fragment.children);
+    for (const node of nodes) node.setAttribute('data-placeholder', templateId);
+    removePlaceholders(container);
+    container.append(fragment);
     if (error) {
-      const msg = wrapper.querySelector('[data-error-message]');
+      const msg = nodes.map(n => n.matches('[data-error-message]') ? n : n.querySelector('[data-error-message]')).find(Boolean);
       if (msg) msg.textContent = this.formatErrorMessage(error);
     }
-    wrapper.querySelector('[data-retry]')?.addEventListener('click', () => void this.retry(), { once: true });
+    const retry = nodes.map(n => n.matches('[data-retry]') ? n : n.querySelector('[data-retry]')).find(Boolean);
+    retry?.addEventListener('click', () => void this.retry(), { once: true });
   }
 
   async #reconcile(container: Element, view: ListView, config: BindConfig): Promise<void> {
@@ -639,3 +650,8 @@ export abstract class Component extends HTMLElement {
 }
 
 export type { ObjectRef };
+
+/** Remove a list's loading/empty/error placeholder. */
+function removePlaceholders(container: Element): void {
+  for (const el of Array.from(container.querySelectorAll(':scope > [data-placeholder]'))) el.remove();
+}
