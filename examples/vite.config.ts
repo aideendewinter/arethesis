@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { bootScript, criticalCss, loadTokens, POLYCHROME_RESOLVER_FILE, TOKENS_DIR } from '../scripts/tokens.mjs';
 
 const root = import.meta.dirname;
-const pages = ['directory', 'kanban', 'editor', 'dashboard', 'treasury', 'signup', 'offline'];
+const pages = ['directory', 'kanban', 'editor', 'dashboard', 'treasury', 'agora', 'signup', 'offline'];
 
 /**
  * Paint every page in the right colors from the very first frame, using the

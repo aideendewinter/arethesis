@@ -3,7 +3,7 @@ import { MarkdownEditor, type OutlineEntry } from 'arethesis/components';
 import { connectMockBackend } from '../mock/client';
 import { startApp } from '../shared/boot';
 import { bindNetworkControl } from '../shared/network';
-import { avatar, mountShell, PIGMENTS, setStatusPill, toast } from '../shared/shell';
+import { addCommands, avatar, mountShell, PIGMENTS, setStatusPill, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
 mountShell({
@@ -58,6 +58,18 @@ const renderOutline = () => {
 editor.on<OutlineEntry[]>('markdown:outline', entries => {
   outline = entries;
   renderOutline();
+// The command palette (Ctrl/Cmd+K) jumps to sections and runs editor commands.
+addCommands({
+  id: 'editor',
+  label: 'This document',
+  commands: () => [
+    ...outline.map(h => ({ id: `section:${h.text}`, title: h.text, subtitle: `Section, line ${h.line + 1}`, icon: '§', run: () => editor.revealOffset(h.offset) })),
+    { id: 'editor:find', title: 'Find and replace', icon: '⌕', shortcut: 'Ctrl+F', run: () => editor.openFind() },
+    { id: 'editor:preview', title: 'Show only the preview', icon: '◫', run: () => { editor.layout = 'preview'; } },
+    { id: 'editor:split', title: 'Show source and preview side by side', icon: '◫', run: () => { editor.layout = 'split'; } },
+    { id: 'editor:write', title: 'Show only the source', icon: '◫', run: () => { editor.layout = 'write'; } },
+  ],
+});
   renderPeople(session.peers);
 });
 renderOutline();

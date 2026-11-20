@@ -4,7 +4,7 @@ import 'arethesis/components/theme-polychrome.css';
 import './fonts.css';
 import './site.css';
 import { VERSION } from 'arethesis';
-import { applyStoredTheme, getContrast, getTheme, setContrast, setTheme } from 'arethesis/components';
+import { applyStoredTheme, getContrast, getTheme, setContrast, setTheme, type CommandPalette, type PaletteCommand } from 'arethesis/components';
 
 const REPO_URL = 'https://github.com/aideendewinter/arethesis';
 const NPM_URL = 'https://www.npmjs.com/package/arethesis';
@@ -13,11 +13,12 @@ const GITHUB_ICON = `<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden
 const DEMOS: Array<[string, string]> = [
   ['directory', 'Directory'],
   ['kanban', 'Kanban'],
-  ['editor', 'Collaborative editor'],
-  ['dashboard', 'Live dashboard'],
+  ['editor', 'Editor'],
+  ['dashboard', 'Dashboard'],
   ['treasury', 'Treasury'],
-  ['signup', 'Signup form'],
-  ['offline', 'Offline & caching'],
+  ['agora', 'Agora'],
+  ['signup', 'Signup'],
+  ['offline', 'Offline'],
 ];
 
 // An alpha cut like an inscription, in an Egyptian-blue roundel ringed with cinnabar.
@@ -42,6 +43,7 @@ export function mountShell(options: ShellOptions): HTMLElement {
   nav.innerHTML = `
     <a class="site-nav__brand" href="${prefix}index.html">${LOGO}<span>Arethesis</span></a>
     <div class="site-nav__links">${DEMOS.map(([key, label]) => `<a href="${prefix}${key}/index.html"${key === options.page ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</div>
+    <button class="btn btn--ghost site-nav__oracle" type="button" data-palette aria-keyshortcuts="Control+K Meta+K" title="Command palette"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.6 12.6 17 17"/></svg><span class="site-nav__oracle-label">Ask the Oracle</span><kbd aria-hidden="true">${/Mac|iP(hone|ad)/.test(navigator.platform) ? '⌘' : 'Ctrl+'}K</kbd></button>
     ${options.source ? '<button class="btn btn--ghost" type="button" data-source-toggle aria-expanded="false" aria-controls="source-drawer" aria-label="View source"><span class="site-nav__wide" aria-hidden="true">View source</span><span class="site-nav__narrow" aria-hidden="true">Source</span></button>' : ''}
     <a class="icon-button" href="${REPO_URL}" aria-label="Arethesis on GitHub" title="Arethesis on GitHub">${GITHUB_ICON}</a>
     <button class="icon-button" type="button" data-contrast-toggle></button>
@@ -115,9 +117,50 @@ export function mountShell(options: ShellOptions): HTMLElement {
   }
 
   if (options.source) mountSource(nav.querySelector('[data-source-toggle]')!, options.source);
+  mountPalette(nav, prefix, options, () => {
+    themeToggle.click();
+  }, () => contrastToggle.click());
   // The page stays hidden (see themeBoot in vite.config.ts) until its chrome is in place.
   document.body.dataset.ready = '';
   return main;
+}
+
+let paletteEl: CommandPalette | null = null;
+
+/** The command palette on every page (Ctrl/Cmd+K). Pages add their own commands with `addCommands`. */
+function mountPalette(nav: HTMLElement, prefix: string, options: ShellOptions, toggleTheme: () => void, toggleContrast: () => void): void {
+  const palette = document.createElement('a-command-palette') as CommandPalette;
+  palette.setAttribute('placeholder', 'Ask the Oracle: a page, an action, or something to find…');
+  document.body.appendChild(palette);
+  paletteEl = palette;
+  nav.querySelector('[data-palette]')!.addEventListener('click', () => palette.open());
+  const go = (path: string) => () => location.assign(`${prefix}${path}`);
+  palette.addSource({
+    id: 'pages',
+    label: 'Pages',
+    commands: () => [
+      { id: 'page:home', title: 'Home: the Stoa', icon: 'Α', keywords: ['gallery', 'examples', 'start'], run: go('index.html') },
+      ...DEMOS.filter(([key]) => key !== options.page).map(([key, label]): PaletteCommand => ({ id: `page:${key}`, title: label, icon: '→', subtitle: 'Example', run: go(`${key}/index.html`) })),
+    ],
+  });
+  palette.addSource({
+    id: 'actions',
+    label: 'Actions',
+    order: 1,
+    commands: () => [
+      { id: 'action:theme', title: getTheme() === 'dark' ? 'Use the light theme (Helios)' : 'Use the dark theme (Selene)', icon: getTheme() === 'dark' ? '☀' : '☾', keywords: ['dark mode', 'light mode', 'night', 'day'], run: toggleTheme },
+      { id: 'action:contrast', title: getContrast() === 'more' ? 'Turn off high contrast' : 'Turn on high contrast', icon: '◐', keywords: ['accessibility', 'a11y'], run: toggleContrast },
+      ...(options.source ? [{ id: 'action:source', title: 'View this page’s source', icon: '{ }', keywords: ['code', 'main.ts'], run: () => nav.querySelector<HTMLButtonElement>('[data-source-toggle]')!.click() }] : []),
+      { id: 'action:github', title: 'Arethesis on GitHub', icon: '↗', keywords: ['repository', 'code'], run: () => window.open(REPO_URL, '_blank', 'noopener') },
+      { id: 'action:docs', title: 'Read the docs', icon: '↗', keywords: ['documentation', 'guide'], run: () => window.open(`${REPO_URL}/tree/main/docs`, '_blank', 'noopener') },
+      { id: 'action:npm', title: 'Arethesis on npm', icon: '↗', keywords: ['install', 'package'], run: () => window.open(NPM_URL, '_blank', 'noopener') },
+    ],
+  });
+}
+
+/** Add this page's own commands to the palette (shown first). */
+export function addCommands(source: Parameters<CommandPalette['addSource']>[0]): () => void {
+  return paletteEl?.addSource({ order: -1, ...source }) ?? (() => {});
 }
 
 function highlight(code: string): string {

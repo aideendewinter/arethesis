@@ -778,6 +778,35 @@ a-list { display: block; }
 
 .collab-selection { border-radius: 2px; }
 
+/* ── Command palette ───────────────────────────────────────────────────── */
+
+.ar-palette {
+  width: min(40rem, calc(100vw - 2rem)); max-height: min(34rem, calc(100vh - 6rem)); margin: 12vh auto auto; padding: 0;
+  border: 1px solid var(--ar-border); border-radius: var(--ar-radius); background: var(--ar-bg); color: var(--ar-text);
+  box-shadow: var(--ar-shadow-lg); overflow: hidden; font-family: var(--ar-font);
+}
+.ar-palette[open] { display: flex; flex-direction: column; }
+.ar-palette::backdrop { background: color-mix(in srgb, var(--ar-text) 35%, transparent); backdrop-filter: blur(2px); }
+.ar-palette__search { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--ar-border); }
+.ar-palette__icon { width: 1.15rem; height: 1.15rem; flex: none; fill: none; stroke: var(--ar-text-muted); stroke-width: 1.8; stroke-linecap: round; }
+.ar-palette__input:focus, .ar-palette__input:focus-visible { outline: none; box-shadow: none; }
+.ar-palette__search:focus-within { box-shadow: inset 0 -2px 0 var(--ar-accent); }
+.ar-palette__input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--ar-text); font: inherit; font-size: 1.05rem; }
+.ar-palette__esc, .ar-palette__shortcut, .ar-palette__help kbd { font: 0.72rem var(--ar-font-mono); padding: 0.1rem 0.35rem; border: 1px solid var(--ar-border); border-bottom-width: 2px; border-radius: 4px; color: var(--ar-text-muted); background: var(--ar-surface); }
+.ar-palette__list { flex: 1; overflow: auto; padding: 0.35rem; overscroll-behavior: contain; }
+.ar-palette__list[data-empty]::before { content: 'Nothing matches. Try fewer letters.'; display: block; padding: 1.5rem 1rem; color: var(--ar-text-muted); text-align: center; }
+.ar-palette__heading { padding: 0.55rem 0.65rem 0.25rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ar-text-muted); }
+.ar-palette__option { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem 0.65rem; border-radius: var(--ar-radius-sm); cursor: pointer; }
+.ar-palette__option[aria-selected='true'] { background: var(--ar-accent-soft); box-shadow: inset 3px 0 0 var(--ar-accent); }
+.ar-palette__glyph { width: 1.6rem; flex: none; text-align: center; color: var(--ar-text-muted); }
+.ar-palette__text { display: grid; flex: 1; min-width: 0; }
+.ar-palette__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-palette__title mark { background: none; color: var(--ar-accent); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.ar-palette__subtitle { font-size: 0.8rem; color: var(--ar-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-palette__status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: -1px; }
+.ar-palette__help { display: flex; gap: 1rem; margin: 0; padding: 0.5rem 1rem; border-top: 1px solid var(--ar-border); font-size: 0.75rem; color: var(--ar-text-muted); background: var(--ar-surface); }
+.ar-palette__help span { display: inline-flex; gap: 0.25rem; align-items: center; }
+
 /* ── Sheet ─────────────────────────────────────────────────────────────── */
 
 .ar-sheet { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--ar-border); border-radius: var(--ar-radius); background: var(--ar-bg); overflow: hidden; }

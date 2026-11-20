@@ -76,6 +76,8 @@ export type * from './plugins/types';
 export { sanitizeHtml, htmlToText } from './utils/sanitize';
 export type { SanitizeOptions } from './utils/sanitize';
 export { sanitizeUrl } from './utils/url';
+export { fuzzyMatch, fuzzyFilter } from './utils/fuzzy';
+export type { FuzzyMatch } from './utils/fuzzy';
 export { parseDate, formatDatePattern, toDateInputValue, toDateTimeInputValue } from './utils/dates';
 export { getPath, setPath, deepMerge, deepEqual } from './utils/path';
 export { Emitter } from './utils/emitter';

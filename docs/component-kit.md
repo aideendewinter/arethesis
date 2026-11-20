@@ -109,6 +109,30 @@ session.on('annotations', list => (editor.annotations = list.map(a => ({ ...a, c
 
 The renderer and highlighter are exported on their own too: `renderMarkdown(source)` returns sanitized HTML (CommonMark core plus GFM tables, task lists and strikethrough; raw HTML is shown as text), and `markdownOutline`, `highlightMarkdown` and `highlightLine` power the rest. Add `class="ar-prose"` to style rendered Markdown anywhere.
 
+## `<a-command-palette>`
+
+A keyboard-first launcher: Ctrl/Cmd+K opens it anywhere on the page.
+
+```html
+<a-command-palette placeholder="Search or run a command…"></a-command-palette>
+```
+
+```ts
+import { storeSource } from 'arethesis/components';
+palette.addSource({
+  id: 'actions', label: 'Actions',
+  commands: () => [{ id: 'dark', title: 'Use the dark theme', keywords: ['night'], shortcut: 'Ctrl+Shift+L', run: () => setTheme('dark') }],
+});
+palette.addSource(storeSource({ type: 'Person', label: 'People', title: p => p.name, run: (p, id) => show(id) }));
+palette.addSource({ id: 'docs', label: 'Docs', search: async q => fetchDocs(q) }); // your own (async) search
+```
+
+- A modal `<dialog>`: focus stays in it, the page behind is inert, and focus goes back where it was.
+- The input is a combobox over a grouped listbox: ↑/↓ and Page Up/Down move, Enter runs, Escape clears the query and then closes.
+- Fuzzy matching (`fuzzyMatch`, `fuzzyFilter`, exported from `arethesis`) ignores case and accents, prefers word starts and runs, and highlights what matched; keywords and subtitles count for less than titles.
+- With no query it lists recent commands (in localStorage when it's available) and then each source's commands.
+- Attributes: `hotkey` (default `k`, `""` turns the shortcut off) and `placeholder`. Events: `palette:open`, `palette:close`, `palette:run`.
+
 ## `<a-sheet>`
 
 A spreadsheet: formulas, range selection, clipboard, fill and undo.

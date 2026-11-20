@@ -22,6 +22,8 @@ export { List } from './list';
 export { Form } from './form';
 export { Chart, niceTicks } from './chart';
 export type { ChartConfig, ChartRow, ChartSeries, ChartType, ChartX } from './chart';
+export { CommandPalette, storeSource } from './command-palette';
+export type { PaletteCommand, PaletteSource } from './command-palette';
 export { Sheet } from './sheet/sheet';
 export type { SheetConfig } from './sheet/sheet';
 export { SheetModel } from './sheet/model';

@@ -6,7 +6,7 @@
 
 import { CollabServer } from '../../src/realtime/ot/server';
 import type { CollabMessage } from '../../src/realtime/types';
-import { generatePeople, generateTasks, INITIAL_DOC, rng, DEPARTMENTS, ROLES, treasuryCells, type Person, type Task } from './data';
+import { agoraPosts, AGORA_REPLIES, generatePeople, generateTasks, INITIAL_DOC, rng, DEPARTMENTS, ROLES, treasuryCells, type Person, type Post, type Task } from './data';
 
 export interface MockRequest {
   method: string;
@@ -86,6 +86,10 @@ export class MockServer {
   private auditor: ReturnType<typeof setInterval> | null = null;
   /** The shared spreadsheet: raw cell contents by address. */
   private sheet = treasuryCells();
+  /** The Agora: every post, by id. */
+  private posts = new Map(agoraPosts().map(p => [p.id, p]));
+  private agora: ReturnType<typeof setInterval> | null = null;
+  private postCounter = 100;
   private taskCounter = 100;
 
   constructor(private out: ServerOutput) {
@@ -169,6 +173,27 @@ export class MockServer {
         : { [`E${row}`]: this.sheet[`E${row}`] === 'TRUE' ? 'FALSE' : 'TRUE' };
       this.applySheet(changes, 'Pericles', 'server');
     }, 1800);
+  }
+
+  /** Toggle the Agora talking among itself: new replies and votes every few seconds. */
+  setAgora(on: boolean): void {
+    if (this.agora) clearInterval(this.agora);
+    this.agora = null;
+    if (!on) return;
+    this.agora = setInterval(() => {
+      const all = [...this.posts.values()];
+      if (this.random() < 0.6) {
+        const parent = all[Math.floor(this.random() * all.length)];
+        const [author, body] = AGORA_REPLIES[Math.floor(this.random() * AGORA_REPLIES.length)];
+        const post: Post = { id: `p${++this.postCounter}`, parent: parent.id, root: parent.root, author, body, score: 1, createdAt: new Date().toISOString() };
+        this.posts.set(post.id, post);
+        this.out.sse('upsert', { type: 'Post', data: { ...post } });
+      } else {
+        const post = all[Math.floor(this.random() * all.length)];
+        post.score += 1 + Math.floor(this.random() * 3);
+        this.out.sse('upsert', { type: 'Post', data: { ...post } });
+      }
+    }, 3500);
   }
 
   private applySheet(changes: Record<string, string>, by: string, client: string): void {
@@ -255,6 +280,39 @@ export class MockServer {
     }
 
     // ── Dashboard ──────────────────────────────────────────
+    if (path === '/posts' && method === 'GET') {
+      // Top-level posts, best or newest first, a page at a time.
+      const sort = q.get('sort') ?? 'score:desc';
+      const roots = [...this.posts.values()].filter(p => !p.parent)
+        .sort((a, b) => (sort.startsWith('createdAt') ? b.createdAt.localeCompare(a.createdAt) : b.score - a.score || b.createdAt.localeCompare(a.createdAt)));
+      const start = Number(q.get('cursor') ?? 0);
+      const size = Number(q.get('limit') ?? 4);
+      const items = roots.slice(start, start + size);
+      return { status: 200, body: { items, next: start + size < roots.length ? String(start + size) : null, total: roots.length } };
+    }
+    if (path === '/posts/replies' && method === 'GET') {
+      const roots = new Set((q.get('roots') ?? '').split(','));
+      return { status: 200, body: [...this.posts.values()].filter(p => p.parent && roots.has(p.root)) };
+    }
+    if (path === '/posts' && method === 'POST') {
+      const { body: html, author, parent } = (body ?? {}) as { body?: string; author?: string; parent?: string | null };
+      if (!html || !String(html).replace(/<[^>]*>/g, '').trim()) return { status: 422, body: { message: 'Say something first.' } };
+      const parentPost = parent ? this.posts.get(parent) : undefined;
+      if (parent && !parentPost) return { status: 404, body: { message: 'That post is gone.' } };
+      const id = `p${++this.postCounter}`;
+      const post: Post = { id, parent: parentPost?.id ?? null, root: parentPost?.root ?? id, author: String(author ?? 'A citizen').slice(0, 60), body: String(html).slice(0, 5000), score: 1, createdAt: new Date().toISOString() };
+      this.posts.set(id, post);
+      this.out.sse('upsert', { type: 'Post', data: { ...post } });
+      return { status: 201, body: post };
+    }
+    if ((m = /^\/posts\/(\w+)\/vote$/.exec(path)) && method === 'POST') {
+      const post = this.posts.get(m[1]);
+      if (!post) return { status: 404 };
+      const dir = Number((body as { dir?: number } | undefined)?.dir ?? 1);
+      post.score += Math.max(-2, Math.min(2, dir));
+      this.out.sse('upsert', { type: 'Post', data: { ...post } });
+      return { status: 200, body: post };
+    }
     if (path === '/sheets/treasury' && method === 'GET') return { status: 200, body: { id: 'treasury', cells: this.sheet } };
     if (path === '/sheets/treasury' && method === 'PATCH') {
       const { changes, by, client } = (body ?? {}) as { changes?: Record<string, string>; by?: string; client?: string };
@@ -333,8 +391,9 @@ export class MockServer {
     this.collab.disconnect(socketId);
   }
 
-  control(command: { latency?: number; failureRate?: number; offline?: boolean; teammates?: boolean; auditor?: boolean }): void {
+  control(command: { latency?: number; failureRate?: number; offline?: boolean; teammates?: boolean; auditor?: boolean; agora?: boolean }): void {
     if (command.auditor !== undefined) this.setAuditor(command.auditor);
+    if (command.agora !== undefined) this.setAgora(command.agora);
     if (command.latency !== undefined) this.latency = command.latency;
     if (command.failureRate !== undefined) this.failureRate = command.failureRate;
     if (command.offline !== undefined) this.offline = command.offline;

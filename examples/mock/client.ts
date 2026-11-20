@@ -52,7 +52,7 @@ export interface MockBackend {
   fetch: typeof fetch;
   eventSource: (url: string, init?: EventSourceInit) => EventSource;
   webSocket: (url: string, protocols?: string | string[]) => WebSocket;
-  control(command: { latency?: number; failureRate?: number; offline?: boolean; teammates?: boolean; auditor?: boolean }): void;
+  control(command: { latency?: number; failureRate?: number; offline?: boolean; teammates?: boolean; auditor?: boolean; agora?: boolean }): void;
 }
 
 let singleton: MockBackend | null = null;

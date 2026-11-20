@@ -3,7 +3,8 @@ import 'arethesis/components';
 import type { DataTable } from 'arethesis/components';
 import { startApp } from '../shared/boot';
 import { bindNetworkControl } from '../shared/network';
-import { avatar, bindStatus, mountShell, toast } from '../shared/shell';
+import { storeSource } from 'arethesis/components';
+import { addCommands, avatar, bindStatus, mountShell, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
 mountShell({
@@ -93,6 +94,19 @@ table.configure({
 
 const card = document.querySelector<PersonCard>('#card')!;
 table.on<{ id: string }>('row-select', ({ id }) => card.bind({ type: 'Person', id }));
+
+// The command palette (Ctrl/Cmd+K) searches everyone loaded into the store.
+addCommands(storeSource<{ name: string; role: string; department: string }>({
+  type: 'Person',
+  label: 'People',
+  icon: '☺',
+  title: p => p.name,
+  subtitle: p => `${p.role}, ${p.department}`,
+  run: (p, id) => {
+    card.bind({ type: 'Person', id });
+    toast(`Showing ${p.name}`);
+  },
+}));
 
 // Filters are sent to the server as query parameters.
 let searchTimer: ReturnType<typeof setTimeout>;

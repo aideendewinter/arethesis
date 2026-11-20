@@ -1,7 +1,8 @@
 import { Component, defineComponent, type StoredObject } from 'arethesis';
 import { startApp } from '../shared/boot';
 import { bindNetworkControl } from '../shared/network';
-import { avatar, bindStatus, mountShell, toast } from '../shared/shell';
+import { storeSource } from 'arethesis/components';
+import { addCommands, avatar, bindStatus, mountShell, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
 mountShell({
@@ -228,3 +229,13 @@ document.querySelector('#failures')!.addEventListener('change', e => backend.con
 document.querySelector('#new-tab')!.addEventListener('click', () => window.open(location.href, '_blank'));
 bindStatus(document.querySelector('#sse-status')!, 'Live', fn => app.sse!.onStatusChange(fn), app.sse!.status);
 if (!backend.shared) toast('This browser has no SharedWorker, so cross-tab sync is off.', 'info');
+
+// The command palette (Ctrl/Cmd+K) finds cards.
+addCommands(storeSource<{ title: string; status: string; assignee: string }>({
+  type: 'Task',
+  label: 'Cards',
+  icon: '▤',
+  title: t => t.title,
+  subtitle: t => `${t.status} · ${t.assignee}`,
+  run: (_, id) => document.querySelector<HTMLElement>(`li[data-id="${CSS.escape(id)}"]`)?.focus(),
+}));

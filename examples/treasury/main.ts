@@ -3,7 +3,7 @@ import 'arethesis/components';
 import { connectMockBackend } from '../mock/client';
 import { startApp } from '../shared/boot';
 import { bindNetworkControl } from '../shared/network';
-import { bindStatus, mountShell, toast } from '../shared/shell';
+import { addCommands, bindStatus, mountShell, toast } from '../shared/shell';
 import source from './main.ts?raw';
 
 mountShell({
@@ -93,6 +93,32 @@ const redrawSoon = () => {
 };
 sheet.on('sheet:change', redrawSoon);
 app.store.subscribeToType('Cell', redrawSoon);
+
+// The command palette (Ctrl/Cmd+K): type an address to go there, or a polis to find its row.
+const goTo = (addr: string) => {
+  sheet.select(addr);
+  sheet.querySelector<HTMLElement>('[role=grid]')!.focus();
+};
+addCommands({
+  id: 'sheet',
+  label: 'Ledger',
+  search: query => {
+    const q = query.trim().toUpperCase();
+    const out = [];
+    if (/^[A-J]\d{1,2}$/.test(q) && Number(q.slice(1)) <= 60) out.push({ id: `cell:${q}`, title: `Go to cell ${q}`, icon: '⌖', run: () => goTo(q) });
+    for (let r = 2; r <= 18; r++) {
+      const label = sheet.getValue(`A${r}`);
+      if (typeof label === 'string' && label.toLowerCase().includes(query.trim().toLowerCase()) && query.trim()) {
+        out.push({ id: `row:${r}`, title: label, subtitle: `Row ${r}: ${String(sheet.getValue(`C${r}`))} talents`, icon: '⌖', run: () => goTo(`C${r}`) });
+      }
+    }
+    return out;
+  },
+  commands: () => [
+    { id: 'sheet:total', title: 'Go to the total', icon: 'Σ', run: () => goTo('C15') },
+    { id: 'sheet:undo', title: 'Undo my last edit', icon: '↶', shortcut: 'Ctrl+Z', run: () => void sheet.undo() },
+  ],
+});
 
 bindNetworkControl(document.querySelector<HTMLSelectElement>('#network')!, backend);
 bindStatus(document.querySelector('#sse-status')!, 'Live', fn => app.sse!.onStatusChange(fn), app.sse!.status);

@@ -168,3 +168,56 @@ export function treasuryCells(): Record<string, string> {
   });
   return cells;
 }
+
+export interface Post {
+  id: string;
+  parent: string | null;
+  root: string;
+  author: string;
+  body: string;
+  score: number;
+  createdAt: string;
+}
+
+/** Who speaks in the Agora. Their posts paraphrase positions they're known for; none are quotations. */
+export const PHILOSOPHERS = ['Socrates', 'Meno', 'Protagoras', 'Aristotle', 'Hypatia', 'Diotima', 'Zeno of Citium', 'Hipparchia', 'Plato', 'Epicurus'];
+
+/** The opening thread: "Is virtue teachable?" (after Plato's Meno). */
+export function agoraPosts(now = Date.now()): Post[] {
+  const raw: Array<[id: string, parent: string | null, author: string, body: string, score: number, minutesAgo: number]> = [
+    ['p1', null, 'Socrates', '<p>Before we ask whether virtue can be <em>taught</em>, shouldn’t we ask what virtue <em>is</em>? I confess I don’t know, and I’ve never met anyone who did.</p>', 42, 300],
+    ['p2', 'p1', 'Meno', '<p>That’s easy. A man’s virtue is running the city’s affairs well; a woman’s is running a household. Children, the old, the free and the enslaved: each has their own.</p>', 9, 290],
+    ['p3', 'p2', 'Socrates', '<p>I asked for one virtue and you’ve given me a whole swarm. What do the bees have in common that makes them all bees?</p>', 31, 285],
+    ['p4', 'p3', 'Meno', '<p>You’re like a torpedo fish, Socrates: everyone who touches you goes numb.</p>', 27, 280],
+    ['p5', null, 'Protagoras', '<p>I teach it, for a reasonable fee, and my students go home better citizens. Isn’t that the simplest proof that it can be taught?</p>', 14, 240],
+    ['p6', 'p5', 'Socrates', '<p>Then why don’t the best Athenians manage to teach it to their own sons?</p>', 23, 230],
+    ['p7', null, 'Aristotle', '<p>Two kinds, two answers. Virtue of thought grows mostly by teaching. Virtue of character comes from habit: we become just by doing just things, as builders become builders by building.</p>', 38, 200],
+    ['p8', 'p7', 'Zeno of Citium', '<p>Habit, yes, but towards one end: living in agreement with nature. It is the only good, and anyone can learn it, slowly.</p>', 12, 180],
+    ['p9', 'p7', 'Epicurus', '<p>And the reason to practice it? Because it’s the surest road to a quiet, pleasant life. Prudence teaches the rest.</p>', 7, 170],
+    ['p10', null, 'Hypatia', '<p>Mathematics teaches it indirectly. A mind trained to follow a proof learns to follow the truth wherever it leads, even when that’s inconvenient.</p>', 29, 150],
+    ['p11', 'p10', 'Plato', '<p>Agreed: let no one ignorant of geometry enter. Recall the boy and the doubled square: he wasn’t taught the answer, he <em>recollected</em> it.</p>', 18, 140],
+    ['p12', null, 'Diotima', '<p>Love is the teacher. Desire for the beautiful leads upward, from one beautiful body to beautiful souls, to laws and knowledge, and at last to beauty itself. The ascent can be guided.</p>', 33, 120],
+    ['p13', null, 'Hipparchia', '<p>I chose philosophy over a loom and a dowry, and learned it on the street with everyone else. If I could learn it, anyone can.</p>', 25, 90],
+    ['p14', 'p13', 'Socrates', '<p>The street is the best school there is. Most of my teachers didn’t know they were teaching.</p>', 11, 80],
+  ];
+  const roots = new Map<string, string>();
+  return raw.map(([id, parent, author, body, score, ago]) => {
+    const root = parent ? roots.get(parent)! : id;
+    roots.set(id, root);
+    return { id, parent, root, author, body, score, createdAt: new Date(now - ago * 60_000).toISOString() };
+  });
+}
+
+/** Replies the Agora generates while you watch (paraphrases, not quotations). */
+export const AGORA_REPLIES: Array<[author: string, body: string]> = [
+  ['Socrates', '<p>But what do you mean by that? Let’s examine it together.</p>'],
+  ['Meno', '<p>How will you even look for something when you don’t know what it is?</p>'],
+  ['Aristotle', '<p>The mean lies between two extremes, and it is relative to us.</p>'],
+  ['Hypatia', '<p>Reserve your right to think. Even thinking wrongly is better than not thinking at all.</p>'],
+  ['Diotima', '<p>We love what we lack. Wisdom is among the most beautiful things, so love is a lover of wisdom.</p>'],
+  ['Zeno of Citium', '<p>We have two ears and one mouth so that we listen more than we talk.</p>'],
+  ['Epicurus', '<p>Of all the things wisdom provides, friendship is the greatest.</p>'],
+  ['Hipparchia', '<p>Time spent learning is never wasted, whatever the loom-keepers say.</p>'],
+  ['Plato', '<p>The beginning is the most important part of the work.</p>'],
+  ['Protagoras', '<p>On every question there are two arguments, opposite to each other.</p>'],
+];
