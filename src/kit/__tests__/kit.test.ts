@@ -108,50 +108,165 @@ describe('<a-data-table>', () => {
     expect(table.selected).toBe('3');
   });
 
-  it('edits inline with validation and saves optimistically', async () => {
+  const key = (el: Element, k: string, init: KeyboardEventInit = {}) => {
+    const e = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init });
+    el.dispatchEvent(e);
+    return e;
+  };
+  const editorInput = (table: Element) => table.querySelector<HTMLInputElement>('.ar-cell-editor .ar-cell-editor__input');
+
+  it('edits inline over the cell, with validation, and saves optimistically', async () => {
     const { app, fetch } = tableApp();
     const table = await mountTable(app);
     const saved = vi.fn();
     table.on('save', saved);
     const cell = table.querySelector<HTMLElement>('tbody tr[data-id="1"] td[data-col=name]')!;
     cell.focus();
-    cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    let input = cell.querySelector('input')!;
+    key(cell, 'Enter');
+    let input = editorInput(table)!;
     expect(input.value).toBe('Person 1');
+    // The editor floats over the cell: the cell keeps its text.
+    expect(cell.textContent).toBe('Person 1');
+    expect(table.editing!.mode).toBe('edit');
     input.value = 'A';
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    key(input, 'Enter');
     await flush(5);
-    expect(cell.querySelector('.editable-error')!.textContent).toBe('Must be at least 2 characters');
-    input = cell.querySelector('input')!;
+    const error = table.querySelector('.ar-cell-editor__error')!;
+    expect(error.textContent).toBe('Must be at least 2 characters');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe(error.id);
+    input = editorInput(table)!;
     input.value = 'Alice';
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    key(input, 'Enter');
     await flush(8);
+    expect(editorInput(table)).toBeNull();
     expect(cell.textContent).toBe('Alice');
+    expect(document.activeElement).toBe(cell); // Enter stays on the cell in a table
     expect(app.store.getData('Person', '1')).toMatchObject({ name: 'Alice' });
     const patch = fetch.calls.find(c => c.init.method === 'PATCH')!;
     expect(patch.url).toContain('/api/people/1');
     expect(JSON.parse(String(patch.init.body))).toEqual({ name: 'Alice' });
     expect(saved).toHaveBeenCalled();
 
-    // Numbers edit the raw value and re-render formatted; typing starts editing.
+    // Numbers edit the raw value and re-render formatted; typing replaces the value.
     const salary = table.querySelector<HTMLElement>('tbody tr[data-id="2"] td[data-col=salary]')!;
     salary.focus();
-    salary.dispatchEvent(new KeyboardEvent('keydown', { key: '5', bubbles: true, cancelable: true }));
-    const num = salary.querySelector('input')!;
+    const typed = key(salary, '5');
+    expect(typed.defaultPrevented).toBe(true); // the editor has the character, so it isn't typed twice
+    const num = editorInput(table)!;
     expect(num.type).toBe('number');
     expect(num.value).toBe('5');
+    expect(table.editing!.mode).toBe('enter');
     num.value = '2500';
-    num.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    key(num, 'Enter');
     await flush(8);
     expect(salary.textContent).toBe('$2,500.00');
     // Escape cancels.
-    salary.dispatchEvent(new KeyboardEvent('keydown', { key: 'F2', bubbles: true, cancelable: true }));
-    salary.querySelector('input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    key(salary, 'F2');
+    const again = editorInput(table)!;
+    expect(again.value).toBe('2500');
+    again.value = '1';
+    key(again, 'Escape');
+    expect(editorInput(table)).toBeNull();
     expect(salary.textContent).toBe('$2,500.00');
+    expect(document.activeElement).toBe(salary);
     // Read-only columns can't be edited.
     const role = table.querySelector<HTMLElement>('tbody tr[data-id="2"] td[data-col=role]')!;
-    role.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    expect(role.querySelector('input')).toBeNull();
+    key(role, 'Enter');
+    expect(editorInput(table)).toBeNull();
+  });
+
+  it('moves after committing: Tab right, arrows after typing, Enter down when configured', async () => {
+    const { app } = tableApp();
+    const table = await mountTable(app, { enterMoves: 'down' });
+    const cell = (id: string, col: string) => table.querySelector<HTMLElement>(`tbody tr[data-id="${id}"] td[data-col=${col}]`)!;
+    cell('1', 'name').focus();
+    key(cell('1', 'name'), 'Enter');
+    key(editorInput(table)!, 'Tab');
+    await flush(3);
+    expect(document.activeElement).toBe(cell('1', 'role'));
+
+    // Typed: ArrowDown commits and moves down.
+    cell('1', 'name').focus();
+    key(cell('1', 'name'), 'Z');
+    const input = editorInput(table)!;
+    expect(input.value).toBe('Z');
+    input.value = 'Zoe';
+    key(input, 'ArrowDown');
+    await flush(8);
+    expect(cell('1', 'name').textContent).toBe('Zoe');
+    expect(document.activeElement).toBe(cell('2', 'name'));
+
+    // Started with Enter, arrows stay in the input; F2 switches to moving between cells.
+    key(cell('2', 'name'), 'Enter');
+    const caret = editorInput(table)!;
+    expect(key(caret, 'ArrowLeft').defaultPrevented).toBe(false);
+    expect(table.editing).not.toBeNull();
+    key(caret, 'F2');
+    expect(table.editing!.mode).toBe('enter');
+    key(caret, 'ArrowUp');
+    await flush(3);
+    expect(document.activeElement).toBe(cell('1', 'name'));
+
+    // Enter moves down with enterMoves: 'down'; Shift+Enter moves up.
+    key(cell('1', 'name'), 'Enter');
+    key(editorInput(table)!, 'Enter');
+    await flush(3);
+    expect(document.activeElement).toBe(cell('2', 'name'));
+    key(cell('2', 'name'), 'Enter');
+    key(editorInput(table)!, 'Enter', { shiftKey: true });
+    await flush(3);
+    expect(document.activeElement).toBe(cell('1', 'name'));
+  });
+
+  it('edits choice columns with a listbox whose arrow keys never save', async () => {
+    const { app, fetch } = tableApp();
+    const table = await mountTable(app, {
+      columns: [
+        { field: 'name', label: 'Name' },
+        { field: 'role', label: 'Role', editable: { type: 'select', choices: ['design', 'dev', 'research'] } },
+      ],
+    });
+    const role = table.querySelector<HTMLElement>('tbody tr[data-id="1"] td[data-col=role]')!;
+    role.click();
+    const box = table.querySelector<HTMLElement>('.ar-cell-editor [role=combobox]')!;
+    expect(box.getAttribute('aria-expanded')).toBe('true');
+    const options = () => Array.from(table.querySelectorAll('.ar-cell-editor [role=option]'));
+    expect(options().map(o => o.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+    key(box, 'ArrowDown');
+    key(box, 'ArrowDown');
+    await flush(3);
+    expect(fetch.calls.some(c => c.init.method === 'PATCH')).toBe(false);
+    expect(box.getAttribute('aria-activedescendant')).toBe(options()[2].id);
+    key(box, 'ArrowUp');
+    key(box, 'Enter');
+    await flush(8);
+    expect(app.store.getData('Person', '1')).toMatchObject({ role: 'dev' });
+    expect(table.querySelector('.ar-cell-editor')).toBeNull();
+
+    // Type-to-edit jumps to a matching option; Escape reverts.
+    role.focus();
+    key(role, 'r');
+    const box2 = table.querySelector<HTMLElement>('.ar-cell-editor [role=combobox]')!;
+    expect(box2.getAttribute('aria-activedescendant')).toBe(table.querySelectorAll('.ar-cell-editor [role=option]')[2].id);
+    key(box2, 'Escape');
+    expect(table.querySelector('.ar-cell-editor')).toBeNull();
+    expect(app.store.getData('Person', '1')).toMatchObject({ role: 'dev' });
+  });
+
+  it('a click edits; leaving the editor saves', async () => {
+    const { app } = tableApp();
+    const table = await mountTable(app);
+    const cell = table.querySelector<HTMLElement>('tbody tr[data-id="3"] td[data-col=name]')!;
+    cell.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    const input = editorInput(table)!;
+    expect(input).not.toBeNull();
+    expect(table.selected).toBe('3');
+    input.value = 'Clicked';
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    input.blur();
+    await flush(8);
+    expect(app.store.getData('Person', '3')).toMatchObject({ name: 'Clicked' });
   });
 
   it('rolls back failed saves', async () => {
@@ -161,9 +276,9 @@ describe('<a-data-table>', () => {
     table.on('save-error', failed);
     const cell = table.querySelector<HTMLElement>('tbody tr[data-id="1"] td[data-col=name]')!;
     cell.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    const input = cell.querySelector('input')!;
+    const input = editorInput(table)!;
     input.value = 'Nope';
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    key(input, 'Enter');
     await flush(10);
     expect(failed).toHaveBeenCalled();
     expect(app.store.getData('Person', '1')).toMatchObject({ name: 'Person 1' });
@@ -186,8 +301,8 @@ describe('<a-data-table>', () => {
     await flush(5);
     const cell = table.querySelector<HTMLElement>('td[data-col=x]')!;
     cell.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    cell.querySelector('input')!.value = 'two';
-    cell.querySelector('input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    editorInput(table)!.value = 'two';
+    key(editorInput(table)!, 'Enter');
     await flush(5);
     expect(save).toHaveBeenCalledWith('a', { x: 'two' });
     table.remove();

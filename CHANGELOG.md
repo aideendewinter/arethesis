@@ -11,8 +11,17 @@
 - **Comments on shared documents**: `session.annotate()` and friends. They stay attached to their text as people edit, and the server stores them.
 - Remote collaborators' selections are drawn as well as their carets. `TextareaAdapter` fires `collab:apply` when it changes the value.
 
+### Fixed
+
+- `editable` select editors no longer save (and close) on the first arrow key press on Windows and Linux.
+- Fast typing to start editing a table cell no longer drops characters, and IME input works.
+
+- **`listbox` mixin**: an accessible select-only combobox whose arrow keys never pick a value by accident.
+- `openCellEditor()`: the spreadsheet-style cell editor behind `<a-data-table>`, for other grids.
+
 ### Changed
 
+- **Editing in `<a-data-table>` works like a spreadsheet.** A click edits the cell; moving with the keyboard only selects. Typing replaces the value, after which the arrow keys save and move. Tab saves and moves right, Enter saves (and can move down with `enterMoves: 'down'`), Escape reverts. The editor floats over the cell, so the table no longer shifts, and edits are announced to screen readers. Choice columns use the new `listbox` instead of a native select.
 - The examples have a new look in the Polychrome theme, with self-hosted fonts (Cinzel and Gentium Book Plus, SIL OFL) and a new home page.
 - The collaborative editor example is now a Markdown studio, with an outline, comments, presence by section, and Socrates as an optional co-author.
 

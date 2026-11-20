@@ -931,3 +931,67 @@ describe('mixin utils', () => {
     expect(placeFloating(tip, new DOMRect(100, 300, 10, 10), 'bottom')).toBe('bottom');
   });
 });
+
+describe('listbox', () => {
+  it('moves through options without committing, then picks', async () => {
+    const { listboxMixin } = await import('../listbox');
+    const el = html('<div aria-label="Fruit"></div>');
+    const changes: string[] = [];
+    const commits: string[] = [];
+    el.addEventListener('listbox:change', e => changes.push((e as CustomEvent).detail.value));
+    el.addEventListener('listbox:commit', e => commits.push((e as CustomEvent).detail.key));
+    const m = listboxMixin(el, { options: ['apple', { value: 'b', label: 'banana' }, { value: 'c', label: 'cherry', disabled: true }, 'date'], value: 'b' });
+    expect(el.getAttribute('role')).toBe('combobox');
+    expect(el.textContent).toBe('banana');
+    const list = document.getElementById(el.getAttribute('aria-controls')!)!;
+    expect(list.getAttribute('role')).toBe('listbox');
+    expect(list.hidden).toBe(true);
+    key(el, 'ArrowDown'); // opens
+    expect(el.getAttribute('aria-expanded')).toBe('true');
+    key(el, 'ArrowDown'); // skips the disabled cherry
+    expect((m.getActiveValue as () => string)()).toBe('date');
+    expect(changes).toEqual([]);
+    key(el, 'Home');
+    expect((m.getActiveValue as () => string)()).toBe('apple');
+    key(el, 'd'); // type-ahead
+    expect((m.getActiveValue as () => string)()).toBe('date');
+    key(el, 'Enter');
+    expect(changes).toEqual(['date']);
+    expect(commits).toEqual(['Enter']);
+    expect(el.getAttribute('aria-expanded')).toBe('false');
+    expect(el.textContent).toBe('date');
+
+    key(el, ' ');
+    key(el, 'ArrowUp');
+    key(el, 'Escape');
+    expect((m.getValue as () => string)()).toBe('date');
+    // Clicking an option picks it.
+    (m.open as () => void)();
+    (list.children[0] as HTMLElement).click();
+    expect((m.getValue as () => string)()).toBe('apple');
+    expect(commits.at(-1)).toBe('click');
+    m.destroy();
+    expect(list.isConnected).toBe(false);
+    expect(el.hasAttribute('role')).toBe(false);
+  });
+});
+
+describe('editable select', () => {
+  it("doesn't save when arrow keys change a closed select", async () => {
+    const el = html('<div>a</div>');
+    const saved = vi.fn();
+    el.addEventListener('editable:save', saved);
+    editableMixin(el, { type: 'select', choices: ['a', 'b', 'c'] });
+    key(el, 'F2');
+    const select = el.querySelector('select')!;
+    key(select, 'ArrowDown');
+    select.value = 'b';
+    select.dispatchEvent(new Event('change'));
+    await flush();
+    expect(saved).not.toHaveBeenCalled();
+    expect(el.querySelector('select')).not.toBeNull();
+    key(select, 'Enter');
+    await flush();
+    expect(saved).toHaveBeenCalledWith(expect.objectContaining({ detail: { value: 'b', previous: 'a' } }));
+  });
+});

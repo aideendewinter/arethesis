@@ -359,7 +359,7 @@ a-data-table { display: block; font-family: var(--ar-font); color: var(--ar-text
   overflow: hidden;
   box-shadow: var(--ar-shadow);
 }
-.ar-table__scroll { max-height: var(--ar-table-height, 32rem); overflow: auto; }
+.ar-table__scroll { position: relative; max-height: var(--ar-table-height, 32rem); overflow: auto; }
 .ar-table table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.95rem; table-layout: fixed; }
 .ar-table thead th {
   position: sticky;
@@ -428,6 +428,40 @@ a-data-table { display: block; font-family: var(--ar-font); color: var(--ar-text
 }
 .editable-error { color: var(--ar-danger); font-size: 0.8em; white-space: normal; }
 .is-saving { opacity: 0.7; }
+
+/* ── Cell editor and listbox ────────────────────────────────────────────── */
+
+/* Floats over the cell being edited, so the table never shifts. */
+.ar-cell-editor { position: absolute; z-index: 5; display: flex; }
+.ar-cell-editor__input {
+  flex: 1; min-width: 0; height: 100%; box-sizing: border-box; margin: 0;
+  padding: 0 calc(0.75rem - 2px); font: inherit; color: var(--ar-text); text-align: inherit;
+  background: var(--ar-bg); border: 2px solid var(--ar-accent); border-radius: 2px; outline: none;
+  box-shadow: var(--ar-shadow-lg);
+}
+.ar-cell-editor[data-mode='enter'] .ar-cell-editor__input { caret-color: var(--ar-accent); }
+.ar-cell-editor.is-invalid .ar-cell-editor__input { border-color: var(--ar-danger); }
+.ar-cell-editor__error {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 1; max-width: 22rem; width: max-content;
+  padding: 0.35rem 0.6rem; border-radius: var(--ar-radius-sm); background: var(--ar-danger); color: var(--ar-danger-text);
+  font-size: 0.82rem; font-weight: 600; box-shadow: var(--ar-shadow-lg); white-space: normal;
+}
+.ar-cell-editor__error::before { content: ''; position: absolute; bottom: 100%; left: 0.8rem; border: 5px solid transparent; border-bottom-color: var(--ar-danger); }
+.ar-cell-editor__error[hidden] { display: none; }
+
+.ar-listbox__button { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; cursor: pointer; user-select: none; }
+.ar-listbox__button::after { content: ''; flex: none; width: 0.45rem; height: 0.45rem; margin-top: -0.2rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); opacity: 0.7; }
+.ar-listbox__value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-listbox {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; min-width: 100%; max-height: 16rem; overflow: auto;
+  margin: 0; padding: 0.25rem; list-style: none; background: var(--ar-bg); border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius-sm); box-shadow: var(--ar-shadow-lg);
+}
+.ar-listbox[hidden] { display: none; }
+.ar-listbox__option { padding: 0.4rem 0.6rem 0.4rem 1.6rem; border-radius: 4px; cursor: pointer; position: relative; white-space: nowrap; }
+.ar-listbox__option.is-active { background: var(--ar-accent-soft); color: var(--ar-text); outline: 1px solid var(--ar-accent); outline-offset: -1px; }
+.ar-listbox__option[aria-selected='true']::before { content: '✓'; position: absolute; left: 0.5rem; color: var(--ar-accent); font-weight: 700; }
+.ar-listbox__option[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Resizable ─────────────────────────────────────────────────────────── */
 

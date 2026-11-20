@@ -58,9 +58,14 @@ export function editableMixin(element: HTMLElement, options: EditableOptions = {
     input.focus();
     if ('select' in input && typeof input.select === 'function') input.select();
 
+    // On a closed <select>, arrow keys change the value and fire `change` (on Windows and Linux).
+    // That's browsing, not choosing: only a change from the popup or Enter saves.
+    let keyboardChange = false;
     input.addEventListener('keydown', (e: Event) => {
       const ke = e as KeyboardEvent;
       ke.stopPropagation();
+      keyboardChange = type === 'select' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(ke.key);
+      if (type === 'select' && ke.key.length === 1) keyboardChange = true;
       if (ke.key === 'Escape') {
         ke.preventDefault();
         cancel();
@@ -70,7 +75,12 @@ export function editableMixin(element: HTMLElement, options: EditableOptions = {
       }
     }, { signal: local.signal });
     if (saveOnBlur) input.addEventListener('blur', () => void save(), { signal: local.signal });
-    if (type === 'select') input.addEventListener('change', () => void save(), { signal: local.signal });
+    if (type === 'select') {
+      input.addEventListener('change', () => {
+        if (keyboardChange) keyboardChange = false;
+        else void save();
+      }, { signal: local.signal });
+    }
     emit(element, 'editable:start', { value: previous });
   }
 

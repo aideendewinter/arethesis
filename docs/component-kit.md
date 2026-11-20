@@ -130,7 +130,22 @@ table.setFilters({ team: 'core' });
 table.setSort([{ field: 'name', direction: 'desc' }]);
 ```
 
-It renders an ARIA grid with sticky headers, sorting from the header (with `aria-sort`), resizable columns, infinite scroll, arrow-key navigation, and type-to-edit inline editing. Edits are validated, saved optimistically, and rolled back (with a visual cue) if the server refuses them. Set the height with `--ar-table-height`.
+It renders an ARIA grid with sticky headers, sorting from the header (with `aria-sort`), resizable columns, infinite scroll, arrow-key navigation and inline editing. Edits are validated, saved optimistically, and rolled back (with a visual cue) if the server refuses them. Set the height with `--ar-table-height`.
+
+Editing works like a spreadsheet, and the editor floats over the cell, so nothing shifts:
+
+| | |
+| --- | --- |
+| Click an editable cell | Edit it, with the caret where you clicked |
+| Arrows, Tab, Home/End (not editing) | Move between cells only |
+| Enter or F2 | Edit, with the caret at the end |
+| Type a character | Edit, replacing the value; the arrow keys then save and move (F2 switches them back to moving the caret) |
+| Enter | Save and stay (`enterMoves: 'down'` to move down; Shift+Enter moves up) |
+| Tab / Shift+Tab | Save and move right / left |
+| Escape | Revert |
+| Choice columns (`editable: { type: 'select', choices }`) | A list opens; arrows move through it without saving; typing jumps to a match; Enter or a click saves |
+
+Invalid values keep the editor open with the message underneath, and starting, saving and errors are announced to screen readers. The editor itself is `openCellEditor()` (exported), for building other grids.
 
 ## `<a-list>`
 

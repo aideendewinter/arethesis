@@ -94,10 +94,11 @@ export function gridNavigationMixin(element: HTMLElement, options: GridNavigatio
     return true;
   }
 
-  function requestEdit(key?: string): void {
-    if (!current) return;
+  /** Ask to edit the current cell. Returns false if a listener prevented the event (it handled the key itself). */
+  function requestEdit(key?: string): boolean {
+    if (!current) return true;
     options.onEdit?.(current, key);
-    emit(element, 'grid:edit', { cell: current, key });
+    return emit(element, 'grid:edit', { cell: current, key });
   }
 
   element.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -140,8 +141,13 @@ export function gridNavigationMixin(element: HTMLElement, options: GridNavigatio
         requestEdit(e.key);
         break;
       default:
-        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) requestEdit(e.key);
-        handled = false;
+        // A typed character starts editing. If the listener put the character in its editor, don't type it again;
+        // otherwise (and for IME composition) the focused editor receives it.
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) handled = !requestEdit(e.key);
+        else if (e.key === 'Process' || e.isComposing) {
+          requestEdit('');
+          handled = false;
+        } else handled = false;
     }
     if (handled) e.preventDefault();
   }, { signal });

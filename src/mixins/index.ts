@@ -14,6 +14,7 @@ import { resizableMixin } from './resizable';
 import { dropdownMixin } from './dropdown';
 import { tooltipMixin } from './tooltip';
 import { contextMenuMixin } from './context-menu';
+import { listboxMixin } from './listbox';
 
 /** Register the built-in mixins (idempotent; called by Arethesis). */
 export function registerBuiltInMixins(): void {
@@ -27,6 +28,7 @@ export function registerBuiltInMixins(): void {
     dropdown: dropdownMixin,
     tooltip: tooltipMixin,
     'context-menu': contextMenuMixin,
+    listbox: listboxMixin,
   };
   for (const [name, fn] of Object.entries(all)) {
     if (!mixinRegistry.has(name)) mixinRegistry.register(name, fn as never);
@@ -43,4 +45,6 @@ export { resizableMixin } from './resizable';
 export { dropdownMixin } from './dropdown';
 export { tooltipMixin } from './tooltip';
 export { contextMenuMixin } from './context-menu';
+export { listboxMixin } from './listbox';
+export type { ListboxOption, ListboxOptions } from './listbox';
 export type * from './types';

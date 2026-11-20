@@ -19,13 +19,14 @@ removeMixin(element, 'tooltip');
 | Mixin | What it does | Events |
 | --- | --- | --- |
 | `draggable` | Pointer and touch dragging; axis, grid snapping, containment; arrow keys move it | `draggable:start/move/end` |
-| `editable` | Click-to-edit (double-click, Enter, F2); validation; rollback on failed save | `editable:start/save/cancel/error` |
-| `grid-navigation` | Spreadsheet keyboard navigation with a roving tabindex; Tab leaves the grid unless `tabBehavior: 'cells'` | `grid:navigate`, `grid:edit` |
+| `editable` | Click-to-edit (double-click, Enter, F2); validation; rollback on failed save. Select editors save on Enter or a pick from the popup, never on arrow keys | `editable:start/save/cancel/error` |
+| `grid-navigation` | Spreadsheet keyboard navigation with a roving tabindex; Tab leaves the grid unless `tabBehavior: 'cells'`. Typing requests an edit; call `preventDefault()` on `grid:edit` if your editor takes the typed character | `grid:navigate`, `grid:edit` |
 | `infinite-scroll` | Loads more near the end; pass `loadMore` or a ListView id via `view` | `infinite-scroll:load/loaded/error` |
 | `sortable` | Reorder by pointer, touch or keyboard (Space to pick up, arrows, Space to drop), across containers sharing a `group`, with screen-reader announcements. Works in lists, grids and wrapping rows; neighbours slide aside, the item glides into place, and containers auto-scroll. | `sortable:start`, `sortable:move`, `sortable:end` (cancelable: reverts the move) |
 | `resizable` | Edge and corner handles (`role="separator"`), keyboard resizing, min/max; works on flex items | `resizable:start/resize/end` |
 | `dropdown` | Turns a `<select>` into an accessible, filterable combobox; the select keeps working for forms and bindings | `dropdown:change` |
 | `tooltip` | On hover and focus, Escape dismisses, linked with `aria-describedby`, flips to stay on screen | none |
+| `listbox` | A select-only combobox (APG pattern) in place of `<select>`: arrows move through the options without picking, typing jumps to a match, Enter, Tab or a click picks, Escape closes | `listbox:change`, `listbox:commit`, `listbox:cancel` |
 | `context-menu` | Right-click, Shift+F10 or the Menu key; arrow keys, Home/End and typeahead | `context-menu:select` |
 
 ## How `sortable` drags

@@ -3,6 +3,12 @@
  * inline editing with validation and optimistic saves, resizable columns and
  * spreadsheet-style keyboard navigation.
  *
+ * Editing (see `kit/cell-editor`): click an editable cell, or select it with
+ * the keyboard and press Enter or F2, or just start typing to replace its
+ * value. Enter saves, Tab saves and moves right, Escape reverts; after
+ * typing, the arrow keys save and move. Choice columns open a list whose
+ * arrow keys never save by accident.
+ *
  * ```ts
  * const table = document.querySelector('a-data-table');
  * table.configure({
@@ -29,6 +35,8 @@ import type { MixinInstance } from '../mixins/types';
 import { mixinRegistry } from '../mixins/registry';
 import { getArethesis } from '../core/arethesis';
 import { cssEscape } from '../utils/dom';
+import { announce } from '../mixins/utils';
+import { openCellEditor, type CellEditor, type CellMove } from './cell-editor';
 
 export interface DataTableColumn {
   field: string;
@@ -37,7 +45,7 @@ export interface DataTableColumn {
   /** Extra binding options (format, currency, locale, …). */
   bind?: Omit<FieldBindConfig, 'selector' | 'field'>;
   sortable?: boolean;
-  /** Allow inline editing (Enter, F2, double-click, or typing). */
+  /** Allow inline editing (a click, Enter, F2, or typing). */
   editable?: boolean | { type?: 'text' | 'number' | 'date' | 'email' | 'url' | 'select'; choices?: string[]; validation?: FieldValidationConfig };
   /** Initial width, e.g. `'12rem'`. */
   width?: string;
@@ -56,6 +64,8 @@ export interface DataTableConfig {
   save?: { endpoint: string; method?: 'PATCH' | 'PUT' | 'POST' } | ((id: string, changes: Record<string, unknown>) => Promise<unknown>);
   /** Accessible table caption. */
   caption?: string;
+  /** Where Enter goes after saving an edit: stay on the cell, or move down. @default 'none' */
+  enterMoves?: 'down' | 'none';
   /** Text when the list is empty. @default 'No results' */
   emptyText?: string;
   /** Infinite scroll threshold in px. @default 400 */
@@ -85,6 +95,7 @@ export class DataTable extends Component {
   #view: ListView | null = null;
   #instances: MixinInstance[] = [];
   #selected: string | null = null;
+  #editor: CellEditor | null = null;
 
   /** Configure columns and the data source. */
   configure(config: DataTableConfig): void {
@@ -144,11 +155,19 @@ export class DataTable extends Component {
     if (grid) this.#instances.push(grid);
     this.listen(table, 'grid:edit', (e: Event) => {
       const { cell, key } = (e as CustomEvent<{ cell: HTMLElement; key?: string }>).detail;
-      this.#edit(cell, key);
+      // Tell grid-navigation we put the typed character in the editor ourselves.
+      if (this.#edit(cell, key)) e.preventDefault();
     });
     this.listen(table, 'click', (e: Event) => {
-      const row = (e.target as Element).closest('tbody tr[data-id]');
+      const me = e as MouseEvent;
+      const target = me.target as Element;
+      const row = target.closest('tbody tr[data-id]');
       if (row) this.#select(row.getAttribute('data-id')!);
+      // A click edits an editable cell, with the caret where you clicked.
+      const cell = target.closest<HTMLElement>('tbody td[data-col]');
+      if (cell && cell.getAttribute('aria-readonly') === 'false' && me.detail <= 1 && !target.closest('a, button, input, select, textarea')) {
+        this.#edit(cell, 'click', caretFromPoint(cell, me.clientX, me.clientY));
+      }
     });
     this.listen(table, 'keydown', (e: Event) => {
       const ke = e as KeyboardEvent;
@@ -246,47 +265,82 @@ export class DataTable extends Component {
     this.emit('row-select', { id });
   }
 
-  #edit(cell: HTMLElement, key?: string): void {
+  /** The cell being edited, if any. */
+  get editing(): CellEditor | null {
+    return this.#editor && !this.#editor.closed ? this.#editor : null;
+  }
+
+  /**
+   * Start editing a cell. `key` is how: a typed character (replaces the value),
+   * 'Enter', 'F2', 'click' or 'dblclick'. Returns true if a typed character
+   * was put in the editor (so the key's default should be prevented).
+   */
+  #edit(cell: HTMLElement, key?: string, caret?: number): boolean {
+    if (this.editing) return false;
     const config = this.#config;
     const field = cell.dataset.col;
     const id = cell.closest('tr')?.getAttribute('data-id');
     const col = config?.columns.find(c => c.field === field);
-    if (!config || !field || !id || !col?.editable || cell.classList.contains('is-editing')) return;
+    if (!config || !field || !id) return false;
+    if (!col?.editable) {
+      if (key === 'Enter' || key === 'F2' || (key && key.length === 1)) announce(`${col?.label ?? 'This cell'} is read only`);
+      return false;
+    }
     const opts = typeof col.editable === 'object' ? col.editable : {};
     const { store } = getRuntime();
     const type = this.#view!.type;
     const raw = store.getData<Record<string, unknown>>(type, id)?.[field];
-    // Edit the raw value, not the formatted one (e.g. 1234 rather than "$1,234.00").
-    cell.textContent = raw === null || raw === undefined ? '' : String(raw);
-    const editor = mixinRegistry.apply(cell, 'editable', {
-      type: opts.type ?? (col.displayType === 'number' || col.displayType === 'currency' ? 'number' : col.displayType === 'date' ? 'date' : 'text'),
+    const isNumber = opts.type === 'number' || col.displayType === 'number' || col.displayType === 'currency';
+    const inputType = opts.type ?? (isNumber ? 'number' : col.displayType === 'date' ? 'date' : 'text');
+    const typed = !!key && key.length === 1;
+    const host = this.querySelector<HTMLElement>('.ar-table__scroll')!;
+    this.#editor = openCellEditor({
+      cell,
+      host,
+      // Edit the raw value, not the formatted one (e.g. 1234 rather than "$1,234.00").
+      value: raw === null || raw === undefined ? '' : String(raw),
+      type: inputType,
       choices: opts.choices,
-      label: `Edit ${col.label}`,
+      label: col.label,
+      mode: typed ? 'enter' : 'edit',
+      initialText: typed && inputType !== 'select' ? key : undefined,
+      caret: caret ?? 'end',
+      enterMoves: config.enterMoves ?? 'none',
       validate: opts.validation
         ? async (value: string) => {
           const error = await getRuntime().binder.validationEngine.validateField(field, value, opts.validation!, { ...store.getData(type, id) });
           return error ? error.message : true;
         }
         : undefined,
+      commit: value => this.#save(type, id, { [field]: isNumber ? Number(value) : value }),
+      onClose: ({ move, reason }) => {
+        this.#editor = null;
+        // Clicking elsewhere moved focus already; otherwise go back to (or on from) the cell.
+        if (reason !== 'blur') this.#moveFrom(cell, move);
+      },
     });
-    if (!editor) return;
-    const finish = (): void => {
-      mixinRegistry.remove(cell, 'editable');
-      const current = store.getData<Record<string, unknown>>(type, id);
-      // Re-render the formatted value.
-      getRuntime().binder.applyValue(cell, current?.[field], { ...col.bind, displayType: col.displayType ?? col.bind?.displayType }, current);
-      cell.focus();
-    };
-    cell.addEventListener('editable:save', (e: Event) => {
-      e.preventDefault(); // we render the formatted value ourselves
-      const detail = (e as CustomEvent<{ value: string }>).detail;
-      const value = opts.type === 'number' || col.displayType === 'number' || col.displayType === 'currency' ? Number(detail.value) : detail.value;
-      void this.#save(type, id, { [field]: value }).finally(finish);
-    }, { once: true });
-    cell.addEventListener('editable:cancel', finish, { once: true });
-    (editor.start as () => void)();
-    const input = cell.querySelector('input');
-    if (input && key && key.length === 1) input.value = key; // type-to-edit replaces the value
+    // Type-to-edit on a choice cell jumps to the first matching option.
+    if (typed && inputType === 'select') this.#editor.input.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    return typed;
+  }
+
+  /** Focus the cell next to `cell` in a direction (or `cell` itself). */
+  #moveFrom(cell: HTMLElement, move: CellMove): void {
+    let target: HTMLElement | null = cell.isConnected ? cell : null;
+    const row = cell.closest('tr');
+    if (row && move !== 'none') {
+      const cells = Array.from(row.querySelectorAll<HTMLElement>('td[data-col]'));
+      const col = cells.indexOf(cell);
+      if (move === 'left' || move === 'right') {
+        target = cells[col + (move === 'right' ? 1 : -1)] ?? cell;
+      } else {
+        const rows = Array.from(this.querySelectorAll<HTMLElement>('tbody tr[data-id]'));
+        const next = rows[rows.indexOf(row as HTMLElement) + (move === 'down' ? 1 : -1)];
+        target = next?.querySelectorAll<HTMLElement>('td[data-col]')[col] ?? cell;
+      }
+    }
+    target?.focus();
+    target?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   }
 
   async #save(type: string, id: string, changes: Record<string, unknown>): Promise<void> {
@@ -313,6 +367,29 @@ export class DataTable extends Component {
   protected override onDisconnected(): void {
     for (const m of this.#instances.splice(0)) m.destroy();
   }
+}
+
+/** The text offset under a point in a cell, for putting the caret where the user clicked. */
+function caretFromPoint(cell: HTMLElement, x: number, y: number): number | undefined {
+  const doc = cell.ownerDocument as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+  let node: Node | null = null;
+  let offset = 0;
+  if (doc.caretPositionFromPoint) {
+    const pos = doc.caretPositionFromPoint(x, y);
+    if (pos) ({ offsetNode: node, offset } = pos);
+  } else if (doc.caretRangeFromPoint) {
+    const range = doc.caretRangeFromPoint(x, y);
+    if (range) ({ startContainer: node, startOffset: offset } = range);
+  }
+  if (!node || !cell.contains(node)) return undefined;
+  // Count the text before the caret node within the cell.
+  let total = 0;
+  const walker = doc.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (n === node) return total + offset;
+    total += n.textContent?.length ?? 0;
+  }
+  return undefined;
 }
 
 defineComponent({ tag: 'a-data-table', html: HTML })(DataTable);
