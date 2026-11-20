@@ -22,6 +22,7 @@
 import type { MixinInstance } from './types';
 import { emit } from './utils';
 import { uniqueId } from '../utils/dom';
+import { attachPopup } from './popup';
 
 export interface ListboxOption {
   value: string;
@@ -57,7 +58,6 @@ export function listboxMixin(element: HTMLElement, config: ListboxOptions): Mixi
   list.id = id;
   list.className = 'ar-listbox';
   list.setAttribute('role', 'listbox');
-  list.hidden = true;
   list.tabIndex = -1;
   const label = config.label ?? element.getAttribute('aria-label');
   if (label) list.setAttribute('aria-label', label);
@@ -72,6 +72,8 @@ export function listboxMixin(element: HTMLElement, config: ListboxOptions): Mixi
   });
   (config.container ?? element.parentElement ?? document.body).appendChild(list);
   if (!config.container) element.after(list);
+  // In the top layer, so a scrolling table or the cell editor can't clip it.
+  const popup = attachPopup(list, { anchor: () => element, placement: 'bottom', gap: 4, matchWidth: true });
 
   const display = document.createElement('span');
   display.className = 'ar-listbox__value';
@@ -116,7 +118,7 @@ export function listboxMixin(element: HTMLElement, config: ListboxOptions): Mixi
   function open(at = active): void {
     if (isOpen) return;
     isOpen = true;
-    list.hidden = false;
+    popup.show();
     element.setAttribute('aria-expanded', 'true');
     setActive(at);
   }
@@ -124,7 +126,7 @@ export function listboxMixin(element: HTMLElement, config: ListboxOptions): Mixi
   function close(): void {
     if (!isOpen) return;
     isOpen = false;
-    list.hidden = true;
+    popup.hide();
     element.setAttribute('aria-expanded', 'false');
     render();
   }
@@ -229,6 +231,7 @@ export function listboxMixin(element: HTMLElement, config: ListboxOptions): Mixi
     },
     destroy: () => {
       controller.abort();
+      popup.destroy();
       list.remove();
       element.removeAttribute('role');
       element.removeAttribute('aria-haspopup');

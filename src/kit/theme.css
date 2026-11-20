@@ -567,10 +567,17 @@ html.is-sorting-active, html.is-sorting-active * { cursor: grabbing !important; 
 }
 .is-dragging { cursor: grabbing !important; user-select: none; z-index: 10; }
 
+/* ── Popups (tooltips, menus, lists) ───────────────────────────────────── */
+/* Popups open in the top layer where supported; they're placed by script, so
+   undo the UA's centered popover box. */
+.ar-popup[popover] { inset: auto; margin: 0; overflow: auto; color: inherit; }
+.ar-popup[hidden] { display: none; }
+
 /* ── Tooltip ───────────────────────────────────────────────────────────── */
 
 .tooltip {
   z-index: 10000;
+  border: 0;
   max-width: 18rem;
   padding: 0.35rem 0.6rem;
   border-radius: var(--ar-radius-sm);

@@ -10,12 +10,14 @@
 
 import type { ContextMenuItem, ContextMenuOptions, MixinInstance } from './types';
 import { emit } from './utils';
+import { attachPopup, popupHost, type Popup } from './popup';
 import { uniqueId } from '../utils/dom';
 
 export function contextMenuMixin(element: HTMLElement, options: ContextMenuOptions = {}): MixinInstance {
   const controller = new AbortController();
   const { signal } = controller;
   let menu: HTMLElement | null = null;
+  let popup: Popup | null = null;
   let menuController: AbortController | null = null;
   let openedOn: HTMLElement | null = null;
   let returnFocus: HTMLElement | null = null;
@@ -69,8 +71,11 @@ export function contextMenuMixin(element: HTMLElement, options: ContextMenuOptio
       }
       menu.appendChild(btn);
     }
-    document.body.appendChild(menu);
-    menu.style.position = 'fixed';
+    popupHost(target).appendChild(menu);
+    // In the top layer, so it's above dialogs and sticky headers. It opens at
+    // the point: down and to the right, flipping near the edges.
+    popup = attachPopup(menu, { anchor: () => new DOMRect(x, y, 0, 0), placement: 'bottom', gap: 0, follow: false });
+    popup.show();
     const rect = menu.getBoundingClientRect();
     menu.style.left = `${Math.max(4, Math.min(x, window.innerWidth - rect.width - 4))}px`;
     menu.style.top = `${Math.max(4, Math.min(y, window.innerHeight - rect.height - 4))}px`;
@@ -127,6 +132,8 @@ export function contextMenuMixin(element: HTMLElement, options: ContextMenuOptio
     if (!menu) return;
     menuController?.abort();
     menuController = null;
+    popup?.destroy();
+    popup = null;
     menu.remove();
     menu = null;
     element.removeAttribute('aria-expanded');

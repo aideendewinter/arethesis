@@ -9,7 +9,7 @@
  */
 
 import type { MixinInstance, TooltipOptions } from './types';
-import { placeFloating } from './utils';
+import { attachPopup, popupHost } from './popup';
 import { uniqueId } from '../utils/dom';
 
 export function tooltipMixin(element: HTMLElement, options: TooltipOptions = {}): MixinInstance {
@@ -24,7 +24,8 @@ export function tooltipMixin(element: HTMLElement, options: TooltipOptions = {})
   tip.id = uniqueId('tooltip');
   tip.className = 'tooltip';
   tip.setAttribute('role', 'tooltip');
-  tip.hidden = true;
+  // A `hint` popover: in the top layer, and it never closes open menus.
+  const popup = attachPopup(tip, { anchor: () => element, placement, mode: 'hint', follow: false });
   const describedBy = element.getAttribute('aria-describedby');
   element.setAttribute('aria-describedby', [describedBy, tip.id].filter(Boolean).join(' '));
 
@@ -36,9 +37,10 @@ export function tooltipMixin(element: HTMLElement, options: TooltipOptions = {})
     const content = text();
     if (!content) return;
     tip.textContent = content;
-    if (!tip.isConnected) document.body.appendChild(tip);
-    tip.hidden = false;
-    placeFloating(tip, element.getBoundingClientRect(), placement);
+    const host = popupHost(element);
+    if (tip.parentElement !== host) host.appendChild(tip);
+    if (popup.isOpen()) popup.reposition();
+    else popup.show();
   }
 
   function schedule(): void {
@@ -49,7 +51,7 @@ export function tooltipMixin(element: HTMLElement, options: TooltipOptions = {})
   function hide(): void {
     if (timer) clearTimeout(timer);
     timer = null;
-    tip.hidden = true;
+    popup.hide();
   }
 
   element.addEventListener('pointerenter', schedule, { signal });
@@ -75,6 +77,7 @@ export function tooltipMixin(element: HTMLElement, options: TooltipOptions = {})
     destroy: () => {
       hide();
       controller.abort();
+      popup.destroy();
       tip.remove();
       if (describedBy) element.setAttribute('aria-describedby', describedBy);
       else element.removeAttribute('aria-describedby');

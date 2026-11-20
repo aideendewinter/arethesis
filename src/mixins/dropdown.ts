@@ -11,6 +11,7 @@
 
 import type { DropdownOptions, MixinInstance } from './types';
 import { emit } from './utils';
+import { attachPopup } from './popup';
 import { uniqueId } from '../utils/dom';
 
 export function dropdownMixin(host: HTMLElement, options: DropdownOptions = {}): MixinInstance {
@@ -48,9 +49,10 @@ export function dropdownMixin(host: HTMLElement, options: DropdownOptions = {}):
   list.className = 'dropdown__list';
   list.id = `${id}-list`;
   list.setAttribute('role', 'listbox');
-  list.hidden = true;
 
   wrapper.append(input, list);
+  // In the top layer, so a scrolling table or card can't clip it.
+  const popup = attachPopup(list, { anchor: () => input, placement: 'bottom', gap: 4, matchWidth: true });
   // Before the select, so messages placed after the select (validation errors) appear below the combobox.
   select.insertAdjacentElement('beforebegin', wrapper);
   // Mirror validation state from the select onto the combobox.
@@ -113,7 +115,7 @@ export function dropdownMixin(host: HTMLElement, options: DropdownOptions = {}):
   function open(): void {
     if (!list.hidden || input.disabled) return;
     render(searchable ? '' : '');
-    list.hidden = false;
+    popup.show();
     input.setAttribute('aria-expanded', 'true');
     wrapper.classList.add('is-open');
     if (searchable) input.select();
@@ -121,7 +123,7 @@ export function dropdownMixin(host: HTMLElement, options: DropdownOptions = {}):
 
   function close(restore = true): void {
     if (list.hidden) return;
-    list.hidden = true;
+    popup.hide();
     input.setAttribute('aria-expanded', 'false');
     input.removeAttribute('aria-activedescendant');
     wrapper.classList.remove('is-open');
@@ -217,6 +219,7 @@ export function dropdownMixin(host: HTMLElement, options: DropdownOptions = {}):
     destroy: () => {
       controller.abort();
       attrObserver?.disconnect();
+      popup.destroy();
       wrapper.remove();
       select.classList.remove('ar-visually-hidden');
       select.removeAttribute('tabindex');
