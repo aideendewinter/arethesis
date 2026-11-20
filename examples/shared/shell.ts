@@ -32,6 +32,8 @@ export interface ShellOptions {
   features?: string[];
   /** Raw source of the page's script, shown in the source drawer. */
   source?: string;
+  /** A short note for the footer (plain text). */
+  footnote?: string;
 }
 
 /** Build the navigation and page intro; returns the main content element. */
@@ -80,6 +82,7 @@ export function mountShell(options: ShellOptions): HTMLElement {
   const footer = document.createElement('footer');
   footer.className = 'site-footer';
   footer.innerHTML = `<div class="site-footer__inner">
+    <p class="site-footer__note"></p>
     <p>Every example runs entirely in your browser, against a mock backend in a SharedWorker. No marble was bleached in the making of this site.</p>
     <p class="site-footer__links">
       <span>Arethesis ${VERSION}</span>
@@ -89,6 +92,9 @@ export function mountShell(options: ShellOptions): HTMLElement {
       <a href="${REPO_URL}/blob/main/CHANGELOG.md">Changelog</a>
       <a href="${REPO_URL}/blob/main/LICENSE">MIT license</a>
     </p></div>`;
+  const note = footer.querySelector<HTMLElement>('.site-footer__note')!;
+  if (options.footnote) note.textContent = options.footnote;
+  else note.remove();
   main.after(footer);
   if (options.title) {
     const intro = document.createElement('header');

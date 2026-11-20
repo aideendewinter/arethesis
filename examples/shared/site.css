@@ -255,8 +255,6 @@ a.icon-button { text-decoration: none; }
 .quote blockquote p::before { content: '“'; } .quote blockquote p::after { content: '”'; }
 .quote figcaption { font-size: 0.85rem; color: var(--ar-text-muted); }
 .quote figcaption::before { content: '— '; }
-.quote__gloss { margin: 0.3rem 0 0; padding-top: 0.6rem; border-top: 1px dashed var(--ar-border); font-size: 0.9rem; line-height: 1.5; }
-.quote__gloss code { font: 0.85em var(--ar-font-mono); }
 
 .theses { margin-top: 3.5rem; }
 .features { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.5rem 1.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }

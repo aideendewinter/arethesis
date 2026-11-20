@@ -14,6 +14,7 @@ mountShell({
   description: 'A threaded discussion, live. Posts are normalized objects in the store; threads load a page at a time with infinite scroll; votes are optimistic and roll back if the server refuses; new replies arrive over Server-Sent Events while you read.',
   features: ['ListView + cursor pagination', 'infinite scroll', 'optimistic votes', 'SSE', 'rich-text', 'feed pattern'],
   source,
+  footnote: 'The posts paraphrase positions their authors are known for; none are quotations.',
 });
 
 interface Post {
