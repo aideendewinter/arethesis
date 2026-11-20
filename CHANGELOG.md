@@ -16,6 +16,7 @@
 - `editable` select editors no longer save (and close) on the first arrow key press on Windows and Linux.
 - Fast typing to start editing a table cell no longer drops characters, and IME input works.
 
+- **`<a-chart>`**: line, area, bar and stacked-bar SVG charts that stream, resize, and are readable by keyboard and screen reader (crosshair tooltip, arrow-key readout, legend toggles, data table). New `--ar-chart-1` … `--ar-chart-6` tokens in both palettes, checked for color-vision deficiency.
 - **`listbox` mixin**: an accessible select-only combobox whose arrow keys never pick a value by accident.
 - `openCellEditor()`: the spreadsheet-style cell editor behind `<a-data-table>`, for other grids.
 
@@ -23,6 +24,7 @@
 
 - **Editing in `<a-data-table>` works like a spreadsheet.** A click edits the cell; moving with the keyboard only selects. Typing replaces the value, after which the arrow keys save and move. Tab saves and moves right, Enter saves (and can move down with `enterMoves: 'down'`), Escape reverts. The editor floats over the cell, so the table no longer shifts, and edits are announced to screen readers. Choice columns use the new `listbox` instead of a native select.
 - The examples have a new look in the Polychrome theme, with self-hosted fonts (Cinzel and Gentium Book Plus, SIL OFL) and a new home page.
+- The dashboard example streams a multi-series traffic chart and grouped bars, and its stat cards use `<a-chart>` sparklines.
 - The collaborative editor example is now a Markdown studio, with an outline, comments, presence by section, and Socrates as an optional co-author.
 
 ## 0.1.5

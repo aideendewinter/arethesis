@@ -241,6 +241,75 @@
         },
         "$description": "Background for warnings."
       }
+    },
+    "chart": {
+      "$description": "Categorical colors for data series, in a fixed order (validated for color-vision deficiency, adjacent pairs). Assign them in order and keep each series on its color.",
+      "1": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.4078,
+            0.4706,
+            0.9412
+          ],
+          "hex": "#6878f0"
+        }
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.8784,
+            0.2902,
+            0.4863
+          ],
+          "hex": "#e04a7c"
+        }
+      },
+      "3": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7255,
+            0.5451,
+            0.0863
+          ],
+          "hex": "#b98b16"
+        }
+      },
+      "4": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0588,
+            0.6275,
+            0.5608
+          ],
+          "hex": "#0fa08f"
+        }
+      },
+      "5": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6275,
+            0.4784,
+            0.9098
+          ],
+          "hex": "#a07ae8"
+        }
+      },
+      "6": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.3686,
+            0.5882,
+            0.1255
+          ],
+          "hex": "#5e9620"
+        }
+      }
     }
   },
   "shadow": {

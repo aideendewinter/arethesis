@@ -92,7 +92,7 @@ test('the gap between two panels is a splitter that shares space between them', 
 test('on a narrow screen panels stack and the splitters go away', async ({ page, errors }) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto('/dashboard/index.html');
-  await expect(page.locator('.ar-flex__panel')).toHaveCount(6);
+  await expect(page.locator('.ar-flex__panel')).toHaveCount(8);
   await expect(page.locator('.ar-flex__splitter:visible')).toHaveCount(0);
   // Widen it again: the splitters come back.
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -171,7 +171,7 @@ test('splitters follow a panel that is dragged into another row', async ({ page,
   await page.mouse.move(revenue.x + revenue.width * 0.8, revenue.y + revenue.height / 2, { steps: 15 });
   await page.mouse.up();
   const keys = () => page.locator('.ar-flex__panel').evaluateAll(els => els.map(el => (el as HTMLElement).dataset.key));
-  await expect.poll(keys).toEqual(['revenue', 'about', 'users', 'orders', 'conversion', 'activity']);
+  await expect.poll(keys).toEqual(['revenue', 'about', 'users', 'orders', 'conversion', 'activity', 'traffic', 'regions']);
 
   // Its neighbours in the same row have splitters on both sides of it.
   const rowOf = (key: string) => page.locator(`[data-key=${key}]`).evaluate(el => Math.round(el.getBoundingClientRect().top));
@@ -190,7 +190,7 @@ test('splitters follow a panel that is dragged into another row', async ({ page,
   await page.mouse.move(a.x + 40, a.y + a.height / 2 - 10, { steps: 3 });
   await page.mouse.move(conversion.x + conversion.width * 0.2, conversion.y + conversion.height / 2, { steps: 15 });
   await page.mouse.up();
-  await expect.poll(keys).toEqual(['revenue', 'about', 'users', 'orders', 'activity', 'conversion']);
+  await expect.poll(keys).toEqual(['revenue', 'about', 'users', 'orders', 'activity', 'conversion', 'traffic', 'regions']);
   expect(await rowOf('activity')).toBe(await rowOf('conversion'));
   expect(await atDrop()).toMatchObject({ activity: true, conversion: false });
   void errors;
@@ -202,7 +202,7 @@ test('panels can still be dragged after "Reset layout"', async ({ page, errors }
   await expect(page.locator('.feed__item strong').first()).toBeVisible();
   await page.locator('#reset').click();
   const keys = () => page.locator('.ar-flex__panel').evaluateAll(els => els.map(el => (el as HTMLElement).dataset.key));
-  await expect.poll(keys).toEqual(['revenue', 'users', 'orders', 'conversion', 'activity', 'about']);
+  await expect.poll(keys).toEqual(['revenue', 'users', 'orders', 'conversion', 'activity', 'about', 'traffic', 'regions']);
 
   // Drag "Revenue" by its title onto the right half of "Users".
   const h = (await page.locator('[data-key=revenue] .ar-flex__header').boundingBox())!;
@@ -212,16 +212,45 @@ test('panels can still be dragged after "Reset layout"', async ({ page, errors }
   await page.mouse.move(h.x + 40, h.y + h.height / 2 + 5, { steps: 3 });
   await page.mouse.move(users.x + users.width * 0.8, users.y + users.height / 2, { steps: 12 });
   await page.mouse.up();
-  await expect.poll(keys).toEqual(['users', 'revenue', 'orders', 'conversion', 'activity', 'about']);
+  await expect.poll(keys).toEqual(['users', 'revenue', 'orders', 'conversion', 'activity', 'about', 'traffic', 'regions']);
 
   // And again after a second reset.
   await page.locator('#reset').click();
-  await expect.poll(keys).toEqual(['revenue', 'users', 'orders', 'conversion', 'activity', 'about']);
+  await expect.poll(keys).toEqual(['revenue', 'users', 'orders', 'conversion', 'activity', 'about', 'traffic', 'regions']);
   const panel = page.locator('.ar-flex__panel[data-key=revenue]');
   await panel.focus();
   await page.keyboard.press('Space');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Space');
-  await expect.poll(keys).toEqual(['users', 'revenue', 'orders', 'conversion', 'activity', 'about']);
+  await expect.poll(keys).toEqual(['users', 'revenue', 'orders', 'conversion', 'activity', 'about', 'traffic', 'regions']);
+  void errors;
+});
+
+test('charts stream, can be read from the keyboard, and show their data as a table', async ({ page, errors }) => {
+  await page.goto('/dashboard/index.html');
+  const traffic = page.locator('traffic-chart a-chart');
+  const plot = traffic.getByRole('group', { name: /Requests per second by channel/ });
+  await expect(traffic.locator('.ar-chart__line')).toHaveCount(3);
+
+  // New points arrive over SSE: the latest time in the table changes.
+  const lastTime = () => traffic.locator('tbody tr:last-child th').textContent();
+  const first = await lastTime();
+  await expect.poll(lastTime, { timeout: 8000 }).not.toBe(first);
+
+  // Keyboard: focus the plot, step back a point, and hear every series.
+  await plot.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(traffic.locator('[aria-live]')).toHaveText(/Web \d+\/s, Mobile \d+\/s, API \d+\/s/);
+  await expect(traffic.locator('.ar-chart__tooltip')).toBeVisible();
+
+  // The legend hides a series; the table toggle shows the data.
+  await traffic.getByRole('button', { name: 'Mobile' }).click();
+  await expect(traffic.getByRole('button', { name: 'Mobile' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(traffic.locator('.ar-chart__line')).toHaveCount(2);
+  await traffic.getByRole('button', { name: 'Table' }).click();
+  await expect(traffic.getByRole('table', { name: 'Requests per second by channel' })).toBeVisible();
+
+  // Grouped bars for the regions.
+  await expect(page.locator('region-chart .ar-chart__bar')).toHaveCount(10);
   void errors;
 });

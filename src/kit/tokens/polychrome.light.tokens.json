@@ -241,6 +241,81 @@
         },
         "$description": "Ochre wash"
       }
+    },
+    "chart": {
+      "$description": "Categorical colors for data series, in a fixed order (validated for color-vision deficiency, adjacent pairs). Assign them in order and keep each series on its color.",
+      "1": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.1647,
+            0.3608,
+            0.7216
+          ],
+          "hex": "#2a5cb8"
+        },
+        "$description": "Egyptian blue"
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7529,
+            0.4902,
+            0.0627
+          ],
+          "hex": "#c07d10"
+        },
+        "$description": "Yellow ochre"
+      },
+      "3": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0.5373,
+            0.4824
+          ],
+          "hex": "#00897b"
+        },
+        "$description": "Verdigris"
+      },
+      "4": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7216,
+            0.1961,
+            0.1098
+          ],
+          "hex": "#b8321c"
+        },
+        "$description": "Cinnabar"
+      },
+      "5": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.5412,
+            0.1647,
+            0.4784
+          ],
+          "hex": "#8a2a7a"
+        },
+        "$description": "Tyrian purple"
+      },
+      "6": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.2471,
+            0.498,
+            0.1647
+          ],
+          "hex": "#3f7f2a"
+        },
+        "$description": "Green earth"
+      }
     }
   },
   "shadow": {

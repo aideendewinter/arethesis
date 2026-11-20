@@ -350,7 +350,8 @@ stat-card { display: block; }
 .stat__value { margin: 0; font-size: clamp(1.6rem, 3vw, 2.1rem); font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .stat__trend { margin: 0.25rem 0 0.75rem; font-size: 0.82rem; font-weight: 600; color: var(--ar-success); }
 .stat__trend.is-down { color: var(--ar-danger); }
-.stat__spark { width: 100%; height: 3rem; color: var(--ar-accent); }
+.stat__spark { display: block; width: 100%; }
+traffic-chart, region-chart { display: block; }
 /* A starting height (not a cap) keeps the feed scrolling; dragging the edge overrides it. */
 #dashboard .ar-flex__panel[data-key='activity'] { height: 26rem; }
 #dashboard .ar-flex__panel[data-key='activity'] .ar-flex__body { overflow: auto; }

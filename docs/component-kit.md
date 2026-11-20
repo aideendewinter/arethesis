@@ -109,6 +109,31 @@ session.on('annotations', list => (editor.annotations = list.map(a => ({ ...a, c
 
 The renderer and highlighter are exported on their own too: `renderMarkdown(source)` returns sanitized HTML (CommonMark core plus GFM tables, task lists and strikethrough; raw HTML is shown as text), and `markdownOutline`, `highlightMarkdown` and `highlightLine` power the rest. Add `class="ar-prose"` to style rendered Markdown anywhere.
 
+## `<a-chart>`
+
+Line, area, bar and stacked-bar charts in SVG, with no dependencies.
+
+```ts
+chart.configure({
+  type: 'line',                       // 'line' | 'area' | 'bar' | 'stacked-bar'
+  label: 'Requests per second',       // accessible name and table caption
+  series: [{ key: 'web', label: 'Web' }, { key: 'api', label: 'API' }],
+  x: { type: 'time' },                // 'time' | 'number' | 'category'
+  y: { format: v => `${v}/s` },
+  data: [{ x: Date.now(), web: 120, api: 80 }],
+  maxPoints: 60,
+});
+chart.push({ x: Date.now(), web: 131, api: 77 }); // stream: the oldest point drops off
+```
+
+- **Colors:** series take `--ar-chart-1` … `--ar-chart-6` in order. Both palettes' chart colors are checked for color-vision deficiency on adjacent pairs, in light and dark. A hidden series never changes the others' colors.
+- **Reading it:** hovering shows a crosshair and one tooltip with every series at that point. The plot is focusable: ← and → step through the points, Home and End jump, and each point is announced. Every chart keeps a data table for screen readers, and the "Table" button shows it.
+- **Legend:** with two or more series, legend buttons show and hide series.
+- **Marks:** 2px lines with an end dot, area washes, bars at most 24px wide with rounded data ends and 2px gaps, hairline gridlines and "nice" ticks.
+- `sparkline: true` draws only the line (a `role="img"` with the label), for stat tiles.
+
+API: `configure`, `setData`, `push`, `setSeriesVisible`, `redraw`, `data`. `niceTicks(min, max, count)` is exported too.
+
 ## `<a-data-table>`
 
 ```ts

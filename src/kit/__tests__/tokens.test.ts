@@ -112,6 +112,10 @@ describe('shipped design tokens', () => {
         ['color.warning', 'color.warning.soft'],
       ];
       for (const [fg, bg] of pairs) expect(contrast(hex(fg), hex(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(target);
+      // Chart series are graphics, read with a legend and a data table: at least 2.5:1, all distinct (palettes validated for color-vision deficiency).
+      const series = [1, 2, 3, 4, 5, 6].map(i => hex(`color.chart.${i}`));
+      expect(new Set(series).size).toBe(6);
+      for (const c of series) expect(contrast(c, hex('color.bg')), c).toBeGreaterThanOrEqual(2.5);
       // Borders are UI components: 3:1 in high contrast.
       if (theme.includes('high-contrast')) for (const bg of backgrounds) expect(contrast(hex('color.border'), hex(bg))).toBeGreaterThanOrEqual(3);
     });

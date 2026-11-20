@@ -20,6 +20,8 @@ export { FlexView } from './flex-view';
 export type { FlexPanelConfig, FlexViewConfig } from './flex-view';
 export { List } from './list';
 export { Form } from './form';
+export { Chart, niceTicks } from './chart';
+export type { ChartConfig, ChartRow, ChartSeries, ChartType, ChartX } from './chart';
 export { openCellEditor } from './cell-editor';
 export type { CellEditor, CellEditorOptions, CellMove, CellEditorType } from './cell-editor';
 export { MarkdownEditor } from './markdown-editor';

@@ -66,6 +66,14 @@ export class MockServer {
     conversion: { id: 'conversion', label: 'Conversion', value: 0.034, unit: 'percent', trend: 0.3, history: [] as number[] },
   };
   private activity: Array<{ id: number; message: string; user: string; at: string }> = [];
+  /** Chart data for the dashboard: requests per second by channel, and orders by region. */
+  private charts = {
+    traffic: { id: 'traffic', points: [] as Array<{ x: number; web: number; mobile: number; api: number }> },
+    regions: {
+      id: 'regions',
+      rows: ['Attica', 'Boeotia', 'Corinth', 'Ionia', 'Sicily'].map(x => ({ x, thisWeek: 0, lastWeek: 0 })),
+    },
+  };
   /**
    * Refresh tokens revoked by signing out. Tokens are otherwise self-contained,
    * so sessions survive the mock restarting (the browser stops its shared worker
@@ -87,6 +95,12 @@ export class MockServer {
       }
     }
     for (let i = 0; i < 200; i++) this.activity.push(this.makeActivity(i, Date.now() - i * 7 * 60_000));
+    const now = Date.now();
+    for (let i = 40; i > 0; i--) this.charts.traffic.points.push(this.trafficPoint(now - i * 2000, this.charts.traffic.points.at(-1)));
+    for (const r of this.charts.regions.rows) {
+      r.lastWeek = Math.round(80 + this.random() * 220);
+      r.thisWeek = Math.round(r.lastWeek * (0.8 + this.random() * 0.45));
+    }
     // Live metrics for the dashboard.
     setInterval(() => this.tickMetrics(), 2000);
   }
@@ -97,7 +111,20 @@ export class MockServer {
     return { id, user: people[id % people.length], message: verbs[(id * 3 + Math.floor(id / 7)) % verbs.length], at: new Date(at).toISOString() };
   }
 
+  private trafficPoint(x: number, prev?: { web: number; mobile: number; api: number }) {
+    const walk = (v: number, base: number) => Math.max(5, Math.round(v + (this.random() - 0.5) * base * 0.18 + (base - v) * 0.08));
+    return { x, web: walk(prev?.web ?? 420, 420), mobile: walk(prev?.mobile ?? 260, 260), api: walk(prev?.api ?? 150, 150) };
+  }
+
   private tickMetrics(): void {
+    const traffic = this.charts.traffic;
+    traffic.points = [...traffic.points.slice(-39), this.trafficPoint(Date.now(), traffic.points.at(-1))];
+    this.out.sse('upsert', { type: 'Chart', data: { ...traffic } });
+    if (this.random() < 0.5) {
+      const r = this.charts.regions.rows[Math.floor(this.random() * this.charts.regions.rows.length)];
+      r.thisWeek += Math.round(1 + this.random() * 6);
+      this.out.sse('upsert', { type: 'Chart', data: { id: 'regions', rows: this.charts.regions.rows.map(row => ({ ...row })) } });
+    }
     for (const m of Object.values(this.metrics)) {
       const change = (this.random() - 0.47) * (m.unit === 'percent' ? 0.002 : m.value * 0.01);
       m.value = m.unit === 'percent' ? Math.max(0.01, Math.round((m.value + change) * 10000) / 10000) : Math.max(0, Math.round(m.value + change));
@@ -202,6 +229,10 @@ export class MockServer {
     }
 
     // ── Dashboard ──────────────────────────────────────────
+    if ((m = /^\/charts\/(\w+)$/.exec(path)) && method === 'GET') {
+      const chart = this.charts[m[1] as keyof typeof this.charts];
+      return chart ? { status: 200, body: chart } : { status: 404 };
+    }
     if ((m = /^\/metrics\/(\w+)$/.exec(path)) && method === 'GET') {
       const metric = this.metrics[m[1] as keyof typeof this.metrics];
       return metric ? { status: 200, body: metric } : { status: 404 };

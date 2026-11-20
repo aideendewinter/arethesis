@@ -1,6 +1,6 @@
 import { Component, defineComponent, type StoredObject } from 'arethesis';
 import 'arethesis/components';
-import type { FlexView } from 'arethesis/components';
+import type { Chart, FlexView } from 'arethesis/components';
 import { startApp } from '../shared/boot';
 import { bindStatus, mountShell } from '../shared/shell';
 import source from './main.ts?raw';
@@ -9,16 +9,17 @@ mountShell({
   page: 'dashboard',
   title: 'Live dashboard',
   description: 'Panels are ordinary components bound to objects and lists in the store. Metrics stream in over Server-Sent Events and only the changed text is patched. The layout is stored like any other object, so with IndexedDB persistence it survives reloads.',
-  features: ['<a-flex-view>', 'SSE upserts', 'sortable + resizable', 'infinite scroll', 'IndexedDB persistence', 'relative time'],
+  features: ['<a-flex-view>', '<a-chart>', 'SSE upserts', 'sortable + resizable', 'infinite scroll', 'IndexedDB persistence'],
   source,
 });
 
 type Metric = { id: string; label: string; value: number; unit: 'currency' | 'number' | 'percent'; trend: number; history: number[] };
 
 const { app } = await startApp('dashboard', {
-  types: [{ name: 'Metric', endpoint: 'getMetric' }, { name: 'Activity', persist: false }],
+  types: [{ name: 'Metric', endpoint: 'getMetric' }, { name: 'Chart', endpoint: 'getChart', persist: false }, { name: 'Activity', persist: false }],
   endpoints: {
     getMetric: { url: '/metrics/:id', type: 'Metric' },
+    getChart: { url: '/charts/:id', type: 'Chart' },
     listActivity: { url: '/activity', type: 'Activity', list: true, mapping: { dataPath: 'items' }, pagination: { cursorPath: 'next' } },
   },
 });
@@ -30,7 +31,7 @@ const { app } = await startApp('dashboard', {
       <p class="stat__label" data-bind="label"></p>
       <p class="stat__value" data-bind="value"></p>
       <p class="stat__trend" data-bind="trend"></p>
-      <svg class="stat__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+      <a-chart class="stat__spark"></a-chart>
     </template>
     <template id="loading"><div class="ar-skeleton"></div><div class="ar-skeleton" style="height:2rem"></div></template>`,
 })
@@ -51,10 +52,50 @@ export class StatCard extends Component {
   protected override onBind(obj: StoredObject) {
     const m = obj.data as Metric;
     this.querySelector('.stat__trend')!.classList.toggle('is-down', m.trend < 0);
-    const min = Math.min(...m.history);
-    const max = Math.max(...m.history);
-    const points = m.history.map((v, i) => `${(i / (m.history.length - 1)) * 100},${28 - ((v - min) / (max - min || 1)) * 26}`);
-    this.querySelector('path')!.setAttribute('d', `M${points.join(' L')}`);
+    const chart = this.querySelector<Chart>('a-chart')!;
+    const data = m.history.map((value, x) => ({ x, value }));
+    if (!chart.config) chart.configure({ type: 'line', sparkline: true, label: `${m.label}, recent trend`, series: [{ key: 'value', label: m.label }], data });
+    else chart.setData(data);
+  }
+}
+
+/** Requests per second by channel, streaming: a new point every two seconds. */
+@defineComponent({ tag: 'traffic-chart', html: '<template id="main"><a-chart></a-chart></template>' })
+export class TrafficChart extends Component {
+  protected override onBind(obj: StoredObject) {
+    const { points } = obj.data as { points: Array<{ x: number; web: number; mobile: number; api: number }> };
+    const chart = this.querySelector<Chart>('a-chart')!;
+    if (!chart.config) {
+      chart.configure({
+        type: 'line',
+        label: 'Requests per second by channel',
+        series: [{ key: 'web', label: 'Web' }, { key: 'mobile', label: 'Mobile' }, { key: 'api', label: 'API' }],
+        x: { type: 'time' },
+        y: { format: v => `${Math.round(v)}/s` },
+        data: points,
+        maxPoints: 40,
+        height: 240,
+      });
+    } else chart.setData(points);
+  }
+}
+
+/** Orders by region, this week against last, as grouped bars. */
+@defineComponent({ tag: 'region-chart', html: '<template id="main"><a-chart></a-chart></template>' })
+export class RegionChart extends Component {
+  protected override onBind(obj: StoredObject) {
+    const { rows } = obj.data as { rows: Array<{ x: string; thisWeek: number; lastWeek: number }> };
+    const chart = this.querySelector<Chart>('a-chart')!;
+    if (!chart.config) {
+      chart.configure({
+        type: 'bar',
+        label: 'Orders by polis, this week and last',
+        series: [{ key: 'thisWeek', label: 'This week' }, { key: 'lastWeek', label: 'Last week' }],
+        x: { type: 'category' },
+        data: rows,
+        height: 240,
+      });
+    } else chart.setData(rows);
   }
 }
 
@@ -85,6 +126,9 @@ dashboard.configure({
     { ...metric('conversion'), title: 'Conversion' },
     { key: 'activity', title: 'Activity', scrollable: true, component: 'activity-feed', list: { id: 'activity', type: 'Activity', endpoint: 'listActivity', pageSize: 15 }, flex: '2', minWidth: '20rem' },
     { key: 'about', title: 'How this works', component: 'how-it-works', flex: '1', minWidth: '18rem' },
+    // Wide enough to start a row of their own.
+    { key: 'traffic', title: 'Requests per second', component: 'traffic-chart', binding: { type: 'Chart', id: 'traffic' }, flex: '2', minWidth: 'min(100%, 40rem)' },
+    { key: 'regions', title: 'Orders by polis', component: 'region-chart', binding: { type: 'Chart', id: 'regions' }, flex: '1', minWidth: '18rem' },
   ],
 });
 
