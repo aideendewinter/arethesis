@@ -33,8 +33,10 @@ import { getRuntime } from '../components/runtime';
 import type { BindConfig, FieldBindConfig, FieldValidationConfig, ValidationRule } from '../binding/types';
 import type { BindingHandle } from '../binding/data-binder';
 import { HttpError } from '../http/http-error';
+import { isFormAssociated } from '../binding/data-binder';
 
-type Control = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+/** Form-associated custom elements (such as `<a-combobox>`) count as controls too. */
+type Control = (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | (HTMLElement & { name: string; value: string; required: boolean; type?: string; labels?: NodeListOf<HTMLLabelElement> }));
 
 export class Form extends Component {
   #handle: BindingHandle | null = null;
@@ -67,8 +69,8 @@ export class Form extends Component {
 
   #controls(): Control[] {
     return Array.from(this.#form?.elements ?? []).filter((el): el is Control =>
-      (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) &&
-      !!el.name && el.type !== 'submit' && el.type !== 'button');
+      (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement || isFormAssociated(el)) &&
+      !!(el as Control).name && (el as Control).type !== 'submit' && (el as Control).type !== 'button');
   }
 
   #rulesFor(control: Control): ValidationRule[] {

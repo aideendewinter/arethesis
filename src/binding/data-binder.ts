@@ -38,7 +38,17 @@ import { sanitizeUrl } from '../utils/url';
 import { sanitizeHtml } from '../utils/sanitize';
 import { cssEscape, uniqueId } from '../utils/dom';
 
-type FormControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+/** A form-associated custom element (`static formAssociated = true`), such as `<a-combobox>`. */
+interface FormValueElement extends HTMLElement {
+  value: string;
+  readonly type?: string;
+}
+type FormControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | FormValueElement;
+
+/** Whether `el` is a form-associated custom element with a value. */
+export function isFormAssociated(el: Element): el is FormValueElement {
+  return el instanceof HTMLElement && (el.constructor as { formAssociated?: boolean }).formAssociated === true && 'value' in el;
+}
 
 interface FieldBinding {
   key: string;
@@ -73,7 +83,7 @@ interface BindingState {
 const URL_ATTRIBUTES = new Set(['href', 'src', 'action', 'formaction', 'poster', 'xlink:href', 'srcset', 'background', 'ping']);
 
 function isControl(el: Element): el is FormControl {
-  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement;
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || isFormAssociated(el);
 }
 
 function isEditableHost(el: Element): el is HTMLElement {
