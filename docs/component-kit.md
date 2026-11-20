@@ -215,6 +215,29 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-tabs>`
+
+Tabs over plain markup. Before scripts run (or without them), it's headings and sections. With them, the headings become a tab list.
+
+```html
+<a-tabs aria-label="Account" data-hash>
+  <h3 data-tab>Profile</h3>
+  <section id="profile">…</section>
+  <h3 data-tab>Billing</h3>
+  <section id="billing"><template data-lazy><invoice-list data-list="listInvoices"></invoice-list></template></section>
+</a-tabs>
+```
+
+You can also write the `role="tablist"` and `role="tab"` buttons yourself. Panels are matched by `aria-controls`, or by order.
+
+- **Keys:** arrows move between tabs (Up and Down with `orientation="vertical"`; reversed in right-to-left text), and Home and End go to the ends. Disabled tabs are skipped. By default the focused tab opens. With `activation="manual"`, Enter or Space opens it.
+- **Find in page:** hidden panels use `hidden="until-found"`, so the browser's find still searches them and opens their tab.
+- **`data-hash`:** the open tab's panel id is kept in the URL, and links to `#billing` open that tab.
+- **Lazy panels:** a `<template data-lazy>` in a panel is rendered the first time the panel is shown, so components in it don't fetch early.
+- **Choosing the first tab:** `selected="2"`, or `aria-selected="true"` on a tab.
+
+`tabs.select(index)` opens a tab, and `tabs.selectedIndex` says which is open. Event: `tabs:change` (`{ index, tab, panel }`).
+
 ## `<a-toast>`
 
 Short notifications in a corner of the screen.

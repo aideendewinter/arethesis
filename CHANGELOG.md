@@ -19,6 +19,7 @@
 
 ### Added
 
+- **`<a-tabs>`**: tabs over headings and sections (or your own tab list), with arrow keys, automatic or manual activation, `hidden="until-found"` panels that find-in-page can open, the tab in the URL with `data-hash`, and lazy panels.
 - **`<a-toast>`**, `toast()` and `connectToasts()`: notifications in polite and assertive live regions that are in the page from the start. A toast pauses while hovered or focused, and a toast with an action stays until it's used. `connectToasts(app)` shows rolled-back changes and, if you ask, failed requests. The examples use it.
 - `app.http.onError(listener)` reports every failed request; several listeners can subscribe.
 - **`<a-combobox>`**: a text field with suggestions, from `<option>`s in the markup, a function or an endpoint. It does fuzzy filtering with highlighted matches, debounced searches that ignore stale results, and it's a form control. The signup example has one.
