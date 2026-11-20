@@ -2,8 +2,8 @@ import { test, expect, clearStorage } from './fixtures';
 
 test.beforeEach(async ({ page }) => clearStorage(page));
 
-/** Whether the point at the center of `selector` hits the element itself (it isn't clipped or covered). */
-const unobstructed = (selector: string) => () => {
+/** Whether the point near the bottom of `selector` hits the element itself (it isn't clipped or covered). Runs in the page. */
+const unobstructed = (selector: string): boolean => {
   const el = document.querySelector<HTMLElement>(selector)!;
   const r = el.getBoundingClientRect();
   const hit = document.elementFromPoint(r.left + r.width / 2, r.bottom - 4);
@@ -31,18 +31,19 @@ test('a choice list in the last visible table row is not clipped by the scrollin
   // It extends below the table's scroll box, and is still the topmost thing there.
   const [listBox, scrollBox] = [await list.boundingBox(), await scroller.boundingBox()];
   expect(listBox!.y + listBox!.height).toBeGreaterThan(scrollBox!.y + scrollBox!.height - 200);
-  expect(await page.evaluate(unobstructed('.ar-listbox:not([hidden])'))).toBe(true);
+  expect(await page.evaluate(unobstructed, '.ar-listbox:not([hidden])')).toBe(true);
   // Escape closes it and the editor, and focus returns to the cell.
   await page.keyboard.press('Escape');
   await expect(page.locator('.ar-listbox:not([hidden])')).toHaveCount(0);
   void errors;
 });
 
-test('a tooltip shows on focus, is linked to its trigger, and Escape hides it', async ({ page, errors }) => {
+test('a tooltip shows on hover, is linked to its trigger, and Escape hides it', async ({ page, errors }) => {
   await page.goto('/kanban/index.html');
-  const trigger = page.locator('[aria-describedby^="tooltip"]').first();
+  // The assignee avatars on the cards have tooltips.
+  const trigger = page.locator('.card__assignee[aria-describedby^="tooltip"]').first();
   await expect(trigger).toBeAttached();
-  await trigger.focus();
+  await trigger.hover();
   const id = (await trigger.getAttribute('aria-describedby'))!.split(' ').pop()!;
   const tip = page.locator(`#${id}`);
   await expect(tip).toBeVisible();
@@ -60,7 +61,7 @@ test('a context menu opens from the keyboard, is on top, and returns focus when 
   const menu = page.locator('.context-menu');
   await expect(menu).toBeVisible();
   await expect(menu.getByRole('menuitem').first()).toBeFocused();
-  expect(await page.evaluate(unobstructed('.context-menu'))).toBe(true);
+  expect(await page.evaluate(unobstructed, '.context-menu')).toBe(true);
   await page.keyboard.press('Escape');
   await expect(menu).toHaveCount(0);
   await expect(card).toBeFocused();

@@ -19,7 +19,7 @@ test('moves a card with the keyboard and syncs to another tab', async ({ page, c
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Space');
   await expect(doing.locator('.kcard__title', { hasText: title })).toBeVisible();
-  await expect(page.locator('[data-count=doing]')).toHaveText('4');
+  await expect(page.locator('[data-count=doing]')).toHaveText('4 / 5'); // the column's limit is 5
 
   // The other tab receives the move over SSE.
   await expect(other.locator('ul[data-column=doing] .kcard__title', { hasText: title })).toBeVisible();
@@ -68,7 +68,7 @@ test('drags a card between columns with the mouse', async ({ page, context, erro
 
   // Dropped before the second card of "In progress", and saved.
   await expect(doing.locator('li').nth(1).locator('.kcard__title')).toHaveText(title);
-  await expect(page.locator('[data-count=doing]')).toHaveText('4');
+  await expect(page.locator('[data-count=doing]')).toHaveText('4 / 5'); // the column's limit is 5
   await expect(page.locator('.sortable-placeholder')).toHaveCount(0);
   // The server has the new position: a second tab shows the card in the same place.
   const other = await context.newPage();

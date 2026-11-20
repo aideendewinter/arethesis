@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+### Fixed
+
+- Choice lists in `<a-data-table>` (and any popup opened before it's added to the page) now appear in browsers with the Popover API. In 0.2.1 they opened invisibly.
+
 ## 0.2.1
 
 ### Changed

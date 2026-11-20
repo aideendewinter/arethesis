@@ -54,6 +54,34 @@ describe('attachPopup', () => {
     }
   });
 
+  it('shows the native popover once it is in the document, if opened before', async () => {
+    const show = vi.fn();
+    const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
+    const had = { show: proto.showPopover, hide: proto.hidePopover };
+    proto.showPopover = show;
+    proto.hidePopover = vi.fn();
+    try {
+      const el = document.createElement('div');
+      const popup = attachPopup(el, { anchor: () => new DOMRect(0, 0, 10, 10) });
+      popup.show();
+      expect(show).not.toHaveBeenCalled();
+      document.body.appendChild(el); // inserted right after opening, as the cell editor does
+      await Promise.resolve();
+      expect(show).toHaveBeenCalledOnce();
+      // Hidden again before it was inserted: never shown.
+      const other = document.createElement('div');
+      const second = attachPopup(other, { anchor: () => new DOMRect(0, 0, 10, 10) });
+      second.show();
+      second.hide();
+      document.body.appendChild(other);
+      await Promise.resolve();
+      expect(show).toHaveBeenCalledOnce();
+    } finally {
+      proto.showPopover = had.show;
+      proto.hidePopover = had.hide;
+    }
+  });
+
   it('follows its anchor while the page scrolls, until hidden', () => {
     const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
       cb(0);

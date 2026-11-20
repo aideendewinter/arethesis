@@ -100,6 +100,14 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
     if (frame === -1) frame = id;
   };
 
+  function showNative(): void {
+    try {
+      if (!el.matches(':popover-open')) el.showPopover();
+    } catch {
+      /* already open, or not in the document */
+    }
+  }
+
   function show(): void {
     if (open) {
       reposition();
@@ -107,12 +115,16 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
     }
     open = true;
     el.hidden = false;
-    if (native && el.isConnected) {
-      try {
-        el.showPopover();
-      } catch {
-        /* already open, or not in the document */
-      }
+    if (native) {
+      if (el.isConnected) showNative();
+      // Shown before it's in the document (the cell editor adds its list after
+      // opening it): show it as soon as the caller has inserted it.
+      else queueMicrotask(() => {
+        if (open && el.isConnected) {
+          showNative();
+          reposition();
+        }
+      });
     }
     reposition();
     if (follow) {
