@@ -22,6 +22,10 @@ export default defineConfig({
         },
       },
     },
+    // Popups take different paths where the Popover API is missing or
+    // behaves differently, so check them in the other engines too.
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: /popups\.spec\.ts/ },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] }, testMatch: /popups\.spec\.ts/ },
   ],
   webServer: {
     command: 'npm run examples:build && npm run examples:preview',
