@@ -134,11 +134,36 @@ export type CollabMessageType =
   | 'collab:ack'
   | 'collab:presence'
   | 'collab:leave'
+  | 'collab:annotate'
   | 'collab:error';
 
 export interface CollabMessage extends WebSocketMessage {
   type: CollabMessageType;
   channel: string;
+}
+
+/**
+ * A comment (or any note) attached to a range of a shared document. The
+ * range moves with the text as people edit; text typed exactly at either end
+ * stays outside it. If its text is deleted, the range collapses (`from === to`).
+ */
+export interface CollabAnnotation {
+  id: string;
+  from: number;
+  to: number;
+  body: string;
+  user?: CollabUser;
+  resolved?: boolean;
+  /** Milliseconds since the epoch. */
+  createdAt?: number;
+  replies?: Array<{ body: string; user?: CollabUser; createdAt?: number }>;
+}
+
+/** `collab:annotate` payload: add, change or remove an annotation. Positions are at `revision`. */
+export interface AnnotatePayload {
+  action: 'add' | 'update' | 'remove';
+  annotation: Partial<CollabAnnotation> & { id: string };
+  revision?: number;
 }
 
 export interface RemoteCursor {

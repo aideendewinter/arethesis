@@ -5,6 +5,11 @@
  * finishes); remote operations are applied while keeping the user's selection
  * where it belongs.
  *
+ * Whenever it changes the value itself (the initial sync, a remote edit), it
+ * fires a `collab:apply` event on the element, with `{ op, remote }` (`op` is
+ * null for the initial sync). Code that decorates the textarea, such as a
+ * syntax highlighter, can listen for it as well as `input`.
+ *
  * @module realtime/collab/textarea-adapter
  */
 
@@ -20,7 +25,18 @@ export interface EditorAdapter {
   getSelection(): CollabSelection;
   /** Register the local-edit and selection-change callbacks. */
   attach(onEdit: (op: TextOperation) => void, onSelect: (selection: CollabSelection) => void): void;
+  /** Optional: route the editor's undo and redo commands (keys, menus) to these. */
+  attachHistory?(undo: () => void, redo: () => void): void;
+  /** Optional: apply an operation made locally (an undo or redo) and put the caret at `caret`. */
+  applyLocal?(op: TextOperation, caret: number): void;
   destroy(): void;
+}
+
+/** Detail of the `collab:apply` event. */
+export interface CollabApplyDetail {
+  /** The operation applied, or null when the whole value was replaced. */
+  op: TextOperation | null;
+  remote: boolean;
 }
 
 export class TextareaAdapter implements EditorAdapter {
@@ -39,6 +55,11 @@ export class TextareaAdapter implements EditorAdapter {
   setValue(value: string): void {
     this.element.value = value;
     this.previous = value;
+    this.announce(null, true);
+  }
+
+  private announce(op: TextOperation | null, remote: boolean): void {
+    this.element.dispatchEvent(new CustomEvent<CollabApplyDetail>('collab:apply', { detail: { op, remote } }));
   }
 
   applyOperation(op: TextOperation): void {
@@ -55,6 +76,37 @@ export class TextareaAdapter implements EditorAdapter {
       el.setSelectionRange(op.transformIndex(start, true), op.transformIndex(end, true), direction ?? undefined);
     }
     (el as HTMLTextAreaElement).scrollTop = scrollTop;
+    this.announce(op, true);
+  }
+
+  applyLocal(op: TextOperation, caret: number): void {
+    const el = this.element;
+    const next = op.apply(this.previous);
+    el.value = next;
+    this.previous = next;
+    el.setSelectionRange(caret, caret);
+    this.announce(op, false);
+  }
+
+  attachHistory(undo: () => void, redo: () => void): void {
+    const { signal } = this.controller;
+    this.element.addEventListener('keydown', (e: Event) => {
+      const ke = e as KeyboardEvent;
+      if (ke.defaultPrevented || !(ke.ctrlKey || ke.metaKey) || ke.altKey) return;
+      const key = ke.key.toLowerCase();
+      if (key === 'z' && !ke.shiftKey) undo();
+      else if ((key === 'z' && ke.shiftKey) || (key === 'y' && !ke.shiftKey)) redo();
+      else return;
+      ke.preventDefault();
+    }, { signal });
+    // Undo and redo from the browser's own menus.
+    this.element.addEventListener('beforeinput', (e: Event) => {
+      const type = (e as InputEvent).inputType;
+      if (type !== 'historyUndo' && type !== 'historyRedo') return;
+      e.preventDefault();
+      if (type === 'historyUndo') undo();
+      else redo();
+    }, { signal });
   }
 
   getSelection(): CollabSelection {

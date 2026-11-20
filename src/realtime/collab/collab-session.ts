@@ -17,10 +17,12 @@
 import { OTClient } from '../ot/client';
 import { TextOperation } from '../ot/text-operation';
 import type { WebSocketManager } from '../websocket-manager';
-import type { CollabMessage, CollabSelection, CollabUser, RemoteCursor } from '../types';
+import type { AnnotatePayload, CollabAnnotation, CollabMessage, CollabSelection, CollabUser, RemoteCursor } from '../types';
 import { Emitter } from '../../utils/emitter';
 import { TextareaAdapter, type EditorAdapter } from './textarea-adapter';
 import { CursorOverlay } from './cursor-overlay';
+import { caretAfter, UndoManager } from './undo-manager';
+import { mapRange, transformRange } from './anchors';
 
 export type CollabStatus = 'connecting' | 'synced' | 'syncing' | 'offline';
 
@@ -33,6 +35,8 @@ export interface CollabEvents extends Record<string, unknown> {
   error: { message: string };
   /** Initial content arrived. */
   ready: { content: string; revision: number };
+  /** Annotations (comments) changed: added, edited, removed, or moved by edits. */
+  annotations: CollabAnnotation[];
 }
 
 export interface CollabOptions {
@@ -41,6 +45,12 @@ export interface CollabOptions {
   cursors?: boolean;
   /** Presence update throttle in ms. @default 50 */
   presenceInterval?: number;
+  /**
+   * Per-user undo and redo: Ctrl/Cmd+Z (and Shift+Z, or Y) revert only your
+   * own edits, even after other people's. Replaces the browser's undo, which
+   * doesn't know about remote edits. @default false
+   */
+  undo?: boolean;
 }
 
 interface InitPayload {
@@ -50,6 +60,7 @@ interface InitPayload {
   peers?: RemoteCursor[];
   since?: number | null;
   missed?: Array<{ op: unknown; opId?: string }>;
+  annotations?: CollabAnnotation[];
 }
 
 export class CollabSession extends Emitter<CollabEvents> {
@@ -68,6 +79,12 @@ export class CollabSession extends Emitter<CollabEvents> {
   private _status: CollabStatus = 'connecting';
   /** The textarea's own readOnly, restored once the document has loaded. */
   private wasReadOnly: boolean | null = null;
+  private history: UndoManager | null = null;
+  /** The content as of the last change, for computing undo steps. */
+  private lastContent = '';
+  private annotationMap = new Map<string, CollabAnnotation>();
+  /** Annotation changes made while our own edits are in flight, sent once synchronized. */
+  private pendingAnnotations: AnnotatePayload[] = [];
   clientId: string | null = null;
 
   constructor(
@@ -94,6 +111,10 @@ export class CollabSession extends Emitter<CollabEvents> {
       op => this.handleLocalEdit(op),
       selection => this.queuePresence(selection),
     );
+    if (options.undo) {
+      this.history = new UndoManager();
+      this.adapter.attachHistory?.(() => this.undo(), () => this.redo());
+    }
     this.unsubscribe = ws.subscribe<CollabMessage>(this.channel, message => this.handleMessage(message));
     this.offOpen = ws.onOpen(() => this.join());
     this.offStatus = ws.onStatusChange(status => {
@@ -118,6 +139,82 @@ export class CollabSession extends Emitter<CollabEvents> {
   /** Remote collaborators. */
   get peers(): RemoteCursor[] {
     return Array.from(this.cursors.values());
+  }
+
+  /** Annotations (comments), in document order, with positions in the local document. */
+  get annotations(): CollabAnnotation[] {
+    return [...this.annotationMap.values()].sort((a, b) => a.from - b.from || a.to - b.to);
+  }
+
+  /** Whether `undo()` / `redo()` would do anything (with `{ undo: true }`). */
+  get canUndo(): boolean {
+    return this.history?.canUndo ?? false;
+  }
+
+  get canRedo(): boolean {
+    return this.history?.canRedo ?? false;
+  }
+
+  /** Undo your last edit (needs `{ undo: true }`). Returns whether anything changed. */
+  undo(): boolean {
+    return this.applyHistory(this.history?.undo(this.adapter.getValue()) ?? null);
+  }
+
+  /** Redo your last undone edit (needs `{ undo: true }`). */
+  redo(): boolean {
+    return this.applyHistory(this.history?.redo(this.adapter.getValue()) ?? null);
+  }
+
+  private applyHistory(op: TextOperation | null): boolean {
+    if (!op || !this.client || !this.adapter.applyLocal) return false;
+    this.adapter.applyLocal(op, caretAfter(op));
+    this.commitLocal(op);
+    return true;
+  }
+
+  /**
+   * Comment on the text from `from` to `to` (local positions). The comment
+   * appears (in the `annotations` event) once the server has stored it.
+   * Returns its id.
+   */
+  annotate(from: number, to: number, body: string, id = `a-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`): string {
+    this.sendAnnotation({ action: 'add', annotation: { id, from: Math.min(from, to), to: Math.max(from, to), body, user: this.options.user, createdAt: Date.now() } });
+    return id;
+  }
+
+  /** Change an annotation: its body, `resolved`, `replies`, or its range (local positions). */
+  updateAnnotation(id: string, changes: Partial<Omit<CollabAnnotation, 'id'>>): void {
+    this.sendAnnotation({ action: 'update', annotation: { ...changes, id } });
+  }
+
+  removeAnnotation(id: string): void {
+    this.sendAnnotation({ action: 'remove', annotation: { id } });
+  }
+
+  private sendAnnotation(payload: AnnotatePayload): void {
+    this.pendingAnnotations.push(payload);
+    this.flushAnnotations();
+  }
+
+  /**
+   * Positions only mean something at a revision. While our own edits are in
+   * flight, the local document is ahead of every server revision, so wait
+   * until they're acknowledged.
+   */
+  private flushAnnotations(): void {
+    if (!this.client || this.client.state !== 'synchronized' || !this.ws.isConnected) return;
+    for (const payload of this.pendingAnnotations.splice(0)) {
+      this.ws.send({ type: 'collab:annotate', channel: this.channel, payload: { ...payload, revision: this.client.revision } });
+    }
+  }
+
+  private toLocalRange(a: CollabAnnotation): CollabAnnotation {
+    const client = this.client;
+    return client ? mapRange(a, (i, stickLeft) => client.transformIndex(i, stickLeft)) : a;
+  }
+
+  private emitAnnotations(): void {
+    this.emit('annotations', this.annotations);
   }
 
   private setStatus(status: CollabStatus): void {
@@ -164,6 +261,14 @@ export class CollabSession extends Emitter<CollabEvents> {
       case 'collab:leave':
         if (this.cursors.delete(String(payload.clientId))) this.emitPresence();
         break;
+      case 'collab:annotate': {
+        const { action, annotation } = payload as unknown as AnnotatePayload;
+        if (!annotation?.id) return;
+        if (action === 'remove') this.annotationMap.delete(annotation.id);
+        else this.annotationMap.set(annotation.id, this.toLocalRange(annotation as CollabAnnotation));
+        this.emitAnnotations();
+        break;
+      }
       case 'collab:error':
         this.emit('error', { message: String(payload.message ?? 'Collaboration error') });
         break;
@@ -179,6 +284,8 @@ export class CollabSession extends Emitter<CollabEvents> {
         apply: op => this.applyRemote(op),
       });
       this.outstandingOpId = null;
+      this.lastContent = init.content;
+      this.history?.clear();
       this.adapter.setValue(init.content);
       this.emit('ready', { content: init.content, revision: init.revision });
       this.emit('change', { content: init.content, remote: true });
@@ -197,6 +304,9 @@ export class CollabSession extends Emitter<CollabEvents> {
     this.cursors.clear();
     for (const peer of init.peers ?? []) this.cursors.set(peer.clientId, peer);
     this.emitPresence();
+    this.annotationMap.clear();
+    for (const a of init.annotations ?? []) this.annotationMap.set(a.id, this.toLocalRange(a));
+    this.emitAnnotations();
     if (this.adapter instanceof TextareaAdapter) {
       this.adapter.element.removeAttribute('aria-busy');
       if (this.wasReadOnly !== null) this.adapter.element.readOnly = this.wasReadOnly;
@@ -212,6 +322,9 @@ export class CollabSession extends Emitter<CollabEvents> {
 
   private applyRemote(op: TextOperation): void {
     this.adapter.applyOperation(op);
+    this.lastContent = this.adapter.getValue();
+    this.history?.transform(op);
+    this.moveAnnotations(op);
     for (const cursor of this.cursors.values()) {
       if (cursor.selection) {
         cursor.selection = { anchor: op.transformIndex(cursor.selection.anchor), head: op.transformIndex(cursor.selection.head) };
@@ -223,16 +336,31 @@ export class CollabSession extends Emitter<CollabEvents> {
 
   private handleLocalEdit(op: TextOperation): void {
     if (!this.client) return; // not synced yet; the init will overwrite
+    this.history?.record(op, this.lastContent);
+    this.commitLocal(op);
+  }
+
+  /** A local edit (typed, or an undo/redo) that is already in the editor. */
+  private commitLocal(op: TextOperation): void {
+    if (!this.client) return;
+    this.lastContent = this.adapter.getValue();
     this.client.applyClient(op);
     for (const cursor of this.cursors.values()) {
       if (cursor.selection) {
         cursor.selection = { anchor: op.transformIndex(cursor.selection.anchor), head: op.transformIndex(cursor.selection.head) };
       }
     }
+    this.moveAnnotations(op);
     this.emitPresence();
     this.updateStatus();
     this.emit('change', { content: this.adapter.getValue(), remote: false });
     this.queuePresence(this.adapter.getSelection());
+  }
+
+  private moveAnnotations(op: TextOperation): void {
+    if (!this.annotationMap.size) return;
+    for (const [id, a] of this.annotationMap) this.annotationMap.set(id, transformRange(a, op));
+    this.emitAnnotations();
   }
 
   private toLocal(selection: CollabSelection): CollabSelection {
@@ -257,6 +385,7 @@ export class CollabSession extends Emitter<CollabEvents> {
   private updateStatus(): void {
     if (!this.ws.isConnected) this.setStatus('offline');
     else this.setStatus(this.client?.state === 'synchronized' ? 'synced' : 'syncing');
+    this.flushAnnotations();
   }
 
   /** Leave the document and clean up. */

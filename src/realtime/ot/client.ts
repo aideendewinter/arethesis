@@ -80,10 +80,10 @@ export class OTClient {
   }
 
   /** Map a position in the server document to the local document (for remote cursors). */
-  transformIndex(index: number): number {
+  transformIndex(index: number, stickLeft = false): number {
     let i = index;
-    if (this.outstanding) i = this.outstanding.transformIndex(i);
-    if (this.buffer) i = this.buffer.transformIndex(i);
+    if (this.outstanding) i = this.outstanding.transformIndex(i, stickLeft);
+    if (this.buffer) i = this.buffer.transformIndex(i, stickLeft);
     return i;
   }
 }

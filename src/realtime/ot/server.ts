@@ -16,12 +16,18 @@
  */
 
 import { TextOperation } from './text-operation';
-import type { CollabMessage, CollabUser, PresencePayload } from '../types';
+import { transformRange } from '../collab/anchors';
+import type { AnnotatePayload, CollabAnnotation, CollabMessage, CollabUser, PresencePayload } from '../types';
+
+const MAX_ANNOTATIONS = 500;
+const MAX_ANNOTATION_TEXT = 4000;
 
 export class OTDocumentServer {
   readonly operations: TextOperation[] = [];
   /** Client op ids, parallel to `operations` (lets reconnecting clients spot their own ops). */
   readonly opIds: Array<string | undefined> = [];
+  /** Annotations (comments), kept anchored to their text as operations arrive. */
+  readonly annotations = new Map<string, CollabAnnotation>();
 
   constructor(public document = '') {}
 
@@ -42,7 +48,49 @@ export class OTDocumentServer {
     this.document = op.apply(this.document);
     this.operations.push(op);
     this.opIds.push(opId);
+    for (const [id, a] of this.annotations) this.annotations.set(id, transformRange(a, op));
     return op;
+  }
+
+  /** Map a range made against `revision` to the current document. */
+  rebaseRange(from: number, to: number, revision: number): { from: number; to: number } {
+    let range = { from, to };
+    for (const op of this.operations.slice(Math.max(0, Math.min(revision, this.operations.length)))) range = transformRange(range, op);
+    const clamp = (n: number) => Math.max(0, Math.min(n, this.document.length));
+    return { from: clamp(range.from), to: clamp(Math.max(range.from, range.to)) };
+  }
+
+  /**
+   * Apply an annotation change made against `revision`. Returns the stored
+   * annotation (positions at the current revision), or null if it was invalid.
+   */
+  annotate(payload: AnnotatePayload, user?: CollabUser): CollabAnnotation | null {
+    const input = payload.annotation;
+    if (!input || typeof input.id !== 'string' || !input.id || input.id.length > 100) return null;
+    const existing = this.annotations.get(input.id);
+    if (payload.action === 'remove') {
+      if (!existing) return null;
+      this.annotations.delete(input.id);
+      return existing;
+    }
+    const text = (v: unknown) => (typeof v === 'string' ? v.slice(0, MAX_ANNOTATION_TEXT) : undefined);
+    const revision = typeof payload.revision === 'number' ? payload.revision : this.revision;
+    let range = existing ? { from: existing.from, to: existing.to } : null;
+    if (typeof input.from === 'number' && typeof input.to === 'number' && input.from <= input.to) range = this.rebaseRange(input.from, input.to, revision);
+    if (!range) return null;
+    if (payload.action === 'add') {
+      if (existing || this.annotations.size >= MAX_ANNOTATIONS) return null;
+      const created: CollabAnnotation = { id: input.id, ...range, body: text(input.body) ?? '', user: user ?? input.user, resolved: false, createdAt: typeof input.createdAt === 'number' ? input.createdAt : Date.now(), replies: [] };
+      this.annotations.set(input.id, created);
+      return created;
+    }
+    if (!existing) return null;
+    const replies = Array.isArray(input.replies)
+      ? input.replies.slice(0, 200).map(r => ({ body: text(r?.body) ?? '', user: r?.user, createdAt: typeof r?.createdAt === 'number' ? r.createdAt : undefined }))
+      : existing.replies;
+    const updated: CollabAnnotation = { ...existing, ...range, body: text(input.body) ?? existing.body, resolved: typeof input.resolved === 'boolean' ? input.resolved : existing.resolved, replies };
+    this.annotations.set(input.id, updated);
+    return updated;
   }
 }
 
@@ -105,7 +153,8 @@ export class CollabServer {
         const peers = this.membersOf(docId)
           .filter(id => id !== clientId)
           .map(id => ({ clientId: id, user: this.clients.get(id)?.user, selection: this.clients.get(id)?.selection }));
-        this.send(clientId, { type: 'collab:init', channel: message.channel, payload: { content: doc.document, revision: doc.revision, clientId, peers, since, missed } });
+        const annotations = [...doc.annotations.values()];
+        this.send(clientId, { type: 'collab:init', channel: message.channel, payload: { content: doc.document, revision: doc.revision, clientId, peers, since, missed, annotations } });
         this.broadcast(docId, { type: 'collab:presence', channel: message.channel, payload: { clientId, user: client.user } }, clientId);
         return;
       }
@@ -130,6 +179,19 @@ export class CollabServer {
         client.selection = payload.selection;
         if (payload.user) client.user = payload.user;
         this.broadcast(docId, { type: 'collab:presence', channel: message.channel, payload: { clientId, user: client.user, selection: payload.selection, revision: this.document(docId).revision } }, clientId);
+        return;
+      }
+      case 'collab:annotate': {
+        if (!client.docs.has(docId)) return;
+        const payload = message.payload as AnnotatePayload;
+        const doc = this.document(docId);
+        const annotation = doc.annotate(payload, client.user);
+        if (!annotation) {
+          this.send(clientId, { type: 'collab:error', channel: message.channel, payload: { message: 'Invalid annotation' } });
+          return;
+        }
+        // Everyone, including the sender, gets the stored version at the current revision.
+        this.broadcast(docId, { type: 'collab:annotate', channel: message.channel, payload: { action: payload.action, annotation, revision: doc.revision } });
         return;
       }
       case 'collab:leave':
