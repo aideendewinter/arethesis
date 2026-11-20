@@ -61,6 +61,8 @@ export { sanitizeHtml, htmlToText } from '../utils/sanitize';
 export type { SanitizeOptions } from '../utils/sanitize';
 export { sanitizeUrl } from '../utils/url';
 export { fuzzyMatch, fuzzyFilter } from '../utils/fuzzy';
+export { computeWindow } from '../utils/virtual-window';
+export type { WindowInput, WindowRange } from '../utils/virtual-window';
 export type { FuzzyMatch } from '../utils/fuzzy';
 export { parseDate, formatDatePattern, toDateInputValue, toDateTimeInputValue } from '../utils/dates';
 export { getPath, setPath, deepMerge, deepEqual } from '../utils/path';
