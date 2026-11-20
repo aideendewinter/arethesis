@@ -4,7 +4,7 @@ import 'arethesis/components/theme-polychrome.css';
 import './fonts.css';
 import './site.css';
 import { VERSION } from 'arethesis';
-import { applyStoredTheme, getContrast, getTheme, setContrast, setTheme, type CommandPalette, type PaletteCommand } from 'arethesis/components';
+import { applyStoredTheme, getContrast, getTheme, setContrast, setTheme, toast as kitToast, type CommandPalette, type PaletteCommand } from 'arethesis/components';
 
 const REPO_URL = 'https://github.com/aideendewinter/arethesis';
 const NPM_URL = 'https://www.npmjs.com/package/arethesis';
@@ -205,23 +205,9 @@ function mountSource(button: HTMLButtonElement, source: string): void {
   });
 }
 
-let toastRegion: HTMLElement | null = null;
-
-/** Show a short notification. */
+/** Show a short notification (the kit's `<a-toast>`). */
 export function toast(message: string, kind: 'info' | 'success' | 'error' = 'info'): void {
-  if (!toastRegion) {
-    toastRegion = document.createElement('div');
-    toastRegion.className = 'toasts';
-    toastRegion.setAttribute('role', 'status');
-    toastRegion.setAttribute('aria-live', 'polite');
-    document.body.appendChild(toastRegion);
-  }
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.dataset.kind = kind;
-  el.textContent = message;
-  toastRegion.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  kitToast(message, { kind });
 }
 
 /**

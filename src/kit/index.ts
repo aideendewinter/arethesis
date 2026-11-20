@@ -27,6 +27,7 @@ import './elements/sheet';
 import './elements/markdown-editor';
 import './elements/kanban';
 import './elements/combobox';
+import './elements/toast';
 
 export { DataTable } from './data-table';
 export type { DataTableColumn, DataTableConfig } from './data-table';
@@ -47,6 +48,8 @@ export { openCellEditor } from './cell-editor';
 export type { CellEditor, CellEditorOptions, CellMove, CellEditorType } from './cell-editor';
 export { Combobox } from './combobox';
 export type { ComboboxConfig, ComboboxOption, ComboboxSource } from './combobox';
+export { Toaster, toast, connectToasts } from './toast';
+export type { ToastOptions, ToastHandle, ToastKind, ConnectToastsOptions } from './toast';
 export { Kanban } from './kanban';
 export type { KanbanColumn, KanbanConfig } from './kanban';
 export { MarkdownEditor } from './markdown-editor';

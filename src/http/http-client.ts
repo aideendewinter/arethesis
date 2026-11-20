@@ -61,6 +61,7 @@ function isAbortError(err: unknown): boolean {
 
 export class HttpClient {
   private config: HttpConfig = {};
+  private errorListeners = new Set<(error: HttpError) => void>();
   private endpoints = new Map<string, EndpointConfig>();
   private auth: AuthManager | null = null;
   private store: ObjectStore | null = null;
@@ -69,6 +70,15 @@ export class HttpClient {
   private batchQueue: Array<{ op: ResolvedBatchOperation; endpoint?: EndpointConfig; resolve: (r: BatchResult) => void; reject: (e: unknown) => void }> = [];
   private batchTimer: ReturnType<typeof setTimeout> | null = null;
   private batchCounter = 0;
+
+  /**
+   * Listen for failed requests (HTTP errors, network failures, timeouts).
+   * Cancelled requests aren't reported. Returns a function that stops listening.
+   */
+  onError(listener: (error: HttpError) => void): () => void {
+    this.errorListeners.add(listener);
+    return () => this.errorListeners.delete(listener);
+  }
 
   constructor(config: HttpConfig = {}) {
     this.configure(config);
@@ -307,7 +317,16 @@ export class HttpClient {
       }
       return await this.readBody(response, config.responseType ?? 'json', url, method) as T;
     } catch (err) {
-      if (err instanceof HttpError) this.config.interceptors?.error?.(err, ctx);
+      if (err instanceof HttpError) {
+        this.config.interceptors?.error?.(err, ctx);
+        for (const listener of this.errorListeners) {
+          try {
+            listener(err);
+          } catch (e) {
+            console.error('HTTP error listener failed:', e);
+          }
+        }
+      }
       throw err;
     } finally {
       if (timer) clearTimeout(timer);

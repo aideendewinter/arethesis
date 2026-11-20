@@ -193,11 +193,6 @@ a.icon-button { text-decoration: none; }
 
 /* ── Toasts ─────────────────────────────────────────────────────────────── */
 
-.toasts { position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 200; display: grid; gap: 0.5rem; width: min(22rem, calc(100vw - 2.5rem)); }
-.toast { padding: 0.75rem 1rem; border-radius: var(--ar-radius); background: var(--ar-text); color: var(--ar-bg); box-shadow: var(--ar-shadow-lg); font-size: 0.9rem; border-left: 4px solid var(--ar-accent-2); animation: toast-in 0.2s ease-out; }
-.toast[data-kind='error'] { background: var(--ar-danger); color: var(--ar-danger-text); border-left-color: transparent; }
-.toast[data-kind='success'] { background: var(--ar-success); color: var(--ar-success-text); border-left-color: transparent; }
-@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 
 /* ── Home: the Stoa ─────────────────────────────────────────────────────── */
 
@@ -276,7 +271,6 @@ a.icon-button { text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   .demo-card, .demo-card:hover { transition: none; transform: none; }
   .source-drawer { transition: none; }
-  .toast { animation: none; }
 }
 
 /* Directory */

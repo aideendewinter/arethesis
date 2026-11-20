@@ -215,6 +215,27 @@ Invalid values keep the editor open with the message underneath, and starting, s
 
 For long lists, `virtualize: true` renders only the rows on screen. Rows keep their `aria-rowindex`, so screen readers still say "row 812 of 10,001". The row being edited stays rendered even if it scrolls away. Rows must be one height; pass `virtualize: { rowHeight }` if it isn't measured right.
 
+## `<a-toast>`
+
+Short notifications in a corner of the screen.
+
+```ts
+import { toast, connectToasts } from 'arethesis/components/toast';
+
+toast('Saved', 'success');
+toast('Card deleted', { action: { label: 'Undo', run: restore } });
+connectToasts(app); // a toast whenever an optimistic change is rolled back
+connectToasts(app, { rollback: false, httpError: e => `Request failed (${e.status ?? e.kind})` });
+```
+
+`toast()` uses the page's `<a-toast>`, and adds one if there's none. Place your own to choose its corner: `<a-toast position="top-end">` (or `bottom-end`, the default, `top-start` and `bottom-start`).
+
+- **Screen readers:** info and success messages go in a `role="status"` region and are read politely. Errors go in a `role="alert"` region and are read at once. Both regions are in the page from the start, so the first message isn't missed.
+- **Time to read:** a toast stays while it's hovered or has focus. One with an action stays until it's used or dismissed (WCAG 2.2.1). Otherwise it goes after `timeout` (5 s, 8 s for errors).
+- **Above everything:** the region opens in the top layer. While a modal dialog is open, the message is also announced, because the page behind the dialog is inert.
+
+`connectToasts(app, options)` returns a function that disconnects. `httpError` is off unless you give it a message function, since most failed requests also roll back a change. `app.http.onError(listener)` reports failed requests if you'd rather handle them yourself.
+
 ## `<a-combobox>`
 
 A text field with a list of suggestions, for when a `<select>` has too many options or they come from a search. It's a form control: it submits its value under its `name` in a native `<form>` or `<a-form>`, and `required`, reset and `<label for>` work.

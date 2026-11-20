@@ -72,9 +72,15 @@ export const fixtures = [
     mustNotContain: ['a-data-table', 'sortable:start', 'compose: length mismatch'],
   },
   {
+    name: 'components/toast',
+    code: `import { toast } from 'arethesis/components/toast'; toast('hi');`,
+    mustContain: ['a-toast'],
+    mustNotContain: ['a-data-table', 'sortable:start', 'a-combobox'],
+  },
+  {
     name: 'components (all)',
     code: `import 'arethesis/components';`,
-    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox'],
+    mustContain: ['a-data-table', 'a-flex-view', 'a-list', 'a-form', 'a-chart', 'a-command-palette', 'a-sheet', 'a-markdown-editor', 'a-kanban', 'a-combobox', 'a-toast'],
   },
   {
     name: 'arethesis (everything)',

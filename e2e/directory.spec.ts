@@ -31,7 +31,7 @@ test('pages, sorts, edits and selects people', async ({ page, errors }) => {
   await input.fill('Zed Example');
   await input.press('Enter');
   await expect(cell).toHaveText('Zed Example');
-  await expect(page.locator('.toast').filter({ hasText: 'Saved' })).toBeVisible();
+  await expect(page.locator('.ar-toast').filter({ hasText: 'Saved' })).toBeVisible();
 
   // Selecting a row shows the person card.
   await rows.nth(1).locator('td').first().click();
@@ -50,14 +50,14 @@ test('rolls back edits the server rejects', async ({ page, errors }) => {
     await page.locator('.ar-cell-editor input').fill(String(60000 + i * 1000));
     await page.locator('.ar-cell-editor input').press('Enter');
     const outcome = await Promise.race([
-      page.locator('.toast[data-kind=error]').first().waitFor().then(() => 'rolled back'),
-      page.locator('.toast[data-kind=success]').last().waitFor().then(() => 'saved'),
+      page.locator('.ar-toast[data-kind=error]').first().waitFor().then(() => 'rolled back'),
+      page.locator('.ar-toast[data-kind=success]').last().waitFor().then(() => 'saved'),
     ]);
     if (outcome === 'rolled back') {
-      await expect(page.locator('.toast[data-kind=error]').first()).toContainText('rolled back');
+      await expect(page.locator('.ar-toast[data-kind=error]').first()).toContainText('rolled back');
       return;
     }
-    await page.locator('.toast').evaluateAll(els => els.forEach(e => e.remove()));
+    await page.locator('.ar-toast').evaluateAll(els => els.forEach(e => e.remove()));
   }
   void before;
   void errors;

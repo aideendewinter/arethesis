@@ -19,6 +19,8 @@
 
 ### Added
 
+- **`<a-toast>`**, `toast()` and `connectToasts()`: notifications in polite and assertive live regions that are in the page from the start. A toast pauses while hovered or focused, and a toast with an action stays until it's used. `connectToasts(app)` shows rolled-back changes and, if you ask, failed requests. The examples use it.
+- `app.http.onError(listener)` reports every failed request; several listeners can subscribe.
 - **`<a-combobox>`**: a text field with suggestions, from `<option>`s in the markup, a function or an endpoint. It does fuzzy filtering with highlighted matches, debounced searches that ignore stale results, and it's a form control. The signup example has one.
 - **`<a-kanban>`**: a board of cards drawn from the store, grouped by a field and sorted by another. Drag with a mouse, finger or keyboard, or move cards from their menu. Moves are optimistic and roll back if the server refuses. It has optional work-in-progress limits, inline add, and delete. The kanban example now uses it.
 - **Virtualized lists.** `virtualize` on a list binding renders only the items on screen (`'window'`) or lets the browser skip off-screen ones (`'css'`). `<a-data-table>` takes `virtualize: true`, keeps `aria-rowindex` on every row, and keeps the row being edited. `<a-list>` takes a `virtualize` attribute. New `Component` hooks: `onItemPosition`, `onItemRemove`, `pinItem`, `itemIndex` and `revealItem`.

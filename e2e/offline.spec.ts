@@ -44,7 +44,7 @@ test('a saved session the server no longer accepts brings the sign-in form back'
   await page.getByRole('button', { name: 'Expire token now' }).click();
 
   // The refresh is refused, the session ends, and the page offers sign-in again.
-  await expect(page.locator('.toast').filter({ hasText: 'Your session expired' })).toBeVisible();
+  await expect(page.locator('.ar-toast').filter({ hasText: 'Your session expired' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
   await expect(page.locator('#signed-in')).toBeHidden();
   await expect(page.locator('#notes')).toContainText('Sign in to load notes');

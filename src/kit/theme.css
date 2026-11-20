@@ -567,6 +567,32 @@ html.is-sorting-active, html.is-sorting-active * { cursor: grabbing !important; 
 }
 .is-dragging { cursor: grabbing !important; user-select: none; z-index: 10; }
 
+/* ── Toasts ────────────────────────────────────────────────────────────── */
+a-toast {
+  position: fixed; inset: auto 1rem 1rem auto; margin: 0; padding: 0; border: 0; background: none; overflow: visible;
+  z-index: 10000; width: min(24rem, calc(100vw - 2rem)); pointer-events: none;
+}
+a-toast[position='top-end'] { inset: 1rem 1rem auto auto; }
+a-toast[position='bottom-start'] { inset: auto auto 1rem 1rem; }
+a-toast[position='top-start'] { inset: 1rem auto auto 1rem; }
+.ar-toast__region { display: flex; flex-direction: column; gap: 0.5rem; }
+.ar-toast__region:empty { display: none; }
+a-toast > .ar-toast__region + .ar-toast__region:not(:empty) { margin-top: 0.5rem; }
+.ar-toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.6rem 0.7rem 1rem;
+  border-radius: var(--ar-radius); background: var(--ar-text); color: var(--ar-bg); box-shadow: var(--ar-shadow-lg);
+  font: 0.9rem/1.4 var(--ar-font); border-inline-start: 4px solid var(--ar-accent); animation: ar-toast-in 0.2s ease-out;
+}
+.ar-toast[data-kind='success'] { border-inline-start-color: var(--ar-success); }
+.ar-toast[data-kind='error'] { background: var(--ar-danger); color: var(--ar-danger-text); border-inline-start-color: transparent; }
+.ar-toast__message { flex: 1; }
+.ar-toast__action, .ar-toast__close { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; border-radius: var(--ar-radius-sm); }
+.ar-toast__action { font-weight: 700; text-decoration: underline; text-underline-offset: 2px; padding: 0.2rem 0.4rem; }
+.ar-toast__close { font-size: 1.2rem; line-height: 1; padding: 0.1rem 0.4rem; opacity: 0.8; }
+.ar-toast__action:focus-visible, .ar-toast__close:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+@keyframes ar-toast-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .ar-toast { animation: none; } }
+
 /* ── Combobox ──────────────────────────────────────────────────────────── */
 a-combobox { display: block; position: relative; }
 .ar-combobox__input { width: 100%; }

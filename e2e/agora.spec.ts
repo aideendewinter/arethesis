@@ -44,7 +44,7 @@ test('votes are optimistic and roll back when the server refuses', async ({ page
   // When the server refuses, the vote shows at once and is then undone.
   await page.locator('#failures').check();
   await first.getByRole('button', { name: 'Disagree with Socrates', exact: true }).first().click();
-  await expect(page.locator('.toast[data-kind=error]').first()).toContainText('rolled back');
+  await expect(page.locator('.ar-toast[data-kind=error]').first()).toContainText('rolled back');
   await expect(score).toHaveText('43');
   await expect(first.getByRole('button', { name: 'Agree with Socrates', exact: true }).first()).toHaveAttribute('aria-pressed', 'true');
   void errors;
