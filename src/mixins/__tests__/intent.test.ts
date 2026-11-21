@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { intentMixin, type IntentInstance } from '../intent';
 import { tooltipMixin } from '../tooltip';
+import { wordRanges } from '../../utils/text-ranges';
 
 const pointer = (el: Element, type: string, init: PointerEventInit = {}) =>
   el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, clientX: 0, clientY: 0, ...init }));
@@ -201,5 +202,148 @@ describe('tooltip on touch', () => {
     expect(tip.hidden).toBe(true);
     window.dispatchEvent(new Event('scroll'));
     m.destroy();
+  });
+});
+
+describe('intent on text ranges', () => {
+  type CaretDoc = { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+  beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] }));
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    delete (document as unknown as CaretDoc).caretPositionFromPoint;
+  });
+
+  // Word i is laid out at x = 50i to 50i + 40, y 0 to 20; between them is space.
+  function setup(options = {}, fresh = false) {
+    document.body.innerHTML = '<p id="p">alpha beta gamma delta</p><div id="out">out</div>';
+    const host = document.getElementById('p')!;
+    const text = host.firstChild as Text;
+    const starts = [0, 6, 11, 17];
+    const lengths = [5, 4, 5, 5];
+    vi.spyOn(Range.prototype, 'getClientRects').mockImplementation(function (this: Range) {
+      const i = starts.indexOf(this.startOffset);
+      return (i < 0 || this.startContainer !== text ? [] : [new DOMRect(50 * i, 0, 40, 20)]) as unknown as DOMRectList;
+    });
+    (document as unknown as CaretDoc).caretPositionFromPoint = x => {
+      const i = Math.min(3, Math.floor(x / 50));
+      const inWord = x - 50 * i <= 40;
+      return { offsetNode: text, offset: starts[i] + (inWord ? Math.min(lengths[i], Math.round((x - 50 * i) / 8)) : lengths[i]) };
+    };
+    const words = wordRanges(host);
+    const log: string[] = [];
+    for (const type of ['show', 'commit', 'cancel']) {
+      host.addEventListener(`intent:${type}`, e => {
+        const d = (e as CustomEvent).detail;
+        log.push(`${type}:${String(d.target)}:${d.via ?? d.reason}`);
+      });
+    }
+    const m = intentMixin(host, { ranges: fresh ? () => wordRanges(host) : words, ...options });
+    const at = (x: number, type = 'pointermove', init: PointerEventInit = {}) =>
+      host.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerType: 'mouse', clientX: x, clientY: 10, ...init }));
+    const clickAt = (x: number, init: MouseEventInit = {}) => {
+      at(x, 'pointerdown');
+      host.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: 10, detail: 1, ...init }));
+    };
+    return { host, words, log, m, at, clickAt };
+  }
+
+  it('shows the word under the pointer, switches at once, and cancels in the gaps', () => {
+    const { log, at, m, words } = setup();
+    at(10);
+    vi.advanceTimersByTime(280);
+    expect(log).toEqual(['show:alpha:hover']);
+    at(20); // the same word
+    at(45); // the gap: leaving, but the next word within the grace shows at once
+    at(60);
+    expect(log).toEqual(['show:alpha:hover', 'cancel:alpha:moved', 'show:beta:hover']);
+    expect(m.active()).toEqual({ target: words[1], committed: false });
+    at(95);
+    vi.advanceTimersByTime(150);
+    expect(log.at(-1)).toBe('cancel:beta:leave');
+    at(110);
+    document.getElementById('p')!.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    vi.advanceTimersByTime(1000);
+    expect(log.at(-1)).toBe('cancel:beta:leave');
+    // Touch moves don't hover.
+    at(10, 'pointermove', { pointerType: 'touch' });
+    vi.advanceTimersByTime(1000);
+    expect(log.at(-1)).toBe('cancel:beta:leave');
+  });
+
+  it('commits on click, but not after a selection or on a double click', () => {
+    const { log, clickAt, at, words } = setup({}, true);
+    clickAt(110);
+    expect(log).toEqual(['commit:gamma:click']);
+    // A recomputed list still matches the same word.
+    clickAt(105);
+    expect(log.at(-1)).toBe('cancel:gamma:toggle');
+    clickAt(10);
+    clickAt(10, { detail: 2 });
+    expect(log.at(-1)).toBe('commit:alpha:click');
+    at(60, 'pointerdown');
+    const range = document.createRange();
+    range.selectNodeContents(document.getElementById('p')!);
+    document.getSelection()!.addRange(range);
+    document.getElementById('p')!.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 160, clientY: 10, detail: 1 }));
+    document.getSelection()!.removeAllRanges();
+    expect(log.at(-1)).toBe('commit:alpha:click');
+    // A click in a gap isn't on a word; the press there cancels.
+    clickAt(45);
+    expect(log.at(-1)).toBe('cancel:alpha:outside');
+    void words;
+  });
+
+  it('commits a tapped word and hit-tests by boxes without a caret API', () => {
+    const { log, at } = setup();
+    delete (document as unknown as CaretDoc).caretPositionFromPoint;
+    at(160, 'pointerdown', { pointerType: 'touch' });
+    at(160, 'pointerup', { pointerType: 'touch' });
+    vi.advanceTimersByTime(350);
+    expect(log).toEqual(['commit:delta:tap']);
+    // A caret outside the host finds nothing.
+    (document as unknown as CaretDoc).caretPositionFromPoint = () => ({ offsetNode: document.getElementById('out')!.firstChild!, offset: 0 });
+    at(160, 'pointerdown', { pointerType: 'touch' });
+    at(160, 'pointerup', { pointerType: 'touch' });
+    vi.advanceTimersByTime(350);
+    expect(log.at(-1)).toBe('cancel:delta:outside');
+  });
+
+  it('moves between words from the keyboard', () => {
+    const { host, log, m } = setup();
+    expect(host.tabIndex).toBe(0);
+    const key = (k: string, init: KeyboardEventInit = {}) => host.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
+    key('Enter'); // nothing active yet
+    key('ArrowLeft');
+    expect(log).toEqual(['show:delta:focus']);
+    key('Home');
+    key('ArrowRight');
+    key('ArrowRight', { ctrlKey: true });
+    expect(log.slice(-2)).toEqual(['cancel:alpha:moved', 'show:beta:focus']);
+    key('Enter');
+    expect(log.at(-1)).toBe('commit:beta:key');
+    // While committed, the commit moves.
+    key('End');
+    expect(log.slice(-2)).toEqual(['cancel:beta:moved', 'commit:delta:key']);
+    key('ArrowRight');
+    key('x');
+    expect(log.at(-1)).toBe('commit:delta:key');
+    m.cancel();
+    key('ArrowLeft');
+    host.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    expect(log.slice(-2)).toEqual(['show:gamma:focus', 'cancel:gamma:blur']);
+    m.destroy();
+    expect(host.hasAttribute('tabindex')).toBe(false);
+  });
+
+  it('leaves the host alone with keyboard: false, or when it is already focusable', () => {
+    const { host, m } = setup({ keyboard: false });
+    expect(host.hasAttribute('tabindex')).toBe(false);
+    m.destroy();
+    document.body.innerHTML = '<p tabindex="-1">a b</p>';
+    const p = document.querySelector('p')!;
+    const ranges: Range[] = [];
+    intentMixin(p, { ranges: () => ranges }).destroy();
+    expect(p.getAttribute('tabindex')).toBe('-1');
   });
 });

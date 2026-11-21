@@ -68,6 +68,31 @@ article.addEventListener('intent:cancel', e => unpin(e.detail.target));   // lea
 - **Detail:** events carry `{ target, via }`, where `via` is `hover`, `focus`, `click`, `tap` or `key`. For cancel, it's `{ target, reason }` instead.
 - **Callbacks:** use `onShow`, `onCommit` and `onCancel`, with `events: false`, when the events would only be noise.
 
+- **Clicks that aren't commits:** a click that ends a text selection, and the second click of a double click, are ignored.
+
+### Words as targets, without spans
+
+Pass `ranges` instead of `selector` and the targets are text Ranges, so a reader can respond to words without wrapping each one in an element:
+
+```ts
+import { intentMixin, highlighter, wordRanges } from 'arethesis';
+
+const words = wordRanges(passage);
+const pointed = highlighter('pointed');
+intentMixin(passage, {
+  ranges: words,                          // or () => words, if the list changes
+  onShow: word => pointed.set([word]),
+  onCancel: () => pointed.clear(),
+  onCommit: (word, via) => readFrom(words.indexOf(word)),
+});
+```
+
+- **Finding the word:** the pointer's caret position is found by binary search in the list, then checked against the word's boxes, so the gaps between words aren't targets and a long book stays fast. The list must be in reading order (as `wordRanges` and `findRanges` give it). A function is called on every pointer move, so return a list you keep.
+- **The same word:** ranges with the same boundaries count as the same target, so recomputing the list doesn't break a hover or a commit.
+- **Keyboard:** the host becomes focusable (unless it already is, or `keyboard: false`). While it has focus, the arrow keys, Home and End move from range to range (reversed in right-to-left text), showing each; Enter commits; once committed, the arrows move the commit. Screen readers read the text itself, so give them what the hover adds another way too.
+- **Showing it:** a Range can't be styled, so highlight it with `highlighter`, and anchor a popup to `() => range.getBoundingClientRect()`.
+- Events and callbacks get the Range as `target`, and in TypeScript the callbacks are typed for it.
+
 `tooltip` is built on it.
 
 ## `selection-menu`

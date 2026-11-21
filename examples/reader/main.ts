@@ -25,7 +25,7 @@ import source from './main.ts?raw';
 mountShell({
   page: 'reader',
   title: 'The Reader',
-  description: 'Heraclitus, in pieces. Search, marks and follow-along reading highlight the text without changing it; glosses appear on hover and stick on tap; selections get a menu; settings persist and follow other tabs; and every shortcut is listed for you.',
+  description: 'Heraclitus, in pieces. Search, marks and follow-along reading highlight the text without changing it, and words respond to taps without being wrapped in spans; glosses appear on hover and stick on tap; selections get a menu; settings persist and follow other tabs; and every shortcut is listed for you.',
   features: ['highlighter', 'selection-menu', 'intent', 'shortcuts', 'definePrefs', 'html'],
   source,
   footnote: 'Free renderings of the fragments, numbered after Diels and Kranz.',
@@ -182,6 +182,7 @@ function follow(on = timer === null): void {
   followButton.setAttribute('aria-pressed', String(on));
   if (!on) {
     word.clear();
+    jump.cancel();
     return;
   }
   words = wordRanges(text);
@@ -195,6 +196,23 @@ function follow(on = timer === null): void {
   timer = setInterval(step, 60_000 / prefs.get('pace'));
 }
 followButton.addEventListener('click', () => follow());
+
+// While following, point at a word (no spans: the words are Ranges) and tap,
+// click or press Enter to read on from there. The arrow keys move between words.
+const pointed = highlighter('reader-hover', { priority: 1 });
+const jump = intentMixin(text, {
+  ranges: () => (timer ? words : []),
+  events: false,
+  onShow: range => pointed.set([range]),
+  onCancel: () => pointed.clear(),
+  onCommit: range => {
+    wordIndex = Math.max(0, words.indexOf(range));
+    queueMicrotask(() => {
+      jump.cancel();
+      follow(true);
+    });
+  },
+});
 
 // ── Glosses: shown on hover or focus, pinned on tap or click ──
 
