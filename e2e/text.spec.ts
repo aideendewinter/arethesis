@@ -137,6 +137,49 @@ test('settings are saved and follow other tabs', async ({ context, page, errors 
   void errors;
 });
 
+/** The text of the word follow-along is on. */
+const followed = (page: Page) => page.evaluate(() => {
+  const native = (CSS as unknown as { highlights?: Map<string, Set<Range>> }).highlights?.get('reader-word');
+  return native ? [...native][0]?.toString() ?? '' : document.querySelector('mark[data-highlight="reader-word"]')?.textContent ?? '';
+});
+
+/** The centre of a word in the fragments, in viewport coordinates. */
+const wordPoint = (page: Page, word: string) => page.evaluate(w => {
+  const root = document.querySelector('.reader__fragments')!;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const at = (n as Text).data.search(new RegExp(`\\b${w}\\b`));
+    if (at < 0) continue;
+    const range = document.createRange();
+    range.setStart(n, at);
+    range.setEnd(n, at + w.length);
+    range.startContainer.parentElement!.scrollIntoView({ block: 'center' });
+    const r = range.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  throw new Error(`no ${w}`);
+}, word);
+
+test('while following along, a click on a word (a Range, not a span) reads on from there', async ({ page, errors }) => {
+  await page.goto('/reader/index.html');
+  const before = await fragments(page).innerHTML();
+  await page.locator('#follow').click();
+  await expect.poll(() => followed(page)).toBe('Listening');
+  const river = await wordPoint(page, 'river');
+  await page.mouse.click(river.x, river.y);
+  // It reads on, so by the time we look it may be a word or two further.
+  await expect.poll(() => followed(page)).toMatch(/^(river|other|and|still|waters|flow|on)$/);
+  // From the keyboard: the passage takes focus and the arrows move word by word.
+  await fragments(page).focus();
+  await page.keyboard.press('Home');
+  await expect.poll(() => highlightSize(page, 'reader-hover')).toBe(1);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => followed(page)).toMatch(/^(Listening|not|to|me|but|the|logos)$/);
+  await page.locator('#follow').click();
+  expect(await fragments(page).innerHTML()).toBe(before);
+  void errors;
+});
+
 test.describe('on a touch screen', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
   test.skip(({ browserName }) => browserName === 'firefox', 'Firefox has no touch emulation');

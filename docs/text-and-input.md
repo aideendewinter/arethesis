@@ -92,7 +92,7 @@ Ranges to highlight come from these helpers. Offsets count the characters of an 
 | `textOf(root)` | The text these offsets count (no `<script>` or `<style>`) |
 | `wordRanges(root, { locale })` | Every word, using `Intl.Segmenter`. Punctuation and spaces are left out, and a word may span inline elements (`<b>Hel</b>lo` is one word) |
 | `findRanges(root, query, { caseSensitive, wholeWord, limit })` | Every match of a plain-text query |
-| `rangeAtPoint(ranges, x, y)` | The range under a point. Highlights don't receive clicks, so this is how a tap finds its word |
+| `rangeAtPoint(ranges, x, y)` | The range under a point. Highlights don't receive clicks, so this is how a tap finds its word. For hover, tap and keyboard all at once, give the ranges to [`intent`](mixins.md#words-as-targets-without-spans) |
 | `caretAt(x, y)` | The DOM position under a point |
 
 ## Keyboard shortcuts

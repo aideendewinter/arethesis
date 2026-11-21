@@ -56,7 +56,7 @@ export { contextMenuMixin } from './context-menu';
 export { listboxMixin } from './listbox';
 export type { ListboxOption, ListboxOptions } from './listbox';
 export { intentMixin } from './intent';
-export type { IntentOptions, IntentInstance, IntentVia, IntentCancelReason } from './intent';
+export type { IntentOptions, IntentInstance, IntentVia, IntentCancelReason, IntentTarget } from './intent';
 export { selectionMenuMixin } from './selection-menu';
 export type { SelectionMenuItem, SelectionMenuOptions, SelectionMenuInstance } from './selection-menu';
 export type * from './types';

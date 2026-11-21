@@ -15,7 +15,7 @@
   "app: components/dialog": 8900,
   "app: components/tree": 10800,
   "app: components/calendar": 11200,
-  "app: components/presence": 11600,
+  "app: components/presence": 12100,
   "app: components (all)": 64800,
   "app: arethesis (everything)": 54200
 }

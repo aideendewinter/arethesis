@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `intent` takes text Ranges as targets (`ranges: wordRanges(passage)`), so words respond to hover, tap and the keyboard without being wrapped in spans. The host becomes focusable, and the arrow keys, Home and End move from word to word.
+- The Reader example: while following along, tap, click or arrow to a word to read on from there.
+
+### Changed
+
+- `intent` no longer commits on a click that ends a text selection, or on the second click of a double click.
+
 ## 0.3.0
 
 ### Added
