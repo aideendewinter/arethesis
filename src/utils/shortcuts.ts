@@ -90,7 +90,7 @@ export function isApplePlatform(): boolean {
 
 function parse(keys: string): Parsed {
   // The last part is the key ("Mod++" is Mod and plus).
-  const parts = keys.endsWith('++') ? [...keys.slice(0, -2).split('+'), '+'] : keys.split('+');
+  const parts = keys === '+' ? ['+'] : keys.endsWith('++') ? [...keys.slice(0, -2).split('+'), '+'] : keys.split('+');
   const rawKey = parts.pop() ?? '';
   const mods = new Set(parts.map(p => p.trim().toLowerCase()));
   const apple = isApplePlatform();

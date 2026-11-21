@@ -30,7 +30,7 @@ describe('shortcuts', () => {
 
   it('matches typed characters, letters with exact modifiers, and named keys', () => {
     const run = vi.fn();
-    register({ t: () => run('t'), 'Shift+T': () => run('T'), '?': () => run('?'), 'Ctrl+k': () => run('ctrl-k'), 'Alt+p': () => run('alt-p'), Esc: () => run('esc'), 'Shift+ArrowDown': () => run('sdown'), Space: () => run('space'), 'Ctrl++': () => run('plus') });
+    register({ t: () => run('t'), 'Shift+T': () => run('T'), '?': () => run('?'), 'Ctrl+k': () => run('ctrl-k'), 'Alt+p': () => run('alt-p'), Esc: () => run('esc'), 'Shift+ArrowDown': () => run('sdown'), Space: () => run('space'), 'Ctrl++': () => run('plus'), '+': () => run('+') });
     press(document.body, 't');
     press(document.body, 'T', { shiftKey: true });
     press(document.body, '?', { shiftKey: true }); // Shift is how you type it
@@ -43,7 +43,8 @@ describe('shortcuts', () => {
     press(document.body, 'ArrowDown', { shiftKey: true });
     press(document.body, ' ');
     press(document.body, '+', { ctrlKey: true, shiftKey: true });
-    expect(run.mock.calls.map(c => c[0])).toEqual(['t', 'T', '?', 'ctrl-k', 'alt-p', 'esc', 'sdown', 'space', 'plus']);
+    press(document.body, '+', { shiftKey: true });
+    expect(run.mock.calls.map(c => c[0])).toEqual(['t', 'T', '?', 'ctrl-k', 'alt-p', 'esc', 'sdown', 'space', 'plus', '+']);
     expect(() => register({ 'Hyper+x': () => {} })).toThrow(/unknown modifier/);
   });
 

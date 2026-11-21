@@ -9,6 +9,7 @@ const tap = (el: Element, init: PointerEventInit = {}) => {
   touch(el, 'pointerdown', init);
   touch(el, 'pointerup', init);
   el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  vi.advanceTimersByTime(0); // the commit runs just after the click
 };
 
 function setup(options = {}) {
@@ -116,9 +117,15 @@ describe('intent', () => {
     tap($('a'));
     tap($('out'));
     expect(log.slice(-2)).toEqual(['commit:a:tap', 'cancel:a:outside']);
+    // Without a click after the tap, it still commits, a moment later.
+    touch($('b'), 'pointerdown');
+    touch($('b'), 'pointerup');
+    expect(log.at(-1)).toBe('cancel:a:outside');
+    vi.advanceTimersByTime(350);
+    expect(log.at(-1)).toBe('commit:b:tap');
     // A mouse up with no touch press does nothing.
     pointer($('a'), 'pointerup', { pointerType: 'mouse' });
-    expect(log.at(-1)).toBe('cancel:a:outside');
+    expect(log.at(-1)).toBe('commit:b:tap');
   });
 
   it('shows on focus, commits on Enter, and cancels on blur and Escape', () => {

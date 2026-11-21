@@ -25,7 +25,9 @@ removeMixin(element, 'tooltip');
 | `sortable` | Reorder by pointer, touch or keyboard (Space to pick up, arrows, Space to drop), across containers sharing a `group`, with screen-reader announcements. Works in lists, grids and wrapping rows; neighbours slide aside, the item glides into place, and containers auto-scroll. | `sortable:start`, `sortable:move`, `sortable:end` (cancelable: reverts the move) |
 | `resizable` | Edge and corner handles (`role="separator"`), keyboard resizing, min/max; works on flex items | `resizable:start/resize/end` |
 | `dropdown` | Turns a `<select>` into an accessible, filterable combobox; the select keeps working for forms and bindings | `dropdown:change` |
-| `tooltip` | On hover and focus, Escape dismisses, linked with `aria-describedby`, flips to stay on screen | none |
+| `tooltip` | On hover (after a delay), focus and tap; Escape or a tap elsewhere dismisses; linked with `aria-describedby`; flips to stay on screen | none |
+| `intent` | Hover, tap and focus as show, commit and cancel, for anything that previews on hover and sticks on tap | `intent:show`, `intent:commit`, `intent:cancel` |
+| `selection-menu` | A toolbar next to selected text, which keeps the selection while you use it | `selection-menu:open/select/close` |
 | `listbox` | A select-only combobox (APG pattern) in place of `<select>`: arrows move through the options without picking, typing jumps to a match, Enter, Tab or a click picks, Escape closes | `listbox:change`, `listbox:commit`, `listbox:cancel` |
 | `context-menu` | Right-click, Shift+F10 or the Menu key; arrow keys, Home/End and typeahead | `context-menu:select` |
 
@@ -41,6 +43,55 @@ import { attachPopup } from 'arethesis/mixins';
 const popup = attachPopup(panel, { anchor: () => button, placement: 'bottom', matchWidth: true });
 button.addEventListener('click', () => (popup.isOpen() ? popup.hide() : popup.show()));
 ```
+
+## `intent`
+
+Tooltips, glosses, link previews and footnotes all need the same judgment about what a pointer, a finger or the keyboard means. `intent` makes it once and reports three events:
+
+```ts
+import { intentMixin } from 'arethesis/mixins';
+
+intentMixin(article, { selector: 'dfn' });
+article.addEventListener('intent:show', e => preview(e.detail.target));   // hover or focus
+article.addEventListener('intent:commit', e => pin(e.detail.target));     // tap, click or Enter
+article.addEventListener('intent:cancel', e => unpin(e.detail.target));   // leave, blur, Escape, tap elsewhere
+```
+
+| Input | Show | Commit | Cancel |
+| --- | --- | --- | --- |
+| Mouse, pen | Resting on a target for `delay` (280 ms); once one is shown, the next shows at once | A click (unless `click: false`) | Leaving (after a short `grace`), or a click outside |
+| Touch | (none) | A tap; tapping another target moves the commit | Tapping the same target again, or tapping outside |
+| Keyboard | Focus | Enter (except on buttons, links and fields) | Blur, Escape |
+
+- **What counts as a tap:** the finger moves less than `tolerance` px, lifts within `longPress` ms, and doesn't scroll the page or select text. Swipes, scrolls, long presses and text selections are ignored. A finger lifting off isn't "leaving".
+- **One target at a time.** `active()` reports it and whether it's committed. `commit(target)` and `cancel()` change it from code.
+- **Detail:** events carry `{ target, via }`, where `via` is `hover`, `focus`, `click`, `tap` or `key`. For cancel, it's `{ target, reason }` instead.
+- **Callbacks:** use `onShow`, `onCommit` and `onCancel`, with `events: false`, when the events would only be noise.
+
+`tooltip` is built on it.
+
+## `selection-menu`
+
+A small toolbar beside selected text: Highlight, Note, Copy, Define.
+
+```ts
+import { selectionMenuMixin } from 'arethesis/mixins';
+
+selectionMenuMixin(article, {
+  items: (range, text) => [
+    { label: 'Highlight', action: 'highlight', icon: '✎' },
+    { label: 'Define', action: 'define', disabled: text.includes(' ') },
+  ],
+});
+article.addEventListener('selection-menu:select', e => {
+  const { action, range, text } = e.detail;
+});
+```
+
+- **When it appears:** for a selection inside the element, but not in a form field, and at least `minLength` characters long. It sits at the end the selection grows from, and follows the selection as it changes. With a coarse pointer it goes below the selection, out of the way of the system's own menu.
+- **Keeping the selection:** pressing its buttons doesn't clear the selection, and the selection is put back before `selection-menu:select` fires. After an action, or after Escape, the same selection doesn't reopen it.
+- **Keyboard:** while text is selected, Shift+F10 or the Menu key moves into it, ahead of a `context-menu` on the same element. It's a `toolbar`, so the arrow keys, Home and End move between its buttons. Escape or Tab goes back to the text with the selection intact. Screen readers are told it's available.
+- **Your own content:** `render(menu, range, text)` fills the toolbar yourself; buttons with `data-action` are its items.
 
 ## How `sortable` drags
 

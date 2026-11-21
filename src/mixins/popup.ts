@@ -79,6 +79,11 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
   el.classList.add('ar-popup');
   el.hidden = true;
   if (native) el.popover = mode === 'hint' && supportsHint() ? 'hint' : 'manual';
+  // Hints can be light-dismissed by the browser: keep up when they are.
+  const onToggle = (e: Event): void => {
+    if ((e as Event & { newState?: string }).newState === 'closed' && open && !el.matches(':popover-open')) hide();
+  };
+  if (native) el.addEventListener('toggle', onToggle);
 
   function reposition(): void {
     if (!open) return;
@@ -112,6 +117,8 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
 
   function show(): void {
     if (open) {
+      // The browser may have light-dismissed it (a hint, on a tap elsewhere).
+      if (native && el.isConnected && !el.matches(':popover-open')) showNative();
       reposition();
       return;
     }
@@ -164,6 +171,7 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
     reposition,
     destroy: () => {
       hide();
+      el.removeEventListener('toggle', onToggle);
       if (native) el.removeAttribute('popover');
       el.classList.remove('ar-popup');
     },

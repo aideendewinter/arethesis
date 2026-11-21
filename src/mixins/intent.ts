@@ -75,6 +75,8 @@ export function intentMixin(element: HTMLElement, options: IntentOptions = {}): 
   let leaving: ReturnType<typeof setTimeout> | null = null;
   let press: { target: HTMLElement | null; x: number; y: number; time: number; scroll: number; selection: string; moved: boolean } | null = null;
   let lastTouch = -Infinity;
+  let tapTarget: HTMLElement | null = null;
+  let tapTimer: ReturnType<typeof setTimeout> | null = null;
 
   const targetOf = (node: EventTarget | null): HTMLElement | null => {
     if (!(node instanceof Element)) return null;
@@ -194,18 +196,38 @@ export function intentMixin(element: HTMLElement, options: IntentOptions = {}): 
     const selected = selectionText();
     const tap = !p.moved && duration < longPress && scrollPos() === p.scroll && (selected === '' || selected === p.selection);
     if (!tap) return;
-    if (!p.target) {
-      if (active) cancel('outside');
-    } else if (active === p.target && committed) {
-      cancel('toggle');
-    } else {
-      commit(p.target, 'tap');
+    // Act on the click that follows: the browser light-dismisses popovers on
+    // this pointerup, which would close anything opened now. (Without a
+    // click, act shortly anyway.)
+    if (tapTimer) clearTimeout(tapTimer);
+    tapTarget = p.target;
+    tapTimer = setTimeout(applyTap, 350);
+  }, { signal, capture: true });
+  document.addEventListener('click', () => {
+    // Just after the click, once the browser has handled it.
+    if (tapTimer) {
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(applyTap, 0);
     }
   }, { signal, capture: true });
 
+  function applyTap(): void {
+    if (tapTimer) clearTimeout(tapTimer);
+    tapTimer = null;
+    const target = tapTarget;
+    tapTarget = null;
+    if (!target?.isConnected) {
+      if (active) cancel('outside');
+    } else if (active === target && committed) {
+      cancel('toggle');
+    } else {
+      commit(target, 'tap');
+    }
+  }
+
   if (click) {
     element.addEventListener('click', e => {
-      // Taps were handled on pointerup; this is their compatibility click.
+      // A tap's compatibility click: handled above.
       if (performance.now() - lastTouch < 800) return;
       const target = targetOf(e.target);
       if (!target) return;
@@ -246,6 +268,7 @@ export function intentMixin(element: HTMLElement, options: IntentOptions = {}): 
     commit: target => commit(target, 'key'),
     cancel: () => cancel('api'),
     destroy() {
+      if (tapTimer) clearTimeout(tapTimer);
       cancel('api');
       controller.abort();
     },

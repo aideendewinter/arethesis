@@ -288,9 +288,10 @@ export function selectionMenuMixin(element: HTMLElement, options: SelectionMenuO
         break;
     }
   }, { signal });
-  // Capture, so it runs before a context menu on the same element.
-  element.addEventListener('keydown', e => {
-    if (!open || !(e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey))) return;
+  // On the document (a mouse selection leaves focus on the page), and in the
+  // capture phase, so it runs before a context menu on the same element.
+  document.addEventListener('keydown', e => {
+    if (!open || !(e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) || menu.contains(e.target as Node)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     focusMenu();

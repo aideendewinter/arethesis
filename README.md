@@ -97,6 +97,7 @@ When the server sends `invalidate { type: "Person", id: 42 }` over SSE, every `<
 - [Binding and validation](docs/binding.md)
 - [Real-time and collaboration](docs/realtime.md)
 - [Mixins](docs/mixins.md)
+- [Text, settings and keyboard](docs/text-and-input.md)
 - [Plugins](docs/plugins.md)
 - [Component kit](docs/component-kit.md)
 - [Security](docs/security.md)
