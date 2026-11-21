@@ -1,6 +1,6 @@
 {
   "name": "arethesis",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Data-driven Light DOM Web Components: a normalized store, config-driven HTTP, live updates, collaborative editing and accessible UI mixins — with zero runtime dependencies.",
   "type": "module",
   "main": "./dist/index.js",
