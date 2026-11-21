@@ -30,6 +30,7 @@ import { defineComponent } from '../components/decorators';
 import { getRuntime } from '../components/runtime';
 import { fuzzyFilter, highlightMatch as highlight, type FuzzyMatch } from '../utils/fuzzy';
 import { uniqueId } from '../utils/dom';
+import { safeStorage } from '../utils/storage';
 import { modal, type Modal } from './internal/modal';
 
 export interface PaletteCommand {
@@ -64,18 +65,16 @@ const RECENT_KEY = 'ar-palette-recent';
 
 function loadRecent(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]') as string[];
+    const ids: unknown = JSON.parse(safeStorage('local').get(RECENT_KEY) ?? '[]');
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : [];
   } catch {
     return [];
   }
 }
 
+/** Without storage, recents last for this page only. */
 function saveRecent(ids: string[]): void {
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(ids.slice(0, 8)));
-  } catch {
-    /* storage unavailable: recents last for this page only */
-  }
+  safeStorage('local').set(RECENT_KEY, JSON.stringify(ids.slice(0, 8)));
 }
 
 /** A source that searches objects of one type in the store. */

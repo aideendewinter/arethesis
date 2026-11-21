@@ -22,6 +22,7 @@ import {
 } from '../../../scripts/tokens.mjs';
 import {
   applyStoredTheme,
+  syncThemeAcrossTabs,
   CRITICAL_CSS,
   POLYCHROME_CRITICAL_CSS,
   getContrast,
@@ -303,6 +304,23 @@ describe('theme boot and helpers', () => {
     document.documentElement.removeAttribute('data-theme');
     applyStoredTheme({ themeKey: 'k' });
     expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+
+  it('follows choices made in other tabs', () => {
+    const listener = vi.fn();
+    document.documentElement.addEventListener('ar-theme-change', listener);
+    const stop = syncThemeAcrossTabs();
+    const change = (key: string, newValue: string | null) => window.dispatchEvent(new StorageEvent('storage', { key, newValue, storageArea: localStorage }));
+    change('ar-theme', 'dark');
+    change('ar-contrast', 'more');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.dataset.contrast).toBe('more');
+    change('ar-theme', 'sepia');
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(3);
+    stop();
+    change('ar-theme', 'dark');
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
   });
 
   it('still works when storage is unavailable', () => {
