@@ -38,6 +38,7 @@ import { resizableMixin } from '../mixins/resizable';
 import { cssEscape } from '../utils/dom';
 import { announce } from '../mixins/utils';
 import { openCellEditor, type CellEditor, type CellMove } from './cell-editor';
+import { caretAt, textOffset } from '../utils/text-ranges';
 
 export interface DataTableColumn {
   field: string;
@@ -395,25 +396,8 @@ export class DataTable extends Component {
 
 /** The text offset under a point in a cell, for putting the caret where the user clicked. */
 function caretFromPoint(cell: HTMLElement, x: number, y: number): number | undefined {
-  const doc = cell.ownerDocument as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
-  let node: Node | null = null;
-  let offset = 0;
-  if (doc.caretPositionFromPoint) {
-    const pos = doc.caretPositionFromPoint(x, y);
-    if (pos) ({ offsetNode: node, offset } = pos);
-  } else if (doc.caretRangeFromPoint) {
-    const range = doc.caretRangeFromPoint(x, y);
-    if (range) ({ startContainer: node, startOffset: offset } = range);
-  }
-  if (!node || !cell.contains(node)) return undefined;
-  // Count the text before the caret node within the cell.
-  let total = 0;
-  const walker = doc.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-    if (n === node) return total + offset;
-    total += n.textContent?.length ?? 0;
-  }
-  return undefined;
+  const caret = caretAt(x, y, cell.ownerDocument);
+  return caret && cell.contains(caret.node) ? textOffset(cell, caret.node, caret.offset) : undefined;
 }
 
 /** Define `<a-data-table>` (idempotent). `import 'arethesis/components/data-table'` calls this. */

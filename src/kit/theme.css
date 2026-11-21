@@ -1166,6 +1166,17 @@ a-list { display: block; }
 .ar-prose .md-align-center { text-align: center; }
 .ar-prose .md-align-right { text-align: right; font-variant-numeric: tabular-nums; }
 
+/* Highlights (utils/highlight): native ::highlight(), and the <mark> fallback. */
+.ar-highlight { background: none; color: inherit; }
+::highlight(ar-search) { background-color: color-mix(in srgb, var(--ar-warning) 28%, transparent); color: inherit; }
+.ar-highlight[data-highlight="ar-search"] { background-color: color-mix(in srgb, var(--ar-warning) 28%, transparent); }
+::highlight(ar-search-current) { background-color: var(--ar-warning); color: var(--ar-bg, #fff); }
+.ar-highlight[data-highlight="ar-search-current"] { background-color: var(--ar-warning); color: var(--ar-bg, #fff); }
+@media (forced-colors: active) {
+  ::highlight(ar-search), ::highlight(ar-search-current) { background-color: Mark; color: MarkText; }
+  .ar-highlight[data-highlight^="ar-search"] { background-color: Mark; color: MarkText; forced-color-adjust: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
