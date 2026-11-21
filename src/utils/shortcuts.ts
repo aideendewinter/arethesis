@@ -11,8 +11,8 @@
  * });
  * ```
  *
- * In a component, `this.shortcuts({...})` does the same while the component
- * is connected.
+ * In a component, pass its signal so they last while it's connected:
+ * `shortcuts({...}, { signal: this.signal })` in `onConnected`.
  *
  * - **Keys:** printable keys match the character typed (`'?'`, not
  *   `'Shift+/'`), so they work on any keyboard layout. Named keys use
@@ -56,6 +56,8 @@ export type ShortcutMap = Record<string, ShortcutBinding | ShortcutBinding['run'
 export interface ShortcutOptions {
   /** Only for key presses inside this element. @default the whole document */
   scope?: Element;
+  /** Remove them when this aborts (a component's `this.signal`). */
+  signal?: AbortSignal;
 }
 
 interface Parsed {
@@ -181,7 +183,7 @@ export function shortcuts(map: ShortcutMap, options: ShortcutOptions = {}): () =
   }
   registrations.push(entries);
   let removed = false;
-  return () => {
+  const stop = (): void => {
     if (removed) return;
     removed = true;
     const i = registrations.indexOf(entries);
@@ -191,6 +193,9 @@ export function shortcuts(map: ShortcutMap, options: ShortcutOptions = {}): () =
       document.removeEventListener('keydown', onKeydown);
     }
   };
+  if (options.signal?.aborted) stop();
+  else options.signal?.addEventListener('abort', stop, { once: true });
+  return stop;
 }
 
 const SYMBOLS_APPLE: Record<string, string> = { meta: '⌘', ctrl: '⌃', alt: '⌥', shift: '⇧' };

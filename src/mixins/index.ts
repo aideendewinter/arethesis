@@ -16,6 +16,7 @@ import { tooltipMixin } from './tooltip';
 import { contextMenuMixin } from './context-menu';
 import { listboxMixin } from './listbox';
 import { intentMixin } from './intent';
+import { selectionMenuMixin } from './selection-menu';
 
 /** Register the built-in mixins, for `data-mixin` (idempotent; `import 'arethesis'` does this). */
 export function registerBuiltInMixins(): void {
@@ -31,6 +32,7 @@ export function registerBuiltInMixins(): void {
     'context-menu': contextMenuMixin,
     listbox: listboxMixin,
     intent: intentMixin,
+    'selection-menu': selectionMenuMixin,
   };
   for (const [name, fn] of Object.entries(all)) {
     if (!mixinRegistry.has(name)) mixinRegistry.register(name, fn as never);
@@ -55,4 +57,6 @@ export { listboxMixin } from './listbox';
 export type { ListboxOption, ListboxOptions } from './listbox';
 export { intentMixin } from './intent';
 export type { IntentOptions, IntentInstance, IntentVia, IntentCancelReason } from './intent';
+export { selectionMenuMixin } from './selection-menu';
+export type { SelectionMenuItem, SelectionMenuOptions, SelectionMenuInstance } from './selection-menu';
 export type * from './types';

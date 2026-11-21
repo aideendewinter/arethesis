@@ -214,7 +214,7 @@ describe('Escape and layers', () => {
   });
 });
 
-describe('Component.shortcuts', () => {
+describe('shortcuts in a component', () => {
   afterEach(() => Arethesis.resetInstance());
 
   it('registers while connected', async () => {
@@ -223,7 +223,7 @@ describe('Component.shortcuts', () => {
     @defineComponent({ tag: 'shortcut-host', html: '<p>x</p>' })
     class Host extends Component {
       protected override onConnected(): void {
-        this.shortcuts({ g: run });
+        shortcuts({ g: run }, { signal: this.signal });
       }
     }
     void Host;
@@ -232,6 +232,10 @@ describe('Component.shortcuts', () => {
     await flush();
     press(document.body, 'g');
     el.remove();
+    press(document.body, 'g');
+    expect(run).toHaveBeenCalledTimes(1);
+    const aborted = AbortSignal.abort();
+    shortcuts({ g: run }, { signal: aborted });
     press(document.body, 'g');
     expect(run).toHaveBeenCalledTimes(1);
   });
