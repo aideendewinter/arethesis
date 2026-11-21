@@ -34,6 +34,7 @@ import { getRuntime } from './runtime';
 import { computeWindow } from '../utils/virtual-window';
 import { mixinRegistry } from '../mixins/registry';
 import { HttpError } from '../http/http-error';
+import { shortcuts as registerShortcuts, type ShortcutMap, type ShortcutOptions } from '../utils/shortcuts';
 
 /** Resolves once the element's children are in the DOM. */
 function childrenParsed(): Promise<void> {
@@ -142,6 +143,15 @@ export abstract class Component extends HTMLElement {
       if (!target || !this.contains(target)) return;
       handler(event, target, target.closest('[data-id]')?.getAttribute('data-id') ?? null);
     });
+  }
+
+  /**
+   * Keyboard shortcuts while this component is connected (see
+   * {@link shortcuts}). Call it from `onConnected`.
+   */
+  protected shortcuts(map: ShortcutMap, options: ShortcutOptions = {}): void {
+    const stop = registerShortcuts(map, options);
+    this.signal.addEventListener('abort', stop, { once: true });
   }
 
   /** Apply a mixin to this component (or a child); destroyed on disconnect. */

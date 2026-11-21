@@ -15,6 +15,7 @@
  */
 
 import { placeFloating, type Placement } from './utils';
+import { pushLayer } from '../utils/layers';
 
 export interface PopupOptions {
   /** What to place it next to: an element, or a rect (such as a pointer position). */
@@ -73,6 +74,7 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
   let open = false;
   let frame = 0;
   let listeners: AbortController | null = null;
+  let releaseLayer: (() => void) | null = null;
 
   el.classList.add('ar-popup');
   el.hidden = true;
@@ -115,6 +117,8 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
     }
     open = true;
     el.hidden = false;
+    // Hints (tooltips) aren't layers: Escape past them still reaches what's below.
+    if (mode !== 'hint') releaseLayer = pushLayer(el, undefined, 'popup');
     if (native) {
       if (el.isConnected) showNative();
       // Shown before it's in the document (the cell editor adds its list after
@@ -137,6 +141,8 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
   function hide(): void {
     if (!open) return;
     open = false;
+    releaseLayer?.();
+    releaseLayer = null;
     listeners?.abort();
     listeners = null;
     if (frame > 0) cancelAnimationFrame(frame);

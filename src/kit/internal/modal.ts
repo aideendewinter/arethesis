@@ -7,6 +7,8 @@
  * @internal
  */
 
+import { pushLayer } from '../../utils/layers';
+
 export interface ModalOptions {
   /** Modal (the page behind is inert) or not. @default true */
   modal?: boolean;
@@ -31,12 +33,15 @@ export function modal(dialog: HTMLDialogElement, options: ModalOptions = {}): Mo
   const { signal } = controller;
   const closedBy = options.closedBy ?? 'any';
   let returnFocus: HTMLElement | null = null;
+  let releaseLayer: (() => void) | null = null;
   // The native attribute does this where it's supported; the handlers below cover the rest.
   dialog.setAttribute('closedby', closedBy);
 
   const isOpen = (): boolean => dialog.open || dialog.hasAttribute('open');
 
   const afterClose = (): void => {
+    releaseLayer?.();
+    releaseLayer = null;
     const target = returnFocus;
     returnFocus = null;
     if (target?.isConnected) target.focus();
@@ -78,6 +83,7 @@ export function modal(dialog: HTMLDialogElement, options: ModalOptions = {}): Mo
       if (isOpen()) return;
       returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       dialog.returnValue = '';
+      releaseLayer = pushLayer(dialog, undefined, 'dialog');
       const useModal = options.modal !== false;
       if (useModal && typeof dialog.showModal === 'function') dialog.showModal();
       else if (!useModal && typeof dialog.show === 'function') dialog.show();
@@ -87,6 +93,9 @@ export function modal(dialog: HTMLDialogElement, options: ModalOptions = {}): Mo
     },
     close,
     isOpen,
-    destroy: () => controller.abort(),
+    destroy: () => {
+      releaseLayer?.();
+      controller.abort();
+    },
   };
 }
