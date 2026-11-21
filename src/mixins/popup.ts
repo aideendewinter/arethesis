@@ -15,6 +15,7 @@
  */
 
 import { placeFloating, type Placement } from './utils';
+import { pushLayer } from '../utils/layers';
 
 export interface PopupOptions {
   /** What to place it next to: an element, or a rect (such as a pointer position). */
@@ -73,10 +74,16 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
   let open = false;
   let frame = 0;
   let listeners: AbortController | null = null;
+  let releaseLayer: (() => void) | null = null;
 
   el.classList.add('ar-popup');
   el.hidden = true;
   if (native) el.popover = mode === 'hint' && supportsHint() ? 'hint' : 'manual';
+  // Hints can be light-dismissed by the browser: keep up when they are.
+  const onToggle = (e: Event): void => {
+    if ((e as Event & { newState?: string }).newState === 'closed' && open && !el.matches(':popover-open')) hide();
+  };
+  if (native) el.addEventListener('toggle', onToggle);
 
   function reposition(): void {
     if (!open) return;
@@ -110,11 +117,15 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
 
   function show(): void {
     if (open) {
+      // The browser may have light-dismissed it (a hint, on a tap elsewhere).
+      if (native && el.isConnected && !el.matches(':popover-open')) showNative();
       reposition();
       return;
     }
     open = true;
     el.hidden = false;
+    // Hints (tooltips) aren't layers: Escape past them still reaches what's below.
+    if (mode !== 'hint') releaseLayer = pushLayer(el, undefined, 'popup');
     if (native) {
       if (el.isConnected) showNative();
       // Shown before it's in the document (the cell editor adds its list after
@@ -137,6 +148,8 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
   function hide(): void {
     if (!open) return;
     open = false;
+    releaseLayer?.();
+    releaseLayer = null;
     listeners?.abort();
     listeners = null;
     if (frame > 0) cancelAnimationFrame(frame);
@@ -158,6 +171,7 @@ export function attachPopup(el: HTMLElement, options: PopupOptions): Popup {
     reposition,
     destroy: () => {
       hide();
+      el.removeEventListener('toggle', onToggle);
       if (native) el.removeAttribute('popover');
       el.classList.remove('ar-popup');
     },

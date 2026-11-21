@@ -115,7 +115,10 @@ export abstract class Component extends HTMLElement {
     this.onDisconnected();
   }
 
-  /** Abort signal for listeners that should be removed on disconnect. */
+  /**
+   * Abort signal for listeners that should be removed on disconnect (and for
+   * `shortcuts(map, { signal: this.signal })`).
+   */
   protected get signal(): AbortSignal {
     if (!this.#lifecycle) this.#lifecycle = new AbortController();
     return this.#lifecycle.signal;

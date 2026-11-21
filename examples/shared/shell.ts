@@ -17,6 +17,7 @@ const DEMOS: Array<[string, string]> = [
   ['dashboard', 'Dashboard'],
   ['treasury', 'Treasury'],
   ['agora', 'Agora'],
+  ['reader', 'Reader'],
   ['signup', 'Signup'],
   ['offline', 'Offline'],
 ];

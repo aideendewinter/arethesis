@@ -129,3 +129,4 @@ With the component kit you can render a paginated, live-updating list without wr
 - [Core concepts](concepts.md) explains the store, list views and components.
 - [HTTP](http.md) covers endpoints, mapping, pagination and auth.
 - [Components](components.md) covers lists, events, templates and islands.
+- [Text, settings and keyboard](text-and-input.md) covers escaping templates, saved settings, highlights and shortcuts.

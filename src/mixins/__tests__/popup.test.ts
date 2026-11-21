@@ -30,9 +30,10 @@ describe('attachPopup', () => {
     expect(el.hasAttribute('popover')).toBe(false);
   });
 
-  it('uses the Popover API when it exists', () => {
-    const show = vi.fn();
-    const hide = vi.fn();
+  it('uses the Popover API when it exists, and keeps up with light dismiss', () => {
+    const opened = new Set<Element>();
+    const show = vi.fn(function (this: Element) { opened.add(this); });
+    const hide = vi.fn(function (this: Element) { opened.delete(this); });
     const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
     const had = { show: proto.showPopover, hide: proto.hidePopover };
     proto.showPopover = show;
@@ -40,14 +41,29 @@ describe('attachPopup', () => {
     try {
       expect(supportsPopover()).toBe(true);
       const el = document.createElement('div');
+      const matches = el.matches.bind(el);
+      (el as { matches: (selector: string) => boolean }).matches = (selector: string) => (selector === ':popover-open' ? opened.has(el) : matches(selector));
       document.body.appendChild(el);
       const popup = attachPopup(el, { anchor: () => new DOMRect(10, 10, 0, 0) });
       expect(el.getAttribute('popover')).toBe('manual');
       popup.show();
       popup.show(); // already open: only repositions
       expect(show).toHaveBeenCalledOnce();
+      // The browser closed it (a light dismiss) but we didn't hear yet: show again.
+      opened.delete(el);
+      popup.show();
+      expect(show).toHaveBeenCalledTimes(2);
+      // And when we hear, it counts as hidden.
+      opened.delete(el);
+      el.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'closed' }));
+      expect(popup.isOpen()).toBe(false);
+      expect(el.hidden).toBe(true);
+      popup.show();
+      el.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'open' }));
+      expect(popup.isOpen()).toBe(true);
       popup.hide();
-      expect(hide).toHaveBeenCalledOnce();
+      expect(hide).toHaveBeenCalled();
+      popup.destroy();
     } finally {
       proto.showPopover = had.show;
       proto.hidePopover = had.hide;

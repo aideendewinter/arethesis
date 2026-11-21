@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- **`html` template tag**: markup from strings with every value escaped. Nested templates and arrays stay markup, and unsafe URLs become `about:invalid`. It throws where escaping can't help: unquoted attributes, event handlers, and the inside of `<script>` and `<style>`. Also new: `setHtml`, `unsafeHtml` and `escapeHtml`.
+- **`definePrefs`**: typed settings with defaults, validation and versioned migrations. They're saved in one storage entry, follow other tabs, and fall back to memory when storage is unavailable. `safeStorage()` and `watchStorage()` are the pieces underneath.
+- **`highlighter`**: highlight ranges of text with the CSS Custom Highlight API, without changing the page. Where the API is missing, it wraps them in `<mark>` and unwraps them cleanly.
+  - Range helpers: `wordRanges` (via `Intl.Segmenter`), `findRanges`, `textRange`, `textOffset`, `rangeAtPoint` and `caretAt`.
+  - `theme.css` styles `ar-search` and `ar-search-current` highlights.
+- **`shortcuts`**: keyboard shortcuts that match the typed character (so `?` works on any layout), with `Mod` for ⌘ or Ctrl.
+  - They skip text fields unless asked, and accept `when`, `scope` and `signal`.
+  - `shortcutList()`, `renderShortcutHelp()` and `shortcutSource()` list them in help and in `<a-command-palette>`.
+- **Escape layers**: popups and dialogs register while open, and `pushLayer()` adds your own panels. Escape closes the top layer before an `Escape` shortcut runs.
+- **`intent` mixin**: hover, tap and focus as show, commit and cancel events. It has a hover delay, a tap that isn't a swipe, scroll, long press or text selection, a second tap that moves or clears the commit, and keyboard support.
+- **`selection-menu` mixin**: a toolbar beside selected text that keeps the selection while you use it, and is reachable with Shift+F10.
+- `syncThemeAcrossTabs()`: a theme picked in one tab applies in the others.
+- New example: **The Reader**. It has fragments of Heraclitus with search highlights, follow-along reading, glosses on hover or tap, marks from a selection menu, settings saved with `definePrefs`, and listed shortcuts.
+
+### Changed
+
+- Tooltips show on tap on touch screens. A second tap, or a tap elsewhere, hides them. They're built on `intent`.
+- A popover that the browser light-dismisses is shown again by the next `show()`, and counts as hidden when the browser closes it.
+- `<a-data-table>` uses the shared caret helper to place the cursor where you click.
+
 ## 0.2.2
 
 ### Fixed

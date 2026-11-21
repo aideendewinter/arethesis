@@ -34,18 +34,24 @@ export const fixtures = [
   {
     name: 'core: ObjectStore only',
     code: `import { ObjectStore } from 'arethesis/core'; globalThis.s = new ObjectStore();`,
-    mustNotContain: ['customElements.define', 'EventSource', 'collab:join', 'compose: length mismatch', 'sortable:start', 'Unknown mixin'],
+    mustNotContain: ['customElements.define', 'EventSource', 'collab:join', 'compose: length mismatch', 'sortable:start', 'Unknown mixin', 'highlights', 'selectionchange', 'Segmenter', 'shortcuts:'],
   },
   {
     name: 'core: app, no services configured',
     code: `import { getArethesis } from 'arethesis/core'; void getArethesis().init({ persistence: false });`,
-    mustNotContain: ['customElements.define', 'EventSource', 'collab:join', 'compose: length mismatch', 'sortable:start'],
+    mustNotContain: ['customElements.define', 'EventSource', 'collab:join', 'compose: length mismatch', 'sortable:start', 'highlights', 'Segmenter', 'shortcuts:'],
   },
   {
     name: 'core + realtime',
     code: `import { getArethesis } from 'arethesis/core'; import 'arethesis/realtime'; void getArethesis().init({ sse: { url: '/events' } });`,
     mustContain: ['EventSource'],
     mustNotContain: ['collab:join', 'compose: length mismatch', 'customElements.define'],
+  },
+  {
+    name: 'core: html and prefs only',
+    code: `import { html, definePrefs } from 'arethesis/core'; globalThis.h = html\`<b>\${1}</b>\`; globalThis.p = definePrefs({ key: 'k', defaults: { a: 1 } });`,
+    mustContain: ['about:invalid'],
+    mustNotContain: ['customElements.define', 'highlights', 'Segmenter', 'shortcuts:', 'ObjectStore'],
   },
   {
     name: 'components/list',

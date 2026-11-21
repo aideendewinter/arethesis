@@ -18,6 +18,7 @@
  */
 
 import { CRITICAL_CSS, POLYCHROME_CRITICAL_CSS } from './theme-boot.generated';
+import { safeStorage, watchStorage } from '../utils/storage';
 
 export const THEME_STORAGE_KEY = 'ar-theme';
 export const CONTRAST_STORAGE_KEY = 'ar-contrast';
@@ -34,16 +35,15 @@ export interface ThemeStorageOptions {
 
 export { CRITICAL_CSS, POLYCHROME_CRITICAL_CSS };
 
+/** A choice still applies to this page when storage is unavailable. */
 function remember(key: string, value: string | null): void {
-  try {
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
-  } catch {
-    /* storage unavailable: the choice still applies to this page */
-  }
+  safeStorage('local').set(key, value);
 }
 
 const root = (): HTMLElement => document.documentElement;
+const announceChange = (): void => {
+  root().dispatchEvent(new CustomEvent('ar-theme-change', { detail: { theme: getTheme(), contrast: getContrast() } }));
+};
 const media = (query: string): boolean => typeof matchMedia === 'function' && matchMedia(query).matches;
 
 /** Use the light or dark theme, or follow the OS again with `'system'`. The choice is remembered. */
@@ -51,7 +51,7 @@ export function setTheme(choice: ThemeChoice, { themeKey = THEME_STORAGE_KEY }: 
   if (choice === 'system') root().removeAttribute('data-theme');
   else root().setAttribute('data-theme', choice);
   remember(themeKey, choice === 'system' ? null : choice);
-  root().dispatchEvent(new CustomEvent('ar-theme-change', { detail: { theme: getTheme(), contrast: getContrast() } }));
+  announceChange();
 }
 
 /** Use high contrast (`'more'`), turn it off (`'standard'`), or follow the OS with `'system'`. The choice is remembered. */
@@ -59,7 +59,7 @@ export function setContrast(choice: ContrastChoice, { contrastKey = CONTRAST_STO
   if (choice === 'system') root().removeAttribute('data-contrast');
   else root().setAttribute('data-contrast', choice);
   remember(contrastKey, choice === 'system' ? null : choice);
-  root().dispatchEvent(new CustomEvent('ar-theme-change', { detail: { theme: getTheme(), contrast: getContrast() } }));
+  announceChange();
 }
 
 /** The theme in effect: an explicit choice, or the OS preference. */
@@ -78,14 +78,28 @@ export function getContrast(): 'more' | 'standard' {
 
 /** Re-apply stored choices (what the boot snippet does), e.g. after `<html>` was replaced. */
 export function applyStoredTheme({ themeKey = THEME_STORAGE_KEY, contrastKey = CONTRAST_STORAGE_KEY }: ThemeStorageOptions = {}): void {
-  try {
-    const theme = localStorage.getItem(themeKey);
-    const contrast = localStorage.getItem(contrastKey);
-    if (theme === 'light' || theme === 'dark') root().setAttribute('data-theme', theme);
-    if (contrast === 'more' || contrast === 'standard') root().setAttribute('data-contrast', contrast);
-  } catch {
-    /* storage unavailable */
-  }
+  const storage = safeStorage('local');
+  const theme = storage.get(themeKey);
+  const contrast = storage.get(contrastKey);
+  if (theme === 'light' || theme === 'dark') root().setAttribute('data-theme', theme);
+  if (contrast === 'more' || contrast === 'standard') root().setAttribute('data-contrast', contrast);
+}
+
+/**
+ * Follow theme choices made in other tabs (and fire `ar-theme-change` for
+ * them). Returns a function that stops.
+ */
+export function syncThemeAcrossTabs({ themeKey = THEME_STORAGE_KEY, contrastKey = CONTRAST_STORAGE_KEY }: ThemeStorageOptions = {}): () => void {
+  const follow = (attribute: string, allowed: string[]) => (value: string | null): void => {
+    if (value !== null && allowed.includes(value)) root().setAttribute(attribute, value);
+    else root().removeAttribute(attribute);
+    announceChange();
+  };
+  const stops = [
+    watchStorage(themeKey, follow('data-theme', ['light', 'dark'])),
+    watchStorage(contrastKey, follow('data-contrast', ['more', 'standard'])),
+  ];
+  return () => stops.forEach(stop => stop());
 }
 
 /** The boot script's source (no `<script>` tag), for inlining. */

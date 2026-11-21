@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Reader · Arethesis</title>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main>
+      <div class="reader-bar">
+        <div class="field reader-find">
+          <label for="find">Find in text</label>
+          <div class="reader-find__row">
+            <input id="find" type="search" autocomplete="off" aria-describedby="find-count" aria-keyshortcuts="/">
+            <button type="button" class="btn btn--ghost btn--small" data-find="prev" aria-label="Previous match" aria-keyshortcuts="Shift+N">↑</button>
+            <button type="button" class="btn btn--ghost btn--small" data-find="next" aria-label="Next match" aria-keyshortcuts="N">↓</button>
+          </div>
+          <span class="hint" id="find-count" aria-live="polite"></span>
+        </div>
+        <button type="button" class="btn btn--ghost" id="follow" aria-pressed="false" aria-keyshortcuts="F">Follow along</button>
+        <button type="button" class="btn btn--ghost" id="settings-toggle" aria-expanded="false" aria-controls="settings" aria-keyshortcuts="S">Settings</button>
+        <button type="button" class="btn btn--ghost" id="help-toggle" aria-keyshortcuts="Shift+?">Shortcuts</button>
+      </div>
+
+      <section class="card reader-settings" id="settings" aria-labelledby="settings-heading" hidden>
+        <h2 id="settings-heading">Settings</h2>
+        <div class="field"><label for="size">Text size</label><input id="size" type="range" min="14" max="28" step="1"></div>
+        <div class="field"><label for="leading">Line spacing</label>
+          <select id="leading"><option value="1.5">Snug</option><option value="1.75">Comfortable</option><option value="2">Airy</option></select></div>
+        <div class="field"><label for="pace">Follow-along pace</label>
+          <select id="pace"><option value="160">Slow</option><option value="240">Steady</option><option value="360">Brisk</option></select></div>
+        <label class="switch"><input type="checkbox" id="glosses"> Show glosses on hover</label>
+        <p class="hint">Saved in this browser, and followed by other open tabs.</p>
+        <button type="button" class="btn btn--ghost btn--small" id="settings-reset">Reset</button>
+      </section>
+
+      <article class="reader" id="text" aria-label="Fragments of Heraclitus">
+        <header>
+          <p class="eyebrow" lang="grc">Ἡράκλειτος</p>
+          <h2>On nature, in pieces</h2>
+          <p class="hint">Select any words to mark or copy them. Dotted words have glosses.</p>
+        </header>
+        <ol class="reader__fragments">
+          <li value="50">Listening not to me but to the <dfn class="gloss" tabindex="0" data-gloss="Word, account, reason: the measure that runs through everything.">logos</dfn>, it is wise to agree that all things are one.</li>
+          <li value="30">This <dfn class="gloss" tabindex="0" data-gloss="Order, arrangement; also ornament. The ordered world.">kosmos</dfn>, the same for all, no god made and no man; it always was, and is, and will be an ever-living fire, kindled in measures and quenched in measures.</li>
+          <li value="53">War is the father of all and the king of all. Some it shows as gods and some as men; some it makes slaves and some free.</li>
+          <li value="91">You cannot step twice into the same river: other and still other waters flow on.</li>
+          <li value="52"><dfn class="gloss" tabindex="0" data-gloss="A lifetime; an age; time as a whole.">Aion</dfn> is a child at play, moving pieces on a board. The kingship belongs to a child.</li>
+          <li value="45">You would not find the limits of the <dfn class="gloss" tabindex="0" data-gloss="Breath, life, soul.">psyche</dfn> though you walked every road, so deep is its logos.</li>
+          <li value="60">The road up and the road down are one and the same.</li>
+          <li value="123">Nature loves to hide.</li>
+          <li value="97">Dogs bark at anyone they don’t know.</li>
+          <li value="119">A person’s character is their <dfn class="gloss" tabindex="0" data-gloss="A divinity, a guiding spirit; one’s lot.">daimon</dfn>.</li>
+          <li value="96">Corpses should be thrown out sooner than dung.</li>
+          <li value="17">Most people do not understand the things they come across, nor do they grasp them when taught, though they think they do.</li>
+        </ol>
+      </article>
+
+      <a-dialog id="help" heading="Keyboard shortcuts">
+        <div id="help-list" class="reader-help"></div>
+      </a-dialog>
+    </main>
+  </body>
+</html>

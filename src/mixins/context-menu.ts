@@ -153,7 +153,7 @@ export function contextMenuMixin(element: HTMLElement, options: ContextMenuOptio
     open(e.clientX, e.clientY, target);
   }, { signal });
   element.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (!(e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey))) return;
+    if (e.defaultPrevented || !(e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey))) return;
     const target = resolveTarget(e.target);
     if (!target) return;
     e.preventDefault();

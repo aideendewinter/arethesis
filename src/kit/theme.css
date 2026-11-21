@@ -791,6 +791,41 @@ a-kanban { display: block; }
 .context-menu__item kbd { font: 0.75rem var(--ar-font-mono); color: var(--ar-text-muted); }
 .context-menu__separator { height: 1px; margin: 0.3rem 0; background: var(--ar-border); }
 
+/* ── Selection menu ────────────────────────────────────────────────────── */
+
+.ar-selection-menu {
+  z-index: 10000;
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  border-radius: var(--ar-radius);
+  border: 1px solid var(--ar-border);
+  background: var(--ar-bg);
+  color: var(--ar-text);
+  box-shadow: var(--ar-shadow-lg);
+  font: 0.85rem/1.2 var(--ar-font);
+  animation: ar-fade-in 0.1s ease-out;
+}
+.ar-selection-menu__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  min-width: 2rem;
+  justify-content: center;
+  padding: 0.3rem 0.6rem;
+  border: 0;
+  border-radius: var(--ar-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ar-selection-menu__item:hover { background: var(--ar-accent-soft); color: var(--ar-accent); }
+.ar-selection-menu__item:focus-visible { outline: 2px solid var(--ar-accent); outline-offset: -2px; }
+.ar-selection-menu__item:disabled { opacity: 0.45; cursor: default; }
+@media (pointer: coarse) { .ar-selection-menu__item { min-height: 2.75rem; min-width: 2.75rem; } }
+
 /* ── Dropdown ──────────────────────────────────────────────────────────── */
 
 .dropdown { position: relative; }
@@ -1165,6 +1200,17 @@ a-list { display: block; }
 .ar-prose th { background: var(--ar-surface); }
 .ar-prose .md-align-center { text-align: center; }
 .ar-prose .md-align-right { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Highlights (utils/highlight): native ::highlight(), and the <mark> fallback. */
+.ar-highlight { background: none; color: inherit; }
+::highlight(ar-search) { background-color: color-mix(in srgb, var(--ar-warning) 28%, transparent); color: inherit; }
+.ar-highlight[data-highlight="ar-search"] { background-color: color-mix(in srgb, var(--ar-warning) 28%, transparent); }
+::highlight(ar-search-current) { background-color: var(--ar-warning); color: var(--ar-bg, #fff); }
+.ar-highlight[data-highlight="ar-search-current"] { background-color: var(--ar-warning); color: var(--ar-bg, #fff); }
+@media (forced-colors: active) {
+  ::highlight(ar-search), ::highlight(ar-search-current) { background-color: Mark; color: MarkText; }
+  .ar-highlight[data-highlight^="ar-search"] { background-color: Mark; color: MarkText; forced-color-adjust: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

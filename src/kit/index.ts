@@ -78,6 +78,7 @@ export {
   getTheme,
   getContrast,
   applyStoredTheme,
+  syncThemeAcrossTabs,
   themeBootScript,
   themeBootHtml,
   CRITICAL_CSS,
